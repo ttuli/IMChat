@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package idgen;
+
+option go_package = "./idgen";
+
+// ========== 枚举定义 ==========
+
+// IDType ID类型枚举
+enum IDType {
+  ID_TYPE_UNSPECIFIED = 0; // 未指定
+  ID_TYPE_USER = 1;        // 用户ID
+  ID_TYPE_GROUP = 2;       // 群组ID
+  ID_TYPE_MESSAGE = 3;     // 消息ID
+}
+
+// ========== 请求和响应消息 ==========
+
+// GetIdReq 获取ID请求
+message GetIdReq {
+  IDType idType = 1;  // ID类型
+  int32 count = 2;     // 需要获取的ID数量，默认为1
+}
+
+// GetIdResp 获取ID响应
+message GetIdResp {
+  repeated int64 ids = 1;  // 返回的ID列表
+}
+
+// ========== 服务定义 ==========
+
+service Idgen {
+  // GetId 获取单个或多个ID
+  // 如果当前号段不足，会自动获取新号段
+  rpc GetId(GetIdReq) returns (GetIdResp);
+}
+

@@ -1,0 +1,9 @@
+.env
+build
+
+nacos/
+**/nacos/
+
+mockdata
+
+docs/

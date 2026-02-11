@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package group;
+
+option go_package = "./group";
+
+// ========== 通用定义 ==========
+
+message EmptyResp {}
+
+// ========== 枚举定义 ==========
+
+enum ApplyStatus {
+  APPLY_STATUS_UNSPECIFIED = 0;
+  APPLY_STATUS_PENDING = 1;     // 待处理
+  APPLY_STATUS_ACCEPTED = 2;    // 已同意
+  APPLY_STATUS_REJECTED = 3;    // 已拒绝
+  APPLY_STATUS_IGNORED = 4;     // 已忽略
+}
+
+enum GroupRole {
+  GROUP_ROLE_UNSPECIFIED = 0;
+  GROUP_ROLE_OWNER = 1;         // 群主
+  GROUP_ROLE_ADMIN = 2;         // 管理员
+  GROUP_ROLE_MEMBER = 3;        // 普通成员
+}
+
+// ========== 基础消息类型 ==========
+
+message Group {
+  uint64 group_id = 1;
+  string name = 2;
+  string avatar = 3;
+  uint64 owner_id = 4;
+  int64 created_at = 5;
+  int64 updated_at = 6;
+  int32 member_count = 7;
+}
+
+message GroupMember {
+  uint64 group_id = 1;
+  uint64 user_id = 2;
+  GroupRole role = 3;
+  string nickname = 4;
+  int64 mute_until = 5;
+  int64 joined_at = 6;
+}
+
+message GroupRequest {
+  uint64 id = 1;
+  uint64 from_user_id = 2;
+  uint64 group_id = 3;
+  string apply_msg = 4;
+  ApplyStatus status = 5;
+  uint64 handler_id = 6;      // 处理人ID（群主或管理员），处理后填充
+  int64 request_time = 7;
+  int64 handle_time = 8;
+  string reject_reason = 9;
+}
+
+// ========== 群组管理 ==========
+
+message CreateGroupReq {
+  string name = 1;
+  uint64 owner_id = 2;
+  string avatar = 3;
+  repeated uint64 member_ids = 4;
+}
+
+message CreateGroupResp {
+  Group data = 1;
+}
+
+// GetGroupReq 获取群组信息（支持通过IDs或名字模糊搜索）
+message GetGroupReq {
+  repeated uint64 group_ids = 1;  // 通过ID列表查询
+  string name_keyword = 2;        // 通过名称模糊搜索
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetGroupResp {
+  repeated Group data = 1;
+  int64 total = 2;  // 搜索时返回总数
+}
+
+message UpdateGroupReq {
+  uint64 group_id = 1;
+  uint64 operator_id = 2;
+  string name = 3;
+  string avatar = 4;
+}
+
+message DismissGroupReq {
+  uint64 group_id = 1;
+  uint64 operator_id = 2;
+}
+
+message GetUserGroupsReq {
+  uint64 user_id = 1;
+}
+
+message GetUserGroupsResp {
+  repeated uint64 data = 1;
+}
+
+// ========== 群成员管理 ==========
+
+message InviteMembersReq {
+  uint64 group_id = 1;
+  uint64 operator_id = 2;
+  repeated uint64 member_ids = 3;
+}
+
+message InviteMembersResp {
+  int32 success_count = 1;
+  repeated uint64 failed_ids = 2;
+}
+
+message RemoveMemberReq {
+  uint64 group_id = 1;
+  uint64 operator_id = 2;
+  uint64 user_id = 3;
+}
+
+message LeaveGroupReq {
+  uint64 group_id = 1;
+  uint64 user_id = 2;
+}
+
+message SetMemberRoleReq {
+  uint64 group_id = 1;
+  uint64 operator_id = 2;
+  uint64 user_id = 3;
+  GroupRole role = 4;
+}
+
+message SetMemberNicknameReq {
+  uint64 group_id = 1;
+  uint64 user_id = 2;
+  string nickname = 3;
+}
+
+message MuteMemberReq {
+  uint64 group_id = 1;
+  uint64 operator_id = 2;
+  uint64 user_id = 3;
+  int64 mute_until = 4;
+}
+
+// GetGroupMemberIDsReq 获取群成员ID列表（用于消息推送）
+message GetGroupMemberIDsReq {
+  uint64 group_id = 1;
+}
+
+message GetGroupMemberIDsResp {
+  repeated GroupMember members = 1;
+}
+
+// ========== 群申请管理 ==========
+
+message JoinGroupReq {
+  uint64 group_id = 1;
+  uint64 from_user_id = 2;
+  string apply_msg = 3;  // 申请理由
+}
+
+message JoinGroupResp {
+  GroupRequest data = 1;
+}
+
+message HandleGroupApplyReq {
+  uint64 id = 1;
+  uint64 operator_id = 2;
+  ApplyStatus status = 3;
+  string reject_reason = 4;
+}
+
+message GetPendingAppliesReq {
+  uint64 user_id = 1;
+}
+
+message GetPendingAppliesResp {
+  repeated GroupRequest data = 1;
+}
+
+// ========== 服务定义 ==========
+
+service GroupRpc {
+  // 群组管理
+  rpc CreateGroup(CreateGroupReq) returns (CreateGroupResp);
+  rpc GetGroup(GetGroupReq) returns (GetGroupResp);           // 合并 GetGroupInfo + GetGroupDetail
+  rpc UpdateGroup(UpdateGroupReq) returns (EmptyResp);
+  rpc DismissGroup(DismissGroupReq) returns (EmptyResp);
+  rpc GetUserGroups(GetUserGroupsReq) returns (GetUserGroupsResp);
+
+  // 群成员管理
+  rpc InviteMembers(InviteMembersReq) returns (InviteMembersResp);
+  rpc RemoveMember(RemoveMemberReq) returns (EmptyResp);
+  rpc LeaveGroup(LeaveGroupReq) returns (EmptyResp);
+  rpc SetMemberRole(SetMemberRoleReq) returns (EmptyResp);
+  rpc SetMemberNickname(SetMemberNicknameReq) returns (EmptyResp);
+  rpc MuteMember(MuteMemberReq) returns (EmptyResp);
+  rpc GetGroupMemberIDs(GetGroupMemberIDsReq) returns (GetGroupMemberIDsResp);
+
+  // 群申请管理
+  rpc JoinGroup(JoinGroupReq) returns (JoinGroupResp);
+  rpc HandleGroupApply(HandleGroupApplyReq) returns (EmptyResp);
+  rpc GetPendingApplies(GetPendingAppliesReq) returns (GetPendingAppliesResp);
+}

@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "./common";
+
+message ErrorResp {
+    int32 code = 1;
+    string message = 2;
+    string rawError = 3;
+}
+
+// ---------- 枚举定义 ----------
+
+// ApplyStatus 申请状态枚举
+enum ApplyStatus {
+  APPLY_STATUS_UNSPECIFIED = 0; // 未指定
+  APPLY_STATUS_PENDING = 1;     // 待处理
+  APPLY_STATUS_ACCEPTED = 2;    // 已同意
+  APPLY_STATUS_REJECTED = 3;    // 已拒绝
+  APPLY_STATUS_IGNORED = 4;     // 已忽略
+}
+
+// GroupRole 群成员角色枚举
+enum GroupRole {
+  GROUP_ROLE_UNSPECIFIED = 0; // 未指定
+  GROUP_ROLE_OWNER = 1;       // 群主
+  GROUP_ROLE_ADMIN = 2;       // 管理员
+  GROUP_ROLE_MEMBER = 3;      // 普通成员
+}
+
+// FriendSource 好友来源枚举
+enum FriendSource {
+  FRIEND_SOURCE_UNSPECIFIED = 0; // 未指定
+  FRIEND_SOURCE_SEARCH = 1;      // 搜索
+  FRIEND_SOURCE_QR_CODE = 2;     // 扫码
+  FRIEND_SOURCE_GROUP = 3;       // 群聊
+}
+
+// MessageType 消息类型枚举（与 model/ws.go 保持一致）
+enum MessageType {
+  MESSAGE_TYPE_UNSPECIFIED = 0; // 未指定
+  MESSAGE_TYPE_TEXT = 1;        // 文本
+  MESSAGE_TYPE_IMAGE = 2;       // 图片
+  MESSAGE_TYPE_FILE = 3;        // 文件
+  MESSAGE_TYPE_AUDIO = 4;       // 音频
+  MESSAGE_TYPE_VIDEO = 5;      // 视频
+}
+
+// MessageStatus 消息状态枚举
+enum MessageStatus {
+  MESSAGE_STATUS_UNSPECIFIED = 0; // 未指定
+  MESSAGE_STATUS_SENDING = 1;     // 发送中
+  MESSAGE_STATUS_SENT = 2;        // 已发送
+  MESSAGE_STATUS_DELIVERED = 3;   // 已送达
+  MESSAGE_STATUS_READ = 4;        // 已读
+  MESSAGE_STATUS_FAILED = 5;      // 发送失败
+}

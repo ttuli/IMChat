@@ -1,0 +1,87 @@
+package defaultimpl
+
+import (
+	"context"
+
+	"IM2/internal/model"
+	"IM2/pkg/xerr"
+
+	"gorm.io/gorm"
+)
+
+// ========== 好友管理 ==========
+
+// GetFriends 获取好友列表（返回全部）
+func (s *userService) GetFriends(ctx context.Context, userID uint64) ([]*model.UserFriend, error) {
+	friends, _, err := s.friendDAO.FindFriendsByUserID(ctx, userID, -1, 0)
+	if err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询好友列表失败")
+	}
+	return friends, nil
+}
+
+// CreateFriend 创建好友关系（双向）
+func (s *userService) CreateFriend(ctx context.Context, userID, friendID uint64, source uint8, remark string) error {
+	// 检查是否已经是好友
+	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	if err == nil {
+		return xerr.New(xerr.ErrInvalidParams, "已经是好友")
+	}
+	if err != gorm.ErrRecordNotFound {
+		return xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
+	}
+
+	// 创建双向好友关系
+	if err := s.friendDAO.InsertFriend(ctx, userID, friendID, source); err != nil {
+		return xerr.Wrap(err, xerr.ErrDatabase, "创建好友关系失败")
+	}
+
+	// 如果有备注，更新备注
+	if remark != "" {
+		updates := map[string]any{"remark": remark}
+		if err := s.friendDAO.UpdateFriend(ctx, userID, friendID, updates); err != nil {
+			return xerr.Wrap(err, xerr.ErrDatabase, "更新好友备注失败")
+		}
+	}
+
+	return nil
+}
+
+// UpdateFriend 更新好友信息（备注、拉黑、星标）
+func (s *userService) UpdateFriend(ctx context.Context, userID, friendID uint64, remark string, blocked, starred bool) error {
+	// 检查好友关系是否存在
+	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	if err == gorm.ErrRecordNotFound {
+		return xerr.New(xerr.ErrNotFound, "好友关系不存在")
+	}
+	if err != nil {
+		return xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
+	}
+
+	updates := map[string]any{
+		"remark":  remark,
+		"blocked": blocked,
+		"stared":  starred,
+	}
+	if err := s.friendDAO.UpdateFriend(ctx, userID, friendID, updates); err != nil {
+		return xerr.Wrap(err, xerr.ErrDatabase, "更新好友信息失败")
+	}
+	return nil
+}
+
+// DeleteFriend 删除好友（双向删除）
+func (s *userService) DeleteFriend(ctx context.Context, userID, friendID uint64) error {
+	// 检查好友关系是否存在
+	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	if err == gorm.ErrRecordNotFound {
+		return xerr.New(xerr.ErrNotFound, "好友关系不存在")
+	}
+	if err != nil {
+		return xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
+	}
+
+	if err := s.friendDAO.DeleteFriend(ctx, userID, friendID); err != nil {
+		return xerr.Wrap(err, xerr.ErrDatabase, "删除好友失败")
+	}
+	return nil
+}

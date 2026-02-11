@@ -1,0 +1,33 @@
+Name: WebSocketGateway
+Host: 0.0.0.0
+Port: 8080
+
+WebSocket:
+  NodeID: ""
+  NodeAddr: ""
+  Path: /ws
+  ReadBufferSize: 4096
+  WriteBufferSize: 4096
+
+Async:
+  WorkerCount: 20
+  QueueSize: 5000
+  IdleTimeout: 30
+  TaskTimeout: 5
+  EnableMetrics: true
+
+Redis:
+  Host: localhost:6379
+  Type: node
+
+AuthRpc:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: auth.rpc
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: user.rpc

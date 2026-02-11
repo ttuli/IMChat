@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "./auth";
+
+message LoginRequest {
+  uint64 account   = 1;
+  string password  = 2;
+  string device_id = 3;
+  string platform  = 4;
+}
+
+message LoginReply {
+  string token = 1;
+  string refreshToken = 2;
+}
+
+message LogoutRequest {
+  uint64 userID = 1;
+  bool removeRT = 2;
+}
+
+message LogoutReply {}
+
+message RegisterReq {
+  string name = 1;
+  string password = 2;
+  string phone = 3;
+  string authCode = 4;
+}
+message RegisterResp {
+  uint64 id = 1;
+}
+
+message GetAuthCodeReq {
+  string phone = 1;
+}
+message GetAuthCodeResp {}
+
+message RefreshReq {
+  string device_id = 1;
+  string platform = 2;
+  string refreshToken = 3;
+}
+message RefreshResp {
+  string token = 1;
+  string refreshToken = 2;
+}
+
+service AuthRpc {
+  rpc Login(LoginRequest) returns (LoginReply);
+  rpc Logout(LogoutRequest) returns (LogoutReply);
+  rpc Register(RegisterReq) returns (RegisterResp);
+  rpc GetAuthCode(GetAuthCodeReq) returns (GetAuthCodeResp);
+  rpc Refresh(RefreshReq) returns (RefreshResp);
+}
