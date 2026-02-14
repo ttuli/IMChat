@@ -35,11 +35,11 @@ type NatsConf struct {
 // WebSocketConf WebSocket 配置
 type WebSocketConf struct {
 	// 节点ID，为空时自动生成
-	NodeID string `json:",omitempty"`
+	NodeID string
 	// WebSocket 路径
-	Path string `json:"path"`
+	Path string
 	// 读缓冲区大小
-	ReadBufferSize int `json:",omitempty"`
+	ReadBufferSize int
 	// 写缓冲区大小
-	WriteBufferSize int `json:",omitempty"`
+	WriteBufferSize int
 }

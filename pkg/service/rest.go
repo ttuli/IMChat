@@ -16,13 +16,14 @@ import (
 
 // APISIXConfig APISIX 注册配置
 type APISIXConfig struct {
-	Enable     bool   `json:",default=false"` // 是否启用 APISIX 注册
-	AdminURL   string `json:",optional"`      // APISIX Admin API 地址，如 http://127.0.0.1:9180
-	APIKey     string `json:",optional"`      // APISIX Admin API Key
-	UpstreamID string `json:",optional"`      // 上游 ID
-	RouteID    string `json:",optional"`      // 路由 ID（可选，不设置则uuid生成）
-	RouteURI   string `json:",optional"`      // 路由 URI，如 /api/user/*
-	ServiceIP  string `json:",optional"`      // 当前服务对外暴露的 IP（可选，默认使用 Host）
+	Enable          bool   `json:",default=false"`          // 是否启用 APISIX 注册
+	AdminURL        string `json:",optional"`               // APISIX Admin API 地址，如 http://127.0.0.1:9180
+	APIKey          string `json:",optional"`               // APISIX Admin API Key
+	UpstreamID      string `json:",optional"`               // 上游 ID
+	RouteID         string `json:",optional"`               // 路由 ID（可选，不设置则uuid生成）
+	RouteURI        string `json:",optional"`               // 路由 URI，如 /api/user/*
+	ServiceIP       string `json:",optional"`               // 当前服务对外暴露的 IP（可选，默认使用 Host）
+	EnableWebsocket bool   `json:",optional,default=false"` // 是否启用 WebSocket
 }
 
 // RestConfExtractor 从配置中提取 RestConf
@@ -161,7 +162,7 @@ func (rs *RestService) registerToAPISIX() error {
 		"nodes": map[string]int{
 			rs.nodeAddr: 1,
 		},
-		"scheme": "http", // 协议类型
+		"scheme":           "http", // 协议类型
 	}
 
 	body, _ := json.Marshal(payload)
@@ -287,10 +288,11 @@ func (rs *RestService) registerRouteToAPISIX() error {
 
 	// 创建路由配置
 	payload := map[string]any{
-		"uri":         rs.apisixCfg.RouteURI,
-		"upstream_id": rs.apisixCfg.UpstreamID,
-		"name":        rs.apisixCfg.RouteID,
-		"status":      1, // 启用状态
+		"uri":              rs.apisixCfg.RouteURI,
+		"upstream_id":      rs.apisixCfg.UpstreamID,
+		"name":             rs.apisixCfg.RouteID,
+		"status":           1, // 启用状态
+		"enable_websocket": rs.apisixCfg.EnableWebsocket,
 	}
 
 	body, _ := json.Marshal(payload)

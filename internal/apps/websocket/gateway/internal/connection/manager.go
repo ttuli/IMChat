@@ -6,6 +6,8 @@ import (
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/pkg/xerr"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // Manager 连接管理器接口
@@ -57,7 +59,7 @@ func (m *DefaultManager) AddConnection(userID uint64, conn *Connection) error {
 			oldConn.Close()
 		}
 	}
-
+	logx.Info("[Connection] user %d added", userID)
 	m.connections.Store(userID, conn)
 	return nil
 }

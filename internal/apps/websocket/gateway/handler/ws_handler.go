@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"IM2/internal/apps/websocket/gateway/config"
@@ -36,6 +37,7 @@ func NewWSHandler(svcCtx *svc.ServiceContext) *WSHandler {
 
 // Handle 处理 WebSocket 连接
 func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	
 	// 从 context 中提取用户ID（JWT 已在 HTTP 中间件层验证）
 	userID := tokenmanager.ExtractIDFromCtx(r.Context())
 
@@ -56,6 +58,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// 创建连接
 	conn := connection.NewConnection(userID, deviceID, platform, wsConn, h.codec)
 
+	fmt.Println("conn add")
 	// 注册连接
 	if err := h.svcCtx.ConnectionManager.AddConnection(conn.UserID, conn); err != nil {
 		resultx.ErrorCtx(r.Context(), w, xerr.Wrap(err, xerr.ErrWsConnAdd, "建立连接失败"))
