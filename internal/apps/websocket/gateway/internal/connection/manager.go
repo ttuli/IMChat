@@ -6,8 +6,6 @@ import (
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/pkg/xerr"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // Manager 连接管理器接口
@@ -57,12 +55,10 @@ func (m *DefaultManager) AddConnection(userID uint64, conn *Connection) error {
 	if old, loaded := m.connections.LoadAndDelete(userID); loaded {
 		if oldConn, ok := old.(*Connection); ok {
 			oldConn.Close()
-			logx.Infof("[ConnectionManager] replaced old connection for user %d", userID)
 		}
 	}
 
 	m.connections.Store(userID, conn)
-	logx.Infof("[ConnectionManager] added connection for user %d on node %s", userID, m.nodeID)
 	return nil
 }
 
@@ -72,7 +68,6 @@ func (m *DefaultManager) RemoveConnection(userID uint64) error {
 		if c, ok := conn.(*Connection); ok {
 			c.Close()
 		}
-		logx.Infof("[ConnectionManager] removed connection for user %d", userID)
 	}
 	return nil
 }
@@ -114,7 +109,6 @@ func (m *DefaultManager) Broadcast(ctx context.Context, userIDs []uint64, msg *p
 				errOnce.Do(func() {
 					firstErr = err
 				})
-				logx.Errorf("[ConnectionManager] broadcast to user %d failed: %v", uid, err)
 			}
 		}(userID)
 	}
@@ -154,6 +148,5 @@ func (m *DefaultManager) Close() error {
 		m.connections.Delete(key)
 		return true
 	})
-	logx.Info("[ConnectionManager] closed all connections")
 	return nil
 }

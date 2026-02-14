@@ -18,38 +18,47 @@ type ConfigParser interface {
 }
 
 func DefaultConfigPath(serviceName string) string {
-	// 1. 优先使用工作目录（适配 go run 和开发环境）
+	configRelPath := filepath.Join("internal/apps", serviceName, "etc/config.yaml")
+
+	// 1. 从工作目录向上查找项目根目录 (go.mod 所在目录)
 	if wd, err := os.Getwd(); err == nil {
-		path := filepath.Join(
-			wd,
-			"../../..",
-			"internal/apps",
-			serviceName,
-			"etc/config.yaml",
-		)
-		if _, err := os.Stat(path); err == nil {
-			return path
-		}
-	}
-
-	// 2. 使用可执行文件路径（生产环境编译后的二进制）
-	if exe, err := os.Executable(); err == nil {
-		exeDir := filepath.Dir(exe)
-
-		// 跳过 /tmp 临时目录（go run 产生的）
-		if !strings.Contains(exeDir, "/tmp/go-build") {
-			root := filepath.Clean(filepath.Join(exeDir, "..", ".."))
-			path := filepath.Join(
-				root,
-				"internal/apps",
-				serviceName,
-				"etc/config.yaml",
-			)
+		if root := findProjectRoot(wd); root != "" {
+			path := filepath.Join(root, configRelPath)
 			if _, err := os.Stat(path); err == nil {
 				return path
 			}
 		}
 	}
 
+	// 2. 从可执行文件路径向上查找（生产环境编译后的二进制）
+	if exe, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exe)
+		// 跳过 /tmp 临时目录（go run 产生的）
+		if !strings.Contains(exeDir, "/tmp/go-build") {
+			if root := findProjectRoot(exeDir); root != "" {
+				path := filepath.Join(root, configRelPath)
+				if _, err := os.Stat(path); err == nil {
+					return path
+				}
+			}
+		}
+	}
+
 	return ""
+}
+
+// findProjectRoot 从 startDir 向上逐级查找包含 go.mod 的目录
+func findProjectRoot(startDir string) string {
+	dir := startDir
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// 已到根目录
+			return ""
+		}
+		dir = parent
+	}
 }

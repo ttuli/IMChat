@@ -8,10 +8,11 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/connection"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/svc"
+	"IM2/pkg/resultx"
+	tokenmanager "IM2/pkg/tokenManager"
 	"IM2/pkg/xerr"
 
 	"github.com/gorilla/websocket"
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 var upgrader = websocket.Upgrader{
@@ -23,46 +24,50 @@ var upgrader = websocket.Upgrader{
 // WSHandler WebSocket 处理器
 type WSHandler struct {
 	svcCtx *svc.ServiceContext
+	codec  protocol.Codec
 }
 
 // NewWSHandler 创建 WebSocket 处理器
 func NewWSHandler(svcCtx *svc.ServiceContext) *WSHandler {
 	upgrader.ReadBufferSize = svcCtx.Config.WebSocket.ReadBufferSize
 	upgrader.WriteBufferSize = svcCtx.Config.WebSocket.WriteBufferSize
-	return &WSHandler{svcCtx: svcCtx}
+	return &WSHandler{svcCtx: svcCtx, codec: protocol.NewJSONCodec()}
 }
 
 // Handle 处理 WebSocket 连接
 func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	// 从 context 中提取用户ID（JWT 已在 HTTP 中间件层验证）
+	userID := tokenmanager.ExtractIDFromCtx(r.Context())
+
+	// 从 query 参数获取设备信息
+	deviceID := r.URL.Query().Get("device_id")
+	platform := r.URL.Query().Get("platform")
+
 	// 升级 HTTP 连接到 WebSocket
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		logx.Errorf("[WSHandler] upgrade failed: %v", err)
+		resultx.ErrorCtx(r.Context(), w, xerr.Wrap(err, xerr.ErrWSUpgrade, "建立连接失败"))
 		return
 	}
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	// 等待认证消息
-	conn, err := h.waitForAuth(ctx, wsConn)
-	if err != nil {
-		logx.Errorf("[WSHandler] auth failed: %v", err)
-		h.sendError(wsConn, int32(xerr.ErrUnauthorized), "authentication failed")
-		wsConn.Close()
-		return
-	}
+	// 创建连接
+	conn := connection.NewConnection(userID, deviceID, platform, wsConn, h.codec)
 
 	// 注册连接
 	if err := h.svcCtx.ConnectionManager.AddConnection(conn.UserID, conn); err != nil {
-		logx.Errorf("[WSHandler] add connection failed: %v", err)
+		resultx.ErrorCtx(r.Context(), w, xerr.Wrap(err, xerr.ErrWsConnAdd, "建立连接失败"))
 		conn.Close()
 		return
 	}
 
 	// 注册路由
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
-		logx.Errorf("[WSHandler] register route failed: %v", err)
+		resultx.ErrorCtx(r.Context(), w, xerr.Wrap(err, xerr.ErrWsConnAdd, "注册路由失败"))
+		conn.Close()
+		return
 	}
 
 	defer func() {
@@ -77,56 +82,6 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	conn.ReadPump(ctx, h.createMessageHandler(ctx, conn))
 }
 
-// waitForAuth 等待认证消息
-func (h *WSHandler) waitForAuth(ctx context.Context, wsConn *websocket.Conn) (*connection.Connection, error) {
-	// 读取第一条消息作为认证消息
-	_, data, err := wsConn.ReadMessage()
-	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrWebSocket, "read auth message failed")
-	}
-
-	msg, err := protocol.Decode(data)
-	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode auth message failed")
-	}
-
-	if msg.Type != protocol.MessageTypeAuth {
-		return nil, xerr.New(xerr.ErrInvalidParams, "first message must be auth")
-	}
-
-	authData, err := protocol.DecodeData[protocol.AuthData](msg)
-	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode auth data failed")
-	}
-
-	// TODO: 调用 Auth RPC 验证 token
-	// 这里暂时模拟验证成功，实际应调用 AuthRpc 验证
-	userID := msg.From
-	if userID == 0 {
-		return nil, xerr.New(xerr.ErrUnauthorized, "invalid user id")
-	}
-
-	// 创建连接
-	conn := connection.NewConnection(userID, authData.DeviceID, authData.Platform, wsConn)
-
-	// 发送认证成功响应
-	ackData, _ := protocol.EncodeData(&protocol.AuthAckData{
-		Success: true,
-		UserID:  userID,
-		Message: "authenticated",
-	})
-	ackMsg := &protocol.Message{
-		Type: protocol.MessageTypeAuthAck,
-		Data: ackData,
-	}
-	if err := conn.Send(ackMsg); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrWebSocket, "send auth ack failed")
-	}
-
-	logx.Infof("[WSHandler] user %d authenticated", userID)
-	return conn, nil
-}
-
 // createMessageHandler 创建消息处理函数
 func (h *WSHandler) createMessageHandler(ctx context.Context, conn *connection.Connection) func(*protocol.Message) error {
 	msgHandler := NewMessageHandler(h.svcCtx, conn)
@@ -138,7 +93,7 @@ func (h *WSHandler) createMessageHandler(ctx context.Context, conn *connection.C
 // sendError 发送错误消息
 func (h *WSHandler) sendError(wsConn *websocket.Conn, code int32, message string) {
 	errMsg := protocol.NewErrorMessage(code, message)
-	data, _ := errMsg.Encode()
+	data, _ := protocol.NewJSONCodec().Encode(errMsg)
 	wsConn.WriteMessage(websocket.TextMessage, data)
 }
 

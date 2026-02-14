@@ -9,6 +9,7 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/pubsub"
 	"IM2/pkg/xerr"
 
+	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -28,17 +29,15 @@ const (
 type Router struct {
 	client    *redis.Client
 	nodeID    string
-	nodeAddr  string
 	publisher *pubsub.Publisher
 }
 
 // NewRouter 创建路由器
-func NewRouter(client *redis.Client, nodeID, nodeAddr string) *Router {
+func NewRouter(client *redis.Client, natsConn *nats.Conn, codec protocol.Codec, nodeID string) *Router {
 	return &Router{
 		client:    client,
 		nodeID:    nodeID,
-		nodeAddr:  nodeAddr,
-		publisher: pubsub.NewPublisher(client, nodeID),
+		publisher: pubsub.NewPublisher(natsConn, codec, nodeID),
 	}
 }
 
@@ -120,10 +119,13 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *pro
 // RegisterNode 注册节点信息并开始心跳
 func (r *Router) RegisterNode(ctx context.Context) error {
 	key := getNodeKey(r.nodeID)
-	if err := r.client.Set(ctx, key, r.nodeAddr, nodeHeartbeatExpire).Err(); err != nil {
+	if isExist, _ := r.client.Get(ctx, key).Result(); isExist != "" {
+		return xerr.New(xerr.ErrInternalServer, "nodeId already connected")
+	}
+	if err := r.client.Set(ctx, key, r.nodeID, nodeHeartbeatExpire).Err(); err != nil {
 		return xerr.Wrap(err, xerr.ErrCache, "register node failed")
 	}
-	logx.Infof("[Router] registered node %s at %s", r.nodeID, r.nodeAddr)
+	logx.Infof("[Router] registered node %s", r.nodeID)
 	return nil
 }
 
@@ -136,7 +138,7 @@ func (r *Router) NodeHeartbeat(ctx context.Context) error {
 	return nil
 }
 
-// StartHeartbeat 启动心跳协程
+// StartHeartbeat 启动节点心跳协程
 func (r *Router) StartHeartbeat(ctx context.Context) {
 	ticker := time.NewTicker(nodeHeartbeatExpire / 2)
 	go func() {
@@ -149,6 +151,37 @@ func (r *Router) StartHeartbeat(ctx context.Context) {
 				if err := r.NodeHeartbeat(ctx); err != nil {
 					logx.Errorf("[Router] heartbeat failed: %v", err)
 				}
+			}
+		}
+	}()
+}
+
+// RenewUserRoute 续期用户路由
+func (r *Router) RenewUserRoute(ctx context.Context, userID uint64) error {
+	key := getRouteKey(userID)
+	if err := r.client.Expire(ctx, key, routeExpire).Err(); err != nil {
+		return xerr.Wrap(err, xerr.ErrCache, "renew user route failed")
+	}
+	return nil
+}
+
+// StartRouteHeartbeat 启动路由心跳协程，定期续期所有活跃用户的路由
+func (r *Router) StartRouteHeartbeat(ctx context.Context, getActiveUserIDs func() []uint64) {
+	ticker := time.NewTicker(routeExpire / 3)
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				userIDs := getActiveUserIDs()
+				for _, uid := range userIDs {
+					if err := r.RenewUserRoute(ctx, uid); err != nil {
+						logx.Errorf("[Router] renew route for user %d failed: %v", uid, err)
+					}
+				}
+				logx.Debugf("[Router] renewed routes for %d users", len(userIDs))
 			}
 		}
 	}()

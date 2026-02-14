@@ -95,15 +95,12 @@ func (s *groupService) GetGroups(ctx context.Context, groupIDs []uint64, nameKey
 
 func (s *groupService) UpdateGroup(ctx context.Context, groupID, operatorID uint64, name, avatar string) error {
 	// 1. 检查权限（必须是群主或管理员）
-	member, err := s.groupDAO.FindMember(ctx, groupID, operatorID)
+	_, err := s.groupDAO.FindMember(ctx, groupID, operatorID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(xerr.ErrForbidden, "非群成员无权操作")
 	}
 	if err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询成员失败")
-	}
-	if member.Role != model.GroupRoleOwner && member.Role != model.GroupRoleAdmin {
-		return xerr.New(xerr.ErrForbidden, "无权修改群信息")
+		return xerr.Wrap(err, xerr.ErrDatabase, "更新群组失败")
 	}
 
 	// 2. 查询群组
@@ -112,7 +109,7 @@ func (s *groupService) UpdateGroup(ctx context.Context, groupID, operatorID uint
 		return xerr.New(xerr.ErrNotFound, "群组不存在")
 	}
 	if err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询群组失败")
+		return xerr.Wrap(err, xerr.ErrDatabase, "更新群组失败")
 	}
 
 	// 3. 更新字段

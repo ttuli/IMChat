@@ -29,6 +29,7 @@ type Connection struct {
 	DeviceID string
 	Platform string
 	Conn     *websocket.Conn
+	Codec    protocol.Codec
 
 	sendChan  chan []byte
 	closeChan chan struct{}
@@ -38,12 +39,13 @@ type Connection struct {
 }
 
 // NewConnection 创建新连接
-func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Conn) *Connection {
+func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Conn, codec protocol.Codec) *Connection {
 	return &Connection{
 		UserID:    userID,
 		DeviceID:  deviceID,
 		Platform:  platform,
 		Conn:      conn,
+		Codec:     codec,
 		sendChan:  make(chan []byte, 256),
 		closeChan: make(chan struct{}),
 	}
@@ -51,7 +53,7 @@ func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Con
 
 // Send 发送消息
 func (c *Connection) Send(msg *protocol.Message) error {
-	data, err := msg.Encode()
+	data, err := c.Codec.Encode(msg)
 	if err != nil {
 		return err
 	}
@@ -116,7 +118,7 @@ func (c *Connection) ReadPump(ctx context.Context, handler func(*protocol.Messag
 			return
 		}
 
-		msg, err := protocol.Decode(data)
+		msg, err := c.Codec.Decode(data)
 		if err != nil {
 			logx.Errorf("[Connection] user %d decode error: %v", c.UserID, err)
 			continue

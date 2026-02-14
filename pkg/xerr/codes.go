@@ -33,6 +33,13 @@ const (
 	ErrTokenGenerate ErrorCode = 2007
 	ErrAuthCodeError ErrorCode = 2008
 	ErrInvalidIDType ErrorCode = 2009
+
+	// WebSocket 错误码 3xxx
+	ErrWSUpgrade  ErrorCode = 3001 // WebSocket 升级失败
+	ErrWSSend     ErrorCode = 3002 // WebSocket 发送消息失败
+	ErrWSClosed   ErrorCode = 3003 // WebSocket 连接已关闭
+	ErrWSNotFound ErrorCode = 3004 // WebSocket 用户连接不存在
+	ErrWsConnAdd  ErrorCode = 3005 // WebSocket 连接添加失败
 )
 
 var ErrorCodeToHTTPStatus = map[ErrorCode]int{
@@ -59,6 +66,13 @@ var ErrorCodeToHTTPStatus = map[ErrorCode]int{
 	ErrTokenGenerate: http.StatusInternalServerError, // 401
 	ErrAuthCodeError: http.StatusBadRequest,          // 400
 	ErrInvalidIDType: http.StatusBadRequest,          // 400
+
+	// WebSocket 错误码 3xxx
+	ErrWSUpgrade:  http.StatusBadRequest,          // 400
+	ErrWSSend:     http.StatusInternalServerError, // 500
+	ErrWSClosed:   http.StatusGone,                // 410
+	ErrWSNotFound: http.StatusNotFound,            // 404
+	ErrWsConnAdd:  http.StatusInternalServerError, // 500
 }
 
 func HTTPStatusFromErrorCode(code ErrorCode) int {

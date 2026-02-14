@@ -1,9 +1,11 @@
 package config
 
 import (
+	"IM2/pkg/service"
+	tokenmanager "IM2/pkg/tokenManager"
+
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/rest"
-	"github.com/zeromicro/go-zero/zrpc"
 )
 
 type Config struct {
@@ -12,24 +14,32 @@ type Config struct {
 	// WebSocket 相关配置
 	WebSocket WebSocketConf
 
-	// Redis 配置
+	// Redis 配置 (用于路由 KV 存储)
 	Redis redis.RedisConf
 
-	// RPC 客户端配置
-	AuthRpc zrpc.RpcClientConf
-	UserRpc zrpc.RpcClientConf
+	// NATS 配置 (用于跨节点消息转发)
+	Nats NatsConf
+
+	// token 配置
+	TokenConfig tokenmanager.TokenConfig
+
+	APISIX service.APISIXConfig
+}
+
+// NatsConf NATS 配置
+type NatsConf struct {
+	// NATS 服务器地址，例如 nats://localhost:4222
+	Url string `json:"url"`
 }
 
 // WebSocketConf WebSocket 配置
 type WebSocketConf struct {
 	// 节点ID，为空时自动生成
-	NodeID string `json:",optional"`
-	// 节点地址，格式 host:port
-	NodeAddr string `json:",optional"`
+	NodeID string `json:",omitempty"`
 	// WebSocket 路径
-	Path string `json:",default=/ws"`
+	Path string `json:"path"`
 	// 读缓冲区大小
-	ReadBufferSize int `json:",default=4096"`
+	ReadBufferSize int `json:",omitempty"`
 	// 写缓冲区大小
-	WriteBufferSize int `json:",default=4096"`
+	WriteBufferSize int `json:",omitempty"`
 }

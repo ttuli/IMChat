@@ -6,24 +6,6 @@ import (
 	"IM2/pkg/xerr"
 )
 
-// Encode 将消息编码为 JSON 字节
-func (m *Message) Encode() ([]byte, error) {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode message failed")
-	}
-	return data, nil
-}
-
-// Decode 从 JSON 字节解码消息
-func Decode(data []byte) (*Message, error) {
-	var msg Message
-	if err := json.Unmarshal(data, &msg); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode message failed")
-	}
-	return &msg, nil
-}
-
 // DecodeData 解码消息数据到指定结构
 func DecodeData[T any](msg *Message) (*T, error) {
 	if msg.Data == nil {
