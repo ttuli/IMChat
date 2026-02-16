@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/svc"
+	"IM2/internal/apps/websocket/gateway/types"
 	"IM2/pkg/logger"
 )
 
@@ -27,6 +27,9 @@ func (s *GatewayServer) Start() error {
 	fmt.Println("Starting WebSocket Gateway Server logic...")
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())
+
+	// 0. 启动遥测总线
+	s.svcCtx.TelemetryBus.Start(s.ctx)
 
 	// 1. 注册节点
 	if err := s.svcCtx.Router.RegisterNode(s.ctx); err != nil {
@@ -80,20 +83,22 @@ func (s *GatewayServer) Stop() error {
 		logger.Errorf("close redis client failed: %v", err)
 	}
 
+	// 6. 停止遥测总线
+	s.svcCtx.TelemetryBus.Stop()
+
 	fmt.Println("WebSocket Gateway Server logic stopped")
 	return nil
 }
 
 // handleInternalMessage 处理跨节点消息
-func (s *GatewayServer) handleInternalMessage(ctx context.Context, msg *protocol.InternalMessage) error {
+func (s *GatewayServer) handleInternalMessage(ctx context.Context, msg *types.InternalMessage) error {
 	// 获取本地连接
-	conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.TargetUserID)
+	conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.TargetUserId)
 	if !ok {
 		// 用户不在本节点，忽略
-		// logx.Slowf("user %d not found on this node", msg.TargetUserID)
 		return nil
 	}
 
 	// 发送消息
-	return conn.Send(&msg.Message)
+	return conn.Send(msg.Message)
 }

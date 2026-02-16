@@ -147,6 +147,28 @@ func (rs *RestService) Stop() error {
 	return nil
 }
 
+// parseUpstreamValue 从 upstream 配置中提取 nodes、scheme、type
+func parseUpstreamValue(val map[string]any) (nodes map[string]int, scheme, lbType string) {
+	scheme = "http"
+	lbType = "roundrobin"
+
+	if n, ok := val["nodes"].(map[string]any); ok {
+		nodes = make(map[string]int)
+		for k, v := range n {
+			if w, ok := v.(float64); ok {
+				nodes[k] = int(w)
+			}
+		}
+	}
+	if s, ok := val["scheme"].(string); ok {
+		scheme = s
+	}
+	if t, ok := val["type"].(string); ok {
+		lbType = t
+	}
+	return
+}
+
 // registerToAPISIX 注册服务节点到 APISIX upstream
 func (rs *RestService) registerToAPISIX() error {
 	if rs.apisixCfg == nil || !rs.apisixCfg.Enable {
@@ -155,36 +177,69 @@ func (rs *RestService) registerToAPISIX() error {
 
 	url := fmt.Sprintf("%s/apisix/admin/upstreams/%s",
 		rs.apisixCfg.AdminURL, rs.apisixCfg.UpstreamID)
+	client := &http.Client{Timeout: 5 * time.Second}
 
-	// 创建或更新 upstream，使用完整配置
+	// 1. 尝试获取现有 upstream 配置，合并节点（避免覆盖其他实例）
+	var nodes map[string]int
+	scheme := "http"
+	lbType := "roundrobin"
+
+	getReq, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	getReq.Header.Set("X-API-KEY", rs.apisixCfg.APIKey)
+
+	if getResp, err := client.Do(getReq); err == nil {
+		if getResp.StatusCode == http.StatusOK {
+			var result map[string]any
+			if err := json.NewDecoder(getResp.Body).Decode(&result); err == nil {
+				// APISIX Admin API v2: { "node": { "value": { ... } } }
+				// APISIX Admin API v3: { "value": { ... } }
+				if val, ok := result["value"].(map[string]any); ok {
+					nodes, scheme, lbType = parseUpstreamValue(val)
+				} else if node, ok := result["node"].(map[string]any); ok {
+					if val, ok := node["value"].(map[string]any); ok {
+						nodes, scheme, lbType = parseUpstreamValue(val)
+					}
+				}
+			}
+		}
+		getResp.Body.Close()
+	}
+
+	// 2. 合并当前节点
+	if nodes == nil {
+		nodes = make(map[string]int)
+	}
+	nodes[rs.nodeAddr] = 1
+
+	// 3. 创建或更新 upstream
 	payload := map[string]any{
-		"type": "roundrobin", // 负载均衡算法
-		"nodes": map[string]int{
-			rs.nodeAddr: 1,
-		},
-		"scheme":           "http", // 协议类型
+		"type":   lbType,
+		"nodes":  nodes,
+		"scheme": scheme,
 	}
 
 	body, _ := json.Marshal(payload)
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(body))
+	putReq, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-API-KEY", rs.apisixCfg.APIKey)
+	putReq.Header.Set("Content-Type", "application/json")
+	putReq.Header.Set("X-API-KEY", rs.apisixCfg.APIKey)
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	putResp, err := client.Do(putReq)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer putResp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("APISIX upstream 注册失败，状态码: %d", resp.StatusCode)
+	if putResp.StatusCode != http.StatusOK && putResp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("APISIX upstream 注册失败，状态码: %d", putResp.StatusCode)
 	}
 
-	fmt.Printf("成功注册 upstream 到 APISIX: %s\n", rs.nodeAddr)
+	fmt.Printf("成功注册 upstream 到 APISIX: %s (当前节点数: %d)\n", rs.nodeAddr, len(nodes))
 
 	// 注册路由
 	if err := rs.registerRouteToAPISIX(); err != nil {

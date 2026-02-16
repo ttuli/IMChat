@@ -5,16 +5,19 @@ import (
 	"log"
 	"os"
 
+	"IM2/internal/apps/Group/rpc/client/grouprpc"
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/internal/connection"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/pubsub"
 	"IM2/internal/apps/websocket/gateway/internal/router"
+	"IM2/internal/apps/websocket/gateway/internal/telemetry"
 	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/zrpc"
 )
 
 // ServiceContext 服务上下文
@@ -26,6 +29,9 @@ type ServiceContext struct {
 	RedisClient       *redis.Client
 	NatsConn          *nats.Conn
 	TokenManager      *tokenmanager.TokenManager
+	TelemetryBus      *telemetry.Bus
+
+	GroupRpc grouprpc.GroupRpc
 }
 
 // NewServiceContext 创建服务上下文
@@ -57,14 +63,18 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		log.Fatalf("connect to nats failed: %v", err)
 	}
 
+	// 创建遥测总线
+	bus := telemetry.NewBus(nodeID, 0)
+	bus.RegisterHandler(telemetry.DefaultLogHandler)
+
 	// 创建路由器
-	r := router.NewRouter(redisClient, natsConn, codec, nodeID)
+	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus)
 
 	// 创建连接管理器
-	connMgr := connection.NewDefaultManager(nodeID, r)
+	connMgr := connection.NewDefaultManager(nodeID, r, bus)
 
 	// 创建订阅者
-	sub := pubsub.NewSubscriber(natsConn, codec, nodeID)
+	sub := pubsub.NewSubscriber(natsConn, codec, nodeID, bus)
 
 	svc := &ServiceContext{
 		Config:            c,
@@ -74,6 +84,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		RedisClient:       redisClient,
 		NatsConn:          natsConn,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
+		TelemetryBus:      bus,
+		GroupRpc:          grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc)),
 	}
 
 	return svc

@@ -10,8 +10,6 @@ type GroupMember struct {
 	Role      int8      `gorm:"column:role;type:tinyint;not null;default:3;comment:角色: 1-群主, 2-管理员, 3-普通成员" json:"role"`
 	Nickname  string    `gorm:"column:nickname;type:varchar(50);not null;default:'';comment:群内昵称" json:"nickname"`
 	MuteUntil int64     `gorm:"column:mute_until;type:bigint;not null;default:0;comment:禁言截止时间（Unix时间戳，0表示未禁言）" json:"mute_until"`
-	IsTop     bool      `gorm:"column:is_top;type:boolean;not null;default:0;comment:是否置顶" json:"is_top"`
-	IsDisturb bool      `gorm:"column:is_disturb;type:boolean;not null;default:0;comment:消息免打扰(1:屏蔽通知)" json:"is_disturb"`
 	JoinedAt  time.Time `gorm:"column:joined_at;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);comment:加入时间" json:"joined_at"`
 	Extra     string    `gorm:"column:extra;type:json;comment:扩展字段(背景图、备注等)" json:"extra"`
 }

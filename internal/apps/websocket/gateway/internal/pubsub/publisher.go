@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
+	"IM2/internal/apps/websocket/gateway/types"
 	"IM2/pkg/xerr"
 
 	"github.com/nats-io/nats.go"
@@ -28,7 +29,7 @@ func NewPublisher(conn *nats.Conn, codec protocol.Codec, nodeID string) *Publish
 }
 
 // PublishToNode 发布消息到指定节点
-func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *protocol.InternalMessage) error {
+func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *types.InternalMessage) error {
 	subject := getNodeSubject(nodeID)
 
 	data, err := p.codec.EncodeInternal(msg)
@@ -40,7 +41,7 @@ func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *proto
 		return xerr.Wrap(err, xerr.ErrCache, "publish message failed")
 	}
 
-	logx.Debugf("[Publisher] published message to node %s for user %d", nodeID, msg.TargetUserID)
+	logx.Debugf("[Publisher] published message to node %s for user %d", nodeID, msg.TargetUserId)
 	return nil
 }
 

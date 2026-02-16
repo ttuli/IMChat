@@ -7,6 +7,8 @@ import (
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/pubsub"
+	"IM2/internal/apps/websocket/gateway/internal/telemetry"
+	"IM2/internal/apps/websocket/gateway/types"
 	"IM2/pkg/xerr"
 
 	"github.com/nats-io/nats.go"
@@ -27,17 +29,19 @@ const (
 
 // Router 消息路由器
 type Router struct {
-	client    *redis.Client
-	nodeID    string
-	publisher *pubsub.Publisher
+	client       *redis.Client
+	nodeID       string
+	publisher    *pubsub.Publisher
+	telemetryBus *telemetry.Bus
 }
 
 // NewRouter 创建路由器
-func NewRouter(client *redis.Client, natsConn *nats.Conn, codec protocol.Codec, nodeID string) *Router {
+func NewRouter(client *redis.Client, natsConn *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus) *Router {
 	return &Router{
-		client:    client,
-		nodeID:    nodeID,
-		publisher: pubsub.NewPublisher(natsConn, codec, nodeID),
+		client:       client,
+		nodeID:       nodeID,
+		publisher:    pubsub.NewPublisher(natsConn, codec, nodeID),
+		telemetryBus: bus,
 	}
 }
 
@@ -45,6 +49,7 @@ func NewRouter(client *redis.Client, natsConn *nats.Conn, codec protocol.Codec, 
 func (r *Router) RegisterUser(ctx context.Context, userID uint64) error {
 	key := getRouteKey(userID)
 	if err := r.client.Set(ctx, key, r.nodeID, routeExpire).Err(); err != nil {
+		r.telemetryBus.Publish(err)
 		return xerr.Wrap(err, xerr.ErrCache, "register user route failed")
 	}
 	logx.Debugf("[Router] registered user %d on node %s", userID, r.nodeID)
@@ -60,11 +65,13 @@ func (r *Router) UnregisterUser(ctx context.Context, userID uint64) error {
 		if err == redis.Nil {
 			return nil // 已经不存在
 		}
+		r.telemetryBus.Publish(err)
 		return xerr.Wrap(err, xerr.ErrCache, "get user route failed")
 	}
 
 	if storedNodeID == r.nodeID {
 		if err := r.client.Del(ctx, key).Err(); err != nil {
+			r.telemetryBus.Publish(err)
 			return xerr.Wrap(err, xerr.ErrCache, "delete user route failed")
 		}
 		logx.Debugf("[Router] unregistered user %d from node %s", userID, r.nodeID)
@@ -80,6 +87,7 @@ func (r *Router) GetUserNode(ctx context.Context, userID uint64) (string, error)
 		if err == redis.Nil {
 			return "", xerr.New(xerr.ErrNotFound, "user not connected")
 		}
+		r.telemetryBus.Publish(err)
 		return "", xerr.Wrap(err, xerr.ErrCache, "get user route failed")
 	}
 	return nodeID, nil
@@ -95,7 +103,7 @@ func (r *Router) IsLocalUser(ctx context.Context, userID uint64) (bool, error) {
 }
 
 // RouteMessage 路由消息到目标用户
-func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *protocol.Message) error {
+func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *types.WSMessage) error {
 	// 获取目标用户所在节点
 	targetNodeID, err := r.GetUserNode(ctx, targetUserID)
 	if err != nil {
@@ -108,9 +116,9 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *pro
 	}
 
 	// 通过 Pub/Sub 转发到目标节点
-	internalMsg := &protocol.InternalMessage{
-		TargetUserID: targetUserID,
-		Message:      *msg,
+	internalMsg := &types.InternalMessage{
+		TargetUserId: targetUserID,
+		Message:      msg,
 	}
 
 	return r.publisher.PublishToNode(ctx, targetNodeID, internalMsg)
@@ -123,6 +131,7 @@ func (r *Router) RegisterNode(ctx context.Context) error {
 		return xerr.New(xerr.ErrInternalServer, "nodeId already connected")
 	}
 	if err := r.client.Set(ctx, key, r.nodeID, nodeHeartbeatExpire).Err(); err != nil {
+		r.telemetryBus.Publish(err)
 		return xerr.Wrap(err, xerr.ErrCache, "register node failed")
 	}
 	logx.Infof("[Router] registered node %s", r.nodeID)
@@ -133,6 +142,7 @@ func (r *Router) RegisterNode(ctx context.Context) error {
 func (r *Router) NodeHeartbeat(ctx context.Context) error {
 	key := getNodeKey(r.nodeID)
 	if err := r.client.Expire(ctx, key, nodeHeartbeatExpire).Err(); err != nil {
+		r.telemetryBus.Publish(err)
 		return xerr.Wrap(err, xerr.ErrCache, "node heartbeat failed")
 	}
 	return nil
@@ -150,6 +160,7 @@ func (r *Router) StartHeartbeat(ctx context.Context) {
 			case <-ticker.C:
 				if err := r.NodeHeartbeat(ctx); err != nil {
 					logx.Errorf("[Router] heartbeat failed: %v", err)
+					r.telemetryBus.Publish(err)
 				}
 			}
 		}
@@ -160,6 +171,7 @@ func (r *Router) StartHeartbeat(ctx context.Context) {
 func (r *Router) RenewUserRoute(ctx context.Context, userID uint64) error {
 	key := getRouteKey(userID)
 	if err := r.client.Expire(ctx, key, routeExpire).Err(); err != nil {
+		r.telemetryBus.Publish(err)
 		return xerr.Wrap(err, xerr.ErrCache, "renew user route failed")
 	}
 	return nil
@@ -179,6 +191,7 @@ func (r *Router) StartRouteHeartbeat(ctx context.Context, getActiveUserIDs func(
 				for _, uid := range userIDs {
 					if err := r.RenewUserRoute(ctx, uid); err != nil {
 						logx.Errorf("[Router] renew route for user %d failed: %v", uid, err)
+						r.telemetryBus.Publish(err)
 					}
 				}
 				logx.Debugf("[Router] renewed routes for %d users", len(userIDs))
@@ -191,6 +204,7 @@ func (r *Router) StartRouteHeartbeat(ctx context.Context, getActiveUserIDs func(
 func (r *Router) UnregisterNode(ctx context.Context) error {
 	key := getNodeKey(r.nodeID)
 	if err := r.client.Del(ctx, key).Err(); err != nil {
+		r.telemetryBus.Publish(err)
 		return xerr.Wrap(err, xerr.ErrCache, "unregister node failed")
 	}
 	logx.Infof("[Router] unregistered node %s", r.nodeID)

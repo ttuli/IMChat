@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	"IM2/internal/apps/User/rpc/internal/logic"
+	userlogic "IM2/internal/apps/User/rpc/internal/logic/user"
 	"IM2/internal/apps/User/rpc/svc"
 	"IM2/internal/apps/User/rpc/user"
 )
@@ -25,58 +25,58 @@ func NewUserServer(svcCtx *svc.ServiceContext) *UserServer {
 
 // 用户管理
 func (s *UserServer) CreateUser(ctx context.Context, in *user.CreateUserReq) (*user.CreateUserResp, error) {
-	l := logic.NewCreateUserLogic(ctx, s.svcCtx)
+	l := userlogic.NewCreateUserLogic(ctx, s.svcCtx)
 	return l.CreateUser(in)
 }
 
 func (s *UserServer) GetUserInfo(ctx context.Context, in *user.GetUserInfoReq) (*user.GetUserInfoResp, error) {
-	l := logic.NewGetUserInfoLogic(ctx, s.svcCtx)
+	l := userlogic.NewGetUserInfoLogic(ctx, s.svcCtx)
 	return l.GetUserInfo(in)
 }
 
 func (s *UserServer) UpdateInfo(ctx context.Context, in *user.UpdateInfoReq) (*user.EmptyResp, error) {
-	l := logic.NewUpdateInfoLogic(ctx, s.svcCtx)
+	l := userlogic.NewUpdateInfoLogic(ctx, s.svcCtx)
 	return l.UpdateInfo(in)
 }
 
 func (s *UserServer) VerifyPassword(ctx context.Context, in *user.VerifyPasswordReq) (*user.VerifyPasswordResp, error) {
-	l := logic.NewVerifyPasswordLogic(ctx, s.svcCtx)
+	l := userlogic.NewVerifyPasswordLogic(ctx, s.svcCtx)
 	return l.VerifyPassword(in)
 }
 
 // 好友管理
 func (s *UserServer) GetFriends(ctx context.Context, in *user.GetFriendsReq) (*user.GetFriendsResp, error) {
-	l := logic.NewGetFriendsLogic(ctx, s.svcCtx)
+	l := userlogic.NewGetFriendsLogic(ctx, s.svcCtx)
 	return l.GetFriends(in)
 }
 
 func (s *UserServer) CreateFriend(ctx context.Context, in *user.CreateFriendReq) (*user.EmptyResp, error) {
-	l := logic.NewCreateFriendLogic(ctx, s.svcCtx)
+	l := userlogic.NewCreateFriendLogic(ctx, s.svcCtx)
 	return l.CreateFriend(in)
 }
 
 func (s *UserServer) UpdateFriend(ctx context.Context, in *user.UpdateFriendReq) (*user.EmptyResp, error) {
-	l := logic.NewUpdateFriendLogic(ctx, s.svcCtx)
+	l := userlogic.NewUpdateFriendLogic(ctx, s.svcCtx)
 	return l.UpdateFriend(in)
 }
 
 func (s *UserServer) DeleteFriend(ctx context.Context, in *user.DeleteFriendReq) (*user.EmptyResp, error) {
-	l := logic.NewDeleteFriendLogic(ctx, s.svcCtx)
+	l := userlogic.NewDeleteFriendLogic(ctx, s.svcCtx)
 	return l.DeleteFriend(in)
 }
 
 // 好友申请
 func (s *UserServer) NewFriendApply(ctx context.Context, in *user.NewFriendApplyReq) (*user.NewFriendApplyResp, error) {
-	l := logic.NewNewFriendApplyLogic(ctx, s.svcCtx)
+	l := userlogic.NewNewFriendApplyLogic(ctx, s.svcCtx)
 	return l.NewFriendApply(in)
 }
 
 func (s *UserServer) HandleFriendApply(ctx context.Context, in *user.HandleFriendApplyReq) (*user.EmptyResp, error) {
-	l := logic.NewHandleFriendApplyLogic(ctx, s.svcCtx)
+	l := userlogic.NewHandleFriendApplyLogic(ctx, s.svcCtx)
 	return l.HandleFriendApply(in)
 }
 
 func (s *UserServer) GetPendingFriendApplies(ctx context.Context, in *user.GetPendingFriendAppliesReq) (*user.GetPendingFriendAppliesResp, error) {
-	l := logic.NewGetPendingFriendAppliesLogic(ctx, s.svcCtx)
+	l := userlogic.NewGetPendingFriendAppliesLogic(ctx, s.svcCtx)
 	return l.GetPendingFriendApplies(in)
 }

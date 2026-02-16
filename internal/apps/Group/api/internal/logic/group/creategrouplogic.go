@@ -57,5 +57,6 @@ func convertGroup(data *grouprpc.Group) types.Group {
 		CreatedAt:   data.CreatedAt,
 		UpdatedAt:   data.UpdatedAt,
 		MemberCount: int(data.MemberCount),
+		Notice:      data.Notice,
 	}
 }

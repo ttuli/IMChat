@@ -1,0 +1,86 @@
+syntax = "v1"
+
+info (
+	title:   "消息服务"
+	desc:    "提供消息发送、拉取、会话管理等功能"
+	author:  "Antigravity"
+	version: "v1"
+)
+
+// ========== 基础类型 ==========
+type (
+	Message {
+		MsgID          string `json:"msg_id"`
+		ConversationID string `json:"conversation_id"`
+		FromUserID     uint64 `json:"from_user_id"`
+		MsgType        int32  `json:"msg_type"`
+		Content        string `json:"content"`
+		MediaURL       string `json:"media_url"`
+		Extra          string `json:"extra"`
+		CreateTime     int64  `json:"create_time"`
+		Seq            uint64 `json:"seq"`
+	}
+	Conversation {
+		ConversationID string  `json:"conversation_id"`
+		Type           int32   `json:"type"`
+		UnreadCount    int32   `json:"unread_count"`
+		IsTop          bool    `json:"is_top"`
+		IsDisturb      bool    `json:"is_disturb"`
+		IsMute         bool    `json:"is_mute"`
+		LastMsg        Message `json:"last_msg"`
+	}
+)
+
+// ========== 请求/响应 ==========
+type (
+	GetHistoryReq {
+		ConversationID string `form:"conversation_id"`
+		CursorSeq      uint64 `form:"cursor_seq,optional"` // 上一次的seq
+		Limit          int    `form:"limit,optional,default=20"`
+		Forward        bool   `form:"forward,optional"` // true:向旧消息拉取
+	}
+	GetHistoryResp {
+		List []Message `json:"list"`
+	}
+	GetConversationListReq {
+		Limit  int `form:"limit,optional,default=20"`
+		Offset int `form:"offset,optional,default=0"`
+	}
+	GetConversationListResp {
+		List []Conversation `json:"list"`
+	}
+	ReadMessageReq {
+		ConversationID string `json:"conversation_id"`
+		Seq            uint64 `json:"seq"`
+	}
+	UpdateConversationReq {
+		ConversationID string `json:"conversation_id"`
+		IsTop          int32  `json:"is_top,optional"` // 1:置顶 2:取消
+		IsDisturb      int32  `json:"is_disturb,optional"` // 1:免打扰 2:取消
+		IsMute         int32  `json:"is_mute,optional"` // 1:静音 2:取消
+	}
+)
+
+// ========== 服务定义 ==========
+@server (
+	group:  message
+	prefix: /message
+)
+service message-api {
+	@doc "获取历史消息"
+	@handler GetHistory
+	get /history (GetHistoryReq) returns (GetHistoryResp)
+
+	@doc "获取会话列表"
+	@handler GetConversationList
+	get /conversations (GetConversationListReq) returns (GetConversationListResp)
+
+	@doc "消息已读上报"
+	@handler ReadMessage
+	post /read (ReadMessageReq)
+
+	@doc "更新会话设置"
+	@handler UpdateConversation
+	put /conversation (UpdateConversationReq)
+}
+

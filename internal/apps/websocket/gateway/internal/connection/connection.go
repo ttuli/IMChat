@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
+	"IM2/internal/apps/websocket/gateway/types"
 	"IM2/pkg/xerr"
 
 	"github.com/gorilla/websocket"
@@ -52,7 +53,7 @@ func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Con
 }
 
 // Send 发送消息
-func (c *Connection) Send(msg *protocol.Message) error {
+func (c *Connection) Send(msg *types.WSMessage) error {
 	data, err := c.Codec.Encode(msg)
 	if err != nil {
 		return err
@@ -91,7 +92,7 @@ func (c *Connection) IsClosed() bool {
 }
 
 // ReadPump 读取消息循环
-func (c *Connection) ReadPump(ctx context.Context, handler func(*protocol.Message) error) {
+func (c *Connection) ReadPump(ctx context.Context, handler func(*types.WSMessage) error) {
 	defer c.Close()
 
 	c.Conn.SetReadLimit(maxMessageSize)

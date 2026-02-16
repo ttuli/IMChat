@@ -2,6 +2,9 @@ package telemetry
 
 import (
 	"context"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -53,8 +56,26 @@ func (b *Bus) RegisterHandler(handler ErrorHandler) {
 }
 
 // Publish 发布错误事件 (非阻塞)
+// Component (文件名) 和 Operation (函数名) 通过 runtime.Caller 自动获取
 // 如果 channel 已满, 事件将被丢弃并记录警告日志
-func (b *Bus) Publish(component, operation string, err error) {
+func (b *Bus) Publish(err error) {
+	// 获取调用方文件名和函数名
+	component := "unknown"
+	operation := "unknown"
+	if pc, file, _, ok := runtime.Caller(1); ok {
+		component = strings.TrimSuffix(filepath.Base(file), ".go")
+		// 获取函数名 (去掉包路径前缀，只保留方法名)
+		if fn := runtime.FuncForPC(pc); fn != nil {
+			fullName := fn.Name()
+			// 取最后一个 "." 之后的部分作为函数/方法名
+			if idx := strings.LastIndex(fullName, "."); idx >= 0 {
+				operation = fullName[idx+1:]
+			} else {
+				operation = fullName
+			}
+		}
+	}
+
 	event := ErrorEvent{
 		Component: component,
 		Operation: operation,

@@ -21,6 +21,7 @@ type Friend struct {
 	Blocked    bool   `json:"blocked"`     // 是否拉黑
 	Starred    bool   `json:"starred"`     // 是否星标
 	CreateTime int64  `json:"create_time"` // 成为好友时间
+	Extra      string `json:"extra"`       // 扩展字段
 }
 
 type FriendRequest struct {

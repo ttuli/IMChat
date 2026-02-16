@@ -1,40 +1,51 @@
 package protocol
 
 import (
-	"encoding/json"
-
+	"IM2/internal/apps/websocket/gateway/types"
 	"IM2/pkg/xerr"
+
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// JSONCodec JSON 编解码器
-type JSONCodec struct{}
+// JSONCodec JSON 编解码器 (使用 protojson)
+type JSONCodec struct {
+	marshaler   protojson.MarshalOptions
+	unmarshaler protojson.UnmarshalOptions
+}
 
 // NewJSONCodec 创建 JSON 编解码器
 func NewJSONCodec() *JSONCodec {
-	return &JSONCodec{}
+	return &JSONCodec{
+		marshaler: protojson.MarshalOptions{
+			UseEnumNumbers: true, // 枚举用数字，前端交互更方便
+		},
+		unmarshaler: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	}
 }
 
-// Encode 编码消息
-func (c *JSONCodec) Encode(msg *Message) ([]byte, error) {
-	data, err := json.Marshal(msg)
+// Encode 编码 WSMessage 为 JSON
+func (c *JSONCodec) Encode(msg *types.WSMessage) ([]byte, error) {
+	data, err := c.marshaler.Marshal(msg)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode message failed")
+		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode WSMessage failed")
 	}
 	return data, nil
 }
 
-// Decode 解码消息
-func (c *JSONCodec) Decode(data []byte) (*Message, error) {
-	var msg Message
-	if err := json.Unmarshal(data, &msg); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode message failed")
+// Decode 解码 JSON 为 WSMessage
+func (c *JSONCodec) Decode(data []byte) (*types.WSMessage, error) {
+	msg := &types.WSMessage{}
+	if err := c.unmarshaler.Unmarshal(data, msg); err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode WSMessage failed")
 	}
-	return &msg, nil
+	return msg, nil
 }
 
 // EncodeInternal 编码内部消息
-func (c *JSONCodec) EncodeInternal(msg *InternalMessage) ([]byte, error) {
-	data, err := json.Marshal(msg)
+func (c *JSONCodec) EncodeInternal(msg *types.InternalMessage) ([]byte, error) {
+	data, err := c.marshaler.Marshal(msg)
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode internal message failed")
 	}
@@ -42,10 +53,10 @@ func (c *JSONCodec) EncodeInternal(msg *InternalMessage) ([]byte, error) {
 }
 
 // DecodeInternal 解码内部消息
-func (c *JSONCodec) DecodeInternal(data []byte) (*InternalMessage, error) {
-	var msg InternalMessage
-	if err := json.Unmarshal(data, &msg); err != nil {
+func (c *JSONCodec) DecodeInternal(data []byte) (*types.InternalMessage, error) {
+	msg := &types.InternalMessage{}
+	if err := c.unmarshaler.Unmarshal(data, msg); err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode internal message failed")
 	}
-	return &msg, nil
+	return msg, nil
 }

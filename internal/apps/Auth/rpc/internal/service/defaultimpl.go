@@ -4,7 +4,7 @@ import (
 	"IM2/interceptor"
 	"IM2/internal/apps/Auth/rpc/config"
 	"IM2/internal/apps/User/rpc/user"
-	"IM2/internal/apps/User/rpc/userclient"
+	userclient "IM2/internal/apps/User/rpc/client/user"
 	"IM2/pkg/logger"
 	"IM2/pkg/redisc"
 	tokenmanager "IM2/pkg/tokenManager"

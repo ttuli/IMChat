@@ -617,7 +617,8 @@ type Friend struct {
 	Source        int32                  `protobuf:"varint,4,opt,name=source,proto3" json:"source,omitempty"`                           // 好友来源
 	Blocked       bool                   `protobuf:"varint,5,opt,name=blocked,proto3" json:"blocked,omitempty"`                         // 是否拉黑
 	Starred       bool                   `protobuf:"varint,6,opt,name=starred,proto3" json:"starred,omitempty"`                         // 是否星标
-	CreateTime    int64                  `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 成为好友时间
+	CreateTime    int64                  `protobuf:"varint,9,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 成为好友时间
+	Extra         string                 `protobuf:"bytes,10,opt,name=extra,proto3" json:"extra,omitempty"`                             // 扩展字段
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -699,6 +700,13 @@ func (x *Friend) GetCreateTime() int64 {
 		return x.CreateTime
 	}
 	return 0
+}
+
+func (x *Friend) GetExtra() string {
+	if x != nil {
+		return x.Extra
+	}
+	return ""
 }
 
 type FriendRequest struct {
@@ -1410,7 +1418,7 @@ const file_rpc_user_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"*\n" +
 	"\x12VerifyPasswordResp\x12\x14\n" +
-	"\x05valid\x18\x01 \x01(\bR\x05valid\"\xc3\x01\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\"\xd9\x01\n" +
 	"\x06Friend\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1b\n" +
 	"\tfriend_id\x18\x02 \x01(\x04R\bfriendId\x12\x16\n" +
@@ -1418,8 +1426,10 @@ const file_rpc_user_proto_rawDesc = "" +
 	"\x06source\x18\x04 \x01(\x05R\x06source\x12\x18\n" +
 	"\ablocked\x18\x05 \x01(\bR\ablocked\x12\x18\n" +
 	"\astarred\x18\x06 \x01(\bR\astarred\x12\x1f\n" +
-	"\vcreate_time\x18\a \x01(\x03R\n" +
-	"createTime\"\x95\x02\n" +
+	"\vcreate_time\x18\t \x01(\x03R\n" +
+	"createTime\x12\x14\n" +
+	"\x05extra\x18\n" +
+	" \x01(\tR\x05extra\"\x95\x02\n" +
 	"\rFriendRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12 \n" +
 	"\ffrom_user_id\x18\x02 \x01(\x04R\n" +

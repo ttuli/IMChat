@@ -57,6 +57,7 @@ type Group struct {
 	Name        string `json:"name"`
 	Avatar      string `json:"avatar"`
 	OwnerID     uint64 `json:"owner_id"`
+	Notice      string `json:"notice"` // 群公告
 	MemberCount int    `json:"member_count"`
 	CreatedAt   int64  `json:"created_at"`
 	UpdatedAt   int64  `json:"updated_at"`
@@ -69,6 +70,7 @@ type GroupMember struct {
 	Nickname  string `json:"nickname"`
 	MuteUntil int64  `json:"mute_until"`
 	JoinedAt  int64  `json:"joined_at"`
+	Extra     string `json:"extra"` // 扩展字段
 }
 
 type GroupRequest struct {
@@ -140,4 +142,5 @@ type UpdateGroupReq struct {
 	GroupID uint64 `json:"group_id"`
 	Name    string `json:"name,optional"`
 	Avatar  string `json:"avatar,optional"`
+	Notice  string `json:"notice,optional"` // 群公告
 }

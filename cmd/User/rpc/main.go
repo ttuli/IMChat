@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"IM2/internal/apps/User/rpc/config"
-	"IM2/internal/apps/User/rpc/server"
+	"IM2/internal/apps/User/rpc/server/user"
 	"IM2/internal/apps/User/rpc/svc"
 	"IM2/internal/apps/User/rpc/user"
 	configparser "IM2/pkg/configParser"

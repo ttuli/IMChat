@@ -46,6 +46,7 @@ func (l *GetFriendsLogic) GetFriends(req *types.GetFriendsReq) (resp *types.GetF
 			Blocked:    f.Blocked,
 			Starred:    f.Starred,
 			CreateTime: f.CreateTime,
+			Extra:      f.Extra,
 		})
 	}
 

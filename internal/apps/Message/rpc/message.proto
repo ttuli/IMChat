@@ -4,171 +4,92 @@ package message;
 
 option go_package = "./message";
 
-// ========== 枚举定义 ==========
+// ========== 消息定义 ==========
 
-// MessageType 消息类型
-enum MessageType {
-  MESSAGE_TYPE_UNSPECIFIED = 0;  // 未指定
-  MESSAGE_TYPE_TEXT = 1;         // 文本消息
-  MESSAGE_TYPE_IMAGE = 2;        // 图片消息
-  MESSAGE_TYPE_VOICE = 3;        // 语音消息
-  MESSAGE_TYPE_VIDEO = 4;        // 视频消息
-  MESSAGE_TYPE_FILE = 5;         // 文件消息
-  MESSAGE_TYPE_LOCATION = 6;     // 位置消息
-  MESSAGE_TYPE_SYSTEM = 10;      // 系统消息
-  MESSAGE_TYPE_RECALL = 11;      // 撤回消息
+message Message {
+  string msg_id = 1;
+  string conversation_id = 2;
+  uint64 from_user_id = 3;
+  int32 msg_type = 4;
+  string content = 5;
+  string media_url = 6;
+  string extra = 7;
+  int32 status = 8;
+  int64 create_time = 9;
+  uint64 seq = 10;
 }
 
-// ChatType 聊天类型
-enum ChatType {
-  CHAT_TYPE_UNSPECIFIED = 0;  // 未指定
-  CHAT_TYPE_SINGLE = 1;       // 单聊
-  CHAT_TYPE_GROUP = 2;        // 群聊
+message Conversation {
+  string conversation_id = 1;
+  int32 type = 2;
+  uint64 last_msg_id = 3;
+  int64 last_msg_time = 4;
+  uint64 max_seq = 5;
+  int32 unread_count = 6;
 }
 
-// MessageStatus 消息状态
-enum MessageStatus {
-  MESSAGE_STATUS_UNSPECIFIED = 0;  // 未指定
-  MESSAGE_STATUS_SENDING = 1;      // 发送中
-  MESSAGE_STATUS_SENT = 2;         // 已发送 (服务端已收到)
-  MESSAGE_STATUS_DELIVERED = 3;    // 已送达 (对方已收到)
-  MESSAGE_STATUS_READ = 4;         // 已读
-  MESSAGE_STATUS_RECALLED = 5;     // 已撤回
-}
-
-// ========== 消息结构 ==========
-
-// MessageInfo 消息信息
-message MessageInfo {
-  int64 msgId = 1;              // 消息ID (Idgen生成)
-  uint64 fromId = 2;            // 发送者ID
-  uint64 toId = 3;              // 接收者ID (单聊为用户ID, 群聊为群ID)
-  ChatType chatType = 4;        // 聊天类型
-  MessageType msgType = 5;      // 消息类型
-  string content = 6;           // 消息内容 (文本或JSON)
-  MessageStatus status = 7;     // 消息状态
-  int64 sendTime = 8;           // 发送时间戳 (毫秒)
-  string clientMsgId = 9;       // 客户端消息ID (用于去重)
-  string extra = 10;            // 扩展字段 (JSON)
-}
-
-// ========== 发送消息 ==========
+// ========== 请求/响应 ==========
 
 message SendMessageReq {
-  uint64 fromId = 1;            // 发送者ID
-  uint64 toId = 2;              // 接收者ID
-  ChatType chatType = 3;        // 聊天类型
-  MessageType msgType = 4;      // 消息类型
-  string content = 5;           // 消息内容
-  string clientMsgId = 6;       // 客户端消息ID (幂等性)
-  string extra = 7;             // 扩展字段
+  string msg_id = 1;
+  string conversation_id = 2;
+  uint64 from_user_id = 3;
+  int32 msg_type = 4;
+  string content = 5;
+  string media_url = 6;
+  string extra = 7;
 }
 
 message SendMessageResp {
-  int64 msgId = 1;              // 服务端生成的消息ID
-  int64 sendTime = 2;           // 服务端时间戳
+  uint64 seq = 1;
+  int64 create_time = 2;
 }
-
-// ========== 批量发送消息 (群聊扩散写) ==========
-
-message BatchSendMessageReq {
-  uint64 fromId = 1;            // 发送者ID
-  repeated uint64 toIds = 2;    // 接收者ID列表
-  MessageType msgType = 3;      // 消息类型
-  string content = 4;           // 消息内容
-  string clientMsgId = 5;       // 客户端消息ID
-}
-
-message BatchSendMessageResp {
-  int64 msgId = 1;              // 消息ID
-  int64 sendTime = 2;           // 发送时间
-  repeated uint64 failedIds = 3; // 发送失败的用户ID列表
-}
-
-// ========== 获取历史消息 ==========
 
 message GetHistoryReq {
-  uint64 userId = 1;            // 当前用户ID
-  uint64 peerId = 2;            // 对方ID (单聊为用户ID, 群聊为群ID)
-  ChatType chatType = 3;        // 聊天类型
-  int64 lastMsgId = 4;          // 上一页最后一条消息ID (分页游标)
-  int32 limit = 5;              // 每页数量 (默认20, 最大100)
-  int32 direction = 6;          // 方向: 0=向前(更早), 1=向后(更新)
+  string conversation_id = 1;
+  uint64 cursor_seq = 2; // 上一次拉取的seq，首次传0(最新)
+  int32 limit = 3;
+  bool forward = 4;      // true: 向旧消息拉取(History), false: 向新消息拉取(Sync)
 }
 
 message GetHistoryResp {
-  repeated MessageInfo messages = 1;  // 消息列表
-  bool hasMore = 2;                   // 是否还有更多
+  repeated Message messages = 1;
 }
 
-// ========== 同步离线消息 ==========
-
-message SyncOfflineReq {
-  uint64 userId = 1;            // 用户ID
-  int64 lastSyncMsgId = 2;      // 上次同步的最大消息ID
-  int32 limit = 3;              // 拉取数量 (默认100)
+message GetConversationListReq {
+  uint64 user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
 }
 
-message SyncOfflineResp {
-  repeated MessageInfo messages = 1;  // 离线消息列表
-  int64 latestMsgId = 2;              // 最新消息ID
-  bool hasMore = 3;                   // 是否还有更多
+message GetConversationListResp {
+  repeated Conversation conversations = 1;
 }
 
-// ========== 消息确认 (已读回执) ==========
-
-message AckMessageReq {
-  uint64 userId = 1;            // 用户ID
-  uint64 peerId = 2;            // 对方ID
-  ChatType chatType = 3;        // 聊天类型
-  int64 lastReadMsgId = 4;      // 已读的最后一条消息ID
+message ReadMessageReq {
+  uint64 user_id = 1;
+  string conversation_id = 2;
+  uint64 seq = 3;        // 读到的seq
 }
 
-message AckMessageResp {}
+message ReadMessageResp {}
 
-// ========== 撤回消息 ==========
-
-message RecallMessageReq {
-  uint64 userId = 1;            // 操作者ID
-  int64 msgId = 2;              // 要撤回的消息ID
+message UpdateConversationReq {
+  uint64 user_id = 1;
+  string conversation_id = 2;
+  int32 is_top = 3;      // 0:不变更 1:置顶 2:取消置顶
+  int32 is_disturb = 4;  // 0:不变更 1:免打扰 2:取消免打扰
+  int32 is_mute = 5;     // 0:不变更 1:静音 2:取消静音
 }
 
-message RecallMessageResp {
-  bool success = 1;             // 是否成功
-}
-
-// ========== 删除消息 (仅自己可见) ==========
-
-message DeleteMessageReq {
-  uint64 userId = 1;            // 操作者ID
-  repeated int64 msgIds = 2;    // 要删除的消息ID列表
-}
-
-message DeleteMessageResp {
-  int32 deletedCount = 1;       // 删除数量
-}
+message UpdateConversationResp {}
 
 // ========== 服务定义 ==========
 
-service Message {
-  // 发送消息 (单聊/群聊)
+service MessageRpc {
   rpc SendMessage(SendMessageReq) returns (SendMessageResp);
-  
-  // 批量发送消息 (群聊扩散)
-  rpc BatchSendMessage(BatchSendMessageReq) returns (BatchSendMessageResp);
-  
-  // 获取历史消息
   rpc GetHistory(GetHistoryReq) returns (GetHistoryResp);
-  
-  // 同步离线消息
-  rpc SyncOffline(SyncOfflineReq) returns (SyncOfflineResp);
-  
-  // 消息确认 (已读回执)
-  rpc AckMessage(AckMessageReq) returns (AckMessageResp);
-  
-  // 撤回消息
-  rpc RecallMessage(RecallMessageReq) returns (RecallMessageResp);
-  
-  // 删除消息
-  rpc DeleteMessage(DeleteMessageReq) returns (DeleteMessageResp);
+  rpc GetConversationList(GetConversationListReq) returns (GetConversationListResp);
+  rpc ReadMessage(ReadMessageReq) returns (ReadMessageResp);
+  rpc UpdateConversation(UpdateConversationReq) returns (UpdateConversationResp);
 }

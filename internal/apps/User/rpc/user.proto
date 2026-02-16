@@ -74,10 +74,12 @@ message Friend {
   uint64 user_id = 1;           // 用户ID（我）
   uint64 friend_id = 2;         // 好友ID（对方）
   string remark = 3;            // 好友备注名
-  int32 source = 4;      // 好友来源
+  int32 source = 4;             // 好友来源
   bool blocked = 5;             // 是否拉黑
   bool starred = 6;             // 是否星标
-  int64 create_time = 7;        // 成为好友时间
+
+  int64 create_time = 9;        // 成为好友时间
+  string extra = 10;            // 扩展字段
 }
 
 message FriendRequest {
@@ -115,6 +117,7 @@ message UpdateFriendReq {
   string remark = 3;
   bool blocked = 4;
   bool starred = 5;
+
 }
 
 message DeleteFriendReq {

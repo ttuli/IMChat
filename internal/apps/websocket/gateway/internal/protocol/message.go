@@ -1,62 +1,63 @@
 package protocol
 
 import (
-	"encoding/json"
+	"time"
 
+	"IM2/internal/apps/websocket/gateway/types"
 	"IM2/pkg/xerr"
+
+	"google.golang.org/protobuf/proto"
 )
 
-// DecodeData 解码消息数据到指定结构
-func DecodeData[T any](msg *Message) (*T, error) {
-	if msg.Data == nil {
-		return nil, xerr.New(xerr.ErrInvalidParams, "message data is nil")
+// NewWSMessage 创建新的 WSMessage
+func NewWSMessage(msgType types.MessageType, payload proto.Message) (*types.WSMessage, error) {
+	msg := &types.WSMessage{
+		Timestamp: time.Now().UnixMilli(),
+		Type:      msgType,
+		Version:   1,
 	}
-	var data T
-	if err := json.Unmarshal(msg.Data, &data); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode message data failed")
-	}
-	return &data, nil
-}
-
-// EncodeData 编码数据到消息
-func EncodeData(data any) (json.RawMessage, error) {
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode data failed")
-	}
-	return bytes, nil
-}
-
-// NewMessage 创建新消息
-func NewMessage(msgType MessageType, data any) (*Message, error) {
-	msg := &Message{
-		Type: msgType,
-	}
-	if data != nil {
-		encoded, err := EncodeData(data)
+	if payload != nil {
+		data, err := proto.Marshal(payload)
 		if err != nil {
-			return nil, err
+			return nil, xerr.Wrap(err, xerr.ErrEncoding, "marshal payload failed")
 		}
-		msg.Data = encoded
+		msg.Payload = data
 	}
 	return msg, nil
 }
 
-// NewErrorMessage 创建错误消息
-func NewErrorMessage(code int32, message string) *Message {
-	data, _ := EncodeData(&ErrorData{
-		Code:    code,
-		Message: message,
-	})
-	return &Message{
-		Type: MessageTypeError,
-		Data: data,
+// NewErrorWSMessage 创建错误消息
+func NewErrorWSMessage(code int32, message string) *types.WSMessage {
+	errMsg := &types.ErrorMessage{
+		ErrorCode: code,
+		ErrorMsg:  message,
+	}
+	data, _ := proto.Marshal(errMsg)
+	return &types.WSMessage{
+		Timestamp: time.Now().UnixMilli(),
+		Type:      types.MessageType_ERROR,
+		Payload:   data,
+		Version:   1,
 	}
 }
 
-// NewHeartbeatAck 创建心跳响应消息
-func NewHeartbeatAck() *Message {
-	return &Message{
-		Type: MessageTypeHeartbeatAck,
+// DecodePayload 从 WSMessage 中解码 payload 到指定 proto message
+func DecodePayload[T proto.Message](msg *types.WSMessage, target T) error {
+	if len(msg.Payload) == 0 {
+		return xerr.New(xerr.ErrInvalidParams, "empty payload")
 	}
+	if err := proto.Unmarshal(msg.Payload, target); err != nil {
+		return xerr.Wrap(err, xerr.ErrDecoding, "unmarshal payload failed")
+	}
+	return nil
+}
+
+// IsChatMessage 判断是否为单聊消息类型 (100-199)
+func IsChatMessage(t types.MessageType) bool {
+	return t >= 100 && t < 200
+}
+
+// IsGroupMessage 判断是否为群聊消息类型 (200-299)
+func IsGroupMessage(t types.MessageType) bool {
+	return t >= 200 && t < 300
 }

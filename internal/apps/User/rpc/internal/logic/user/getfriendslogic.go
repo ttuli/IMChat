@@ -39,7 +39,7 @@ func (l *GetFriendsLogic) GetFriends(in *user.GetFriendsReq) (*user.GetFriendsRe
 			Remark:     f.Remark,
 			Source:     int32(f.Source),
 			Blocked:    f.Blocked,
-			Starred:    f.Stared,
+			Starred:    f.Starred,
 			CreateTime: f.CreateTime.UnixMilli(),
 		})
 	}

@@ -40,6 +40,7 @@ func (l *GetGroupMembersLogic) GetGroupMembers(req *types.GetGroupMembersReq) (r
 			UserID:    m.UserId,
 			Role:      int8(m.Role),
 			Nickname:  m.Nickname,
+			Extra:     m.Extra,
 			MuteUntil: m.MuteUntil,
 			JoinedAt:  m.JoinedAt,
 		})
