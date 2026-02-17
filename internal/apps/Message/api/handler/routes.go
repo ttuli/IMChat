@@ -24,10 +24,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: message.UpdateConversationHandler(serverCtx),
 			},
 			{
-				// 获取会话列表
+				// 批量获取会话详情
 				Method:  http.MethodGet,
-				Path:    "/conversations",
-				Handler: message.GetConversationListHandler(serverCtx),
+				Path:    "/conversations/detail",
+				Handler: message.GetConversationHandler(serverCtx),
+			},
+			{
+				// 获取用户的会话列表(根据UserID)
+				Method:  http.MethodGet,
+				Path:    "/conversations/user",
+				Handler: message.GetUserConversationsHandler(serverCtx),
 			},
 			{
 				// 获取历史消息

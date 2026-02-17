@@ -6,10 +6,10 @@ import (
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/types"
-	"IM2/pkg/xerr"
+	"IM2/pkg/logger"
 
 	"github.com/nats-io/nats.go"
-	"github.com/zeromicro/go-zero/core/logx"
+	// "github.com/zeromicro/go-zero/core/logx"
 )
 
 // Publisher NATS 消息发布者
@@ -34,18 +34,38 @@ func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *types
 
 	data, err := p.codec.EncodeInternal(msg)
 	if err != nil {
-		return xerr.Wrap(err, xerr.ErrEncoding, "marshal internal message failed")
+		return err
 	}
 
 	if err := p.conn.Publish(subject, data); err != nil {
-		return xerr.Wrap(err, xerr.ErrCache, "publish message failed")
+		return err
 	}
 
-	logx.Debugf("[Publisher] published message to node %s for user %d", nodeID, msg.TargetUserId)
+	logger.Infof("[Publisher] published message to node %s for user %d", nodeID, msg.TargetUserId)
+	return nil
+}
+
+func (p *Publisher) PublishToDB(ctx context.Context, msg *types.WSMessage) error {
+	subject := getDBSubject()
+
+	data, err := p.codec.Encode(msg)
+	if err != nil {
+		return err
+	}
+
+	if err := p.conn.Publish(subject, data); err != nil {
+		return err
+	}
+
+	logger.Infof("[Publisher] published message to db for user")
 	return nil
 }
 
 // getNodeSubject 获取节点消息 subject
 func getNodeSubject(nodeID string) string {
 	return fmt.Sprintf("ws.channel.%s", nodeID)
+}
+
+func getDBSubject() string {
+	return "ws.db"
 }

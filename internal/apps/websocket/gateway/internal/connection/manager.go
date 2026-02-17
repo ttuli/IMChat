@@ -126,6 +126,7 @@ func (m *DefaultManager) RemoveConnection(userID uint64) error {
 // GetLocalConnection 获取本地连接
 func (m *DefaultManager) GetLocalConnection(userID uint64) (*Connection, bool) {
 	if conn, ok := m.connections.Load(userID); ok {
+		logx.Infof("[Connection] user %d found", userID)
 		return conn.(*Connection), true
 	}
 	return nil, false

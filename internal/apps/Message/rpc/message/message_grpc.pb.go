@@ -19,22 +19,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessageRpc_SendMessage_FullMethodName         = "/message.MessageRpc/SendMessage"
-	MessageRpc_GetHistory_FullMethodName          = "/message.MessageRpc/GetHistory"
-	MessageRpc_GetConversationList_FullMethodName = "/message.MessageRpc/GetConversationList"
-	MessageRpc_ReadMessage_FullMethodName         = "/message.MessageRpc/ReadMessage"
-	MessageRpc_UpdateConversation_FullMethodName  = "/message.MessageRpc/UpdateConversation"
+	MessageRpc_GetHistory_FullMethodName           = "/message.MessageRpc/GetHistory"
+	MessageRpc_GetConversationList_FullMethodName  = "/message.MessageRpc/GetConversationList"
+	MessageRpc_ReadMessage_FullMethodName          = "/message.MessageRpc/ReadMessage"
+	MessageRpc_UpdateConversation_FullMethodName   = "/message.MessageRpc/UpdateConversation"
+	MessageRpc_GetUserConversations_FullMethodName = "/message.MessageRpc/GetUserConversations"
 )
 
 // MessageRpcClient is the client API for MessageRpc service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MessageRpcClient interface {
-	SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error)
 	GetHistory(ctx context.Context, in *GetHistoryReq, opts ...grpc.CallOption) (*GetHistoryResp, error)
 	GetConversationList(ctx context.Context, in *GetConversationListReq, opts ...grpc.CallOption) (*GetConversationListResp, error)
 	ReadMessage(ctx context.Context, in *ReadMessageReq, opts ...grpc.CallOption) (*ReadMessageResp, error)
 	UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error)
+	GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
 }
 
 type messageRpcClient struct {
@@ -43,16 +43,6 @@ type messageRpcClient struct {
 
 func NewMessageRpcClient(cc grpc.ClientConnInterface) MessageRpcClient {
 	return &messageRpcClient{cc}
-}
-
-func (c *messageRpcClient) SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SendMessageResp)
-	err := c.cc.Invoke(ctx, MessageRpc_SendMessage_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *messageRpcClient) GetHistory(ctx context.Context, in *GetHistoryReq, opts ...grpc.CallOption) (*GetHistoryResp, error) {
@@ -95,15 +85,25 @@ func (c *messageRpcClient) UpdateConversation(ctx context.Context, in *UpdateCon
 	return out, nil
 }
 
+func (c *messageRpcClient) GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserConversationsResp)
+	err := c.cc.Invoke(ctx, MessageRpc_GetUserConversations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MessageRpcServer is the server API for MessageRpc service.
 // All implementations must embed UnimplementedMessageRpcServer
 // for forward compatibility.
 type MessageRpcServer interface {
-	SendMessage(context.Context, *SendMessageReq) (*SendMessageResp, error)
 	GetHistory(context.Context, *GetHistoryReq) (*GetHistoryResp, error)
 	GetConversationList(context.Context, *GetConversationListReq) (*GetConversationListResp, error)
 	ReadMessage(context.Context, *ReadMessageReq) (*ReadMessageResp, error)
 	UpdateConversation(context.Context, *UpdateConversationReq) (*UpdateConversationResp, error)
+	GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error)
 	mustEmbedUnimplementedMessageRpcServer()
 }
 
@@ -114,9 +114,6 @@ type MessageRpcServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMessageRpcServer struct{}
 
-func (UnimplementedMessageRpcServer) SendMessage(context.Context, *SendMessageReq) (*SendMessageResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
-}
 func (UnimplementedMessageRpcServer) GetHistory(context.Context, *GetHistoryReq) (*GetHistoryResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetHistory not implemented")
 }
@@ -128,6 +125,9 @@ func (UnimplementedMessageRpcServer) ReadMessage(context.Context, *ReadMessageRe
 }
 func (UnimplementedMessageRpcServer) UpdateConversation(context.Context, *UpdateConversationReq) (*UpdateConversationResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateConversation not implemented")
+}
+func (UnimplementedMessageRpcServer) GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserConversations not implemented")
 }
 func (UnimplementedMessageRpcServer) mustEmbedUnimplementedMessageRpcServer() {}
 func (UnimplementedMessageRpcServer) testEmbeddedByValue()                    {}
@@ -148,24 +148,6 @@ func RegisterMessageRpcServer(s grpc.ServiceRegistrar, srv MessageRpcServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&MessageRpc_ServiceDesc, srv)
-}
-
-func _MessageRpc_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendMessageReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessageRpcServer).SendMessage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MessageRpc_SendMessage_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).SendMessage(ctx, req.(*SendMessageReq))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _MessageRpc_GetHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -240,6 +222,24 @@ func _MessageRpc_UpdateConversation_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageRpc_GetUserConversations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserConversationsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageRpcServer).GetUserConversations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageRpc_GetUserConversations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageRpcServer).GetUserConversations(ctx, req.(*GetUserConversationsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MessageRpc_ServiceDesc is the grpc.ServiceDesc for MessageRpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -247,10 +247,6 @@ var MessageRpc_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "message.MessageRpc",
 	HandlerType: (*MessageRpcServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "SendMessage",
-			Handler:    _MessageRpc_SendMessage_Handler,
-		},
 		{
 			MethodName: "GetHistory",
 			Handler:    _MessageRpc_GetHistory_Handler,
@@ -266,6 +262,10 @@ var MessageRpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateConversation",
 			Handler:    _MessageRpc_UpdateConversation_Handler,
+		},
+		{
+			MethodName: "GetUserConversations",
+			Handler:    _MessageRpc_GetUserConversations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

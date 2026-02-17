@@ -180,9 +180,9 @@ message CustomMessage {
 
 // 消息确认(ACK)
 message MessageAck {
-  int64 msg_id = 1;               // 消息ID
-  uint64 user_id = 2;             // 用户ID
-  int64 ack_time = 3;             // 确认时间
+  string msg_id = 1;               // 消息ID
+  string client_id = 2;            // 客户端ID
+  string session_id = 3;           // 会话ID
   AckStatus status = 4;           // 确认状态
   string error_msg = 5;           // 错误信息
 }
@@ -313,6 +313,22 @@ enum GroupOperationType {
   GROUP_OP_UNMUTE = 8;            // 取消禁言
 }
 
+message Conversation {
+  string conversation_id = 1;     // 会话ID
+  ConversationType type = 2;      // 会话类型
+  uint32 target_id = 3;           // 目标ID
+  string last_content = 4;      // 最后消息ID
+  int64 last_message_time = 5;    // 最后消息时间
+  int64 unread_count = 6;         // 未读消息数
+  int64 create_time = 7;          // 创建时间
+  int64 update_time = 8;          // 更新时间
+}
+
+enum ConversationType {
+  CONVERSATION_TYPE_PRIVATE = 0;  // 私聊
+  CONVERSATION_TYPE_GROUP = 1;    // 群聊
+}
+
 // ==================== 通知消息 ====================
 
 // 系统通知
@@ -415,8 +431,9 @@ enum UserStatus {
 message ErrorMessage {
   int32 error_code = 1;           // 错误码
   string error_msg = 2;           // 错误信息
-  string request_id = 3;          // 关联的请求ID
-  map<string, string> details = 4; // 错误详情
+  string session_id = 3;          // 关联会话ID
+  string request_id = 4;          // 关联的请求ID
+  map<string, string> details = 5; // 错误详情
 }
 
 // 常见错误码定义

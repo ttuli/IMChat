@@ -10,6 +10,7 @@ import (
 type Message struct {
 	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id"`                // MongoDB 默认主键
 	MsgID          string             `bson:"msg_id" json:"msg_id"`                   // 客户端消息ID(幂等去重)
+	ClientID       string             `bson:"client_id" json:"client_id"`             // 客户端ID
 	ConversationID string             `bson:"conversation_id" json:"conversation_id"` // 会话ID
 	FromUserID     uint64             `bson:"from_user_id" json:"from_user_id"`       // 发送者ID
 	MsgType        int16              `bson:"msg_type" json:"msg_type"`               // 消息类型

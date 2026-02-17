@@ -57,3 +57,21 @@ func (s *messageService) UpdateConversation(ctx context.Context, userID uint64, 
 	}
 	return nil
 }
+
+// GetConversation 批量获取会话详情
+func (s *messageService) GetConversation(ctx context.Context, conversationIDs []string) ([]*model.Conversation, error) {
+	convs, err := s.messageDAO.FindConversationsByIDs(ctx, conversationIDs)
+	if err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "批量查询会话失败")
+	}
+	return convs, nil
+}
+
+// GetUserConversations 获取用户所有会话
+func (s *messageService) GetUserConversations(ctx context.Context, userID uint64) ([]*model.UserConversation, error) {
+	convs, err := s.messageDAO.FindUserConversations(ctx, userID)
+	if err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询用户会话失败")
+	}
+	return convs, nil
+}

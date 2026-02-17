@@ -8,8 +8,10 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/svc"
 	"IM2/internal/apps/websocket/gateway/types"
+	"IM2/pkg/logger"
 
-	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/google/uuid"
+	// "github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -35,7 +37,7 @@ func (h *MessageHandler) Handle(ctx context.Context, msg *types.WSMessage) error
 	case protocol.IsGroupMessage(msg.Type):
 		return h.handleGroupMessage(ctx, msg)
 	default:
-		logx.Slowf("[MessageHandler] unknown message type: %v", msg.Type)
+		logger.Infof("[MessageHandler] unknown message type: %v", msg.Type)
 		return nil
 	}
 }
@@ -45,12 +47,25 @@ func (h *MessageHandler) handleChatMessage(ctx context.Context, msg *types.WSMes
 	// 根据具体类型解析 payload 中的 BaseMessage
 	base, err := h.extractBaseMessage(msg)
 	if err != nil {
-		logx.Errorf("[MessageHandler] extract base message failed: %v", err)
+		logger.Errorf("[MessageHandler] extract base message failed: %v", err)
 		return nil
 	}
 
-	// 服务端填充 from_user_id
-	base.FromUserId = h.conn.UserID
+	base.MsgId = uuid.New().String()
+	seq, err := h.svcCtx.MessageDao.GetConversationMaxSeq(ctx, base.SessionId)
+	if err != nil {
+		h.svcCtx.TelemetryBus.Publish(err)
+		// 返回带 ClientId 的错误消息，方便前端更新状态
+		h.sendError(&types.ErrorMessage{
+			ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+			ErrorMsg:  "发送失败",
+			RequestId: base.ClientId,
+			SessionId: base.SessionId,
+		})
+		return nil
+	}
+	base.MsgSeq = int32(seq)
+	base.Status = types.MessageStatus_MESSAGE_STATUS_SENT
 
 	// 验证目标
 	if base.ToUserId == 0 {
@@ -58,18 +73,35 @@ func (h *MessageHandler) handleChatMessage(ctx context.Context, msg *types.WSMes
 	}
 
 	// 重新序列化 payload (带上服务端填充的字段)
-	if err := h.repackPayload(msg); err != nil {
-		logx.Errorf("[MessageHandler] repack payload failed: %v", err)
+	if err := h.repackPayload(base, msg); err != nil {
+		h.svcCtx.TelemetryBus.Publish(err)
+		h.sendError(&types.ErrorMessage{
+			ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+			ErrorMsg:  "发送失败",
+			RequestId: base.ClientId,
+			SessionId: base.SessionId,
+		})
+		return nil
+	}
+
+	if err := h.svcCtx.Router.RouteMsgToDB(ctx, msg); err != nil {
+		h.svcCtx.TelemetryBus.Publish(err)
+		h.sendError(&types.ErrorMessage{
+			ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+			ErrorMsg:  "发送失败",
+			RequestId: base.ClientId,
+			SessionId: base.SessionId,
+		})
 		return nil
 	}
 
 	// 发送给目标用户
 	if err := h.svcCtx.ConnectionManager.SendToUser(ctx, base.ToUserId, msg); err != nil {
-		logx.Errorf("[MessageHandler] send to user %d failed: %v", base.ToUserId, err)
+		h.svcCtx.TelemetryBus.Publish(err)
 	}
 
 	// 发送 ACK
-	ack, _ := protocol.NewWSMessage(types.MessageType_MSG_ACK, nil)
+	ack := protocol.NewAckMessage(base, types.AckStatus_ACK_STATUS_SUCCESS)
 	return h.conn.Send(ack)
 }
 
@@ -78,7 +110,7 @@ func (h *MessageHandler) handleGroupMessage(ctx context.Context, msg *types.WSMe
 	// 解析 BaseMessage 获取 group_id
 	base, err := h.extractBaseMessage(msg)
 	if err != nil {
-		logx.Errorf("[MessageHandler] extract base message failed: %v", err)
+		logger.Errorf("[MessageHandler] extract base message failed: %v", err)
 		return nil
 	}
 
@@ -89,7 +121,7 @@ func (h *MessageHandler) handleGroupMessage(ctx context.Context, msg *types.WSMe
 	}
 
 	// TODO: 通过群成员列表广播
-	logx.Debugf("[MessageHandler] group message to group %d from user %d", base.GroupId, base.FromUserId)
+	logger.Infof("[MessageHandler] group message to group %d from user %d", base.GroupId, base.FromUserId)
 
 	// 发送 ACK
 	ack, _ := protocol.NewWSMessage(types.MessageType_MSG_ACK, nil)
@@ -148,7 +180,7 @@ func (h *MessageHandler) extractBaseMessage(msg *types.WSMessage) (*types.BaseMe
 }
 
 // repackPayload 重新序列化 payload (服务端填充字段后)
-func (h *MessageHandler) repackPayload(msg *types.WSMessage) error {
+func (h *MessageHandler) repackPayload(base *types.BaseMessage, msg *types.WSMessage) error {
 	// 反序列化 → 修改 → 重新序列化
 	// 由于 extractBaseMessage 已经修改了 base 的指针内容，
 	// 我们需要重新 marshal 完整的消息结构
@@ -158,7 +190,7 @@ func (h *MessageHandler) repackPayload(msg *types.WSMessage) error {
 		if err := proto.Unmarshal(msg.Payload, &textMsg); err != nil {
 			return err
 		}
-		textMsg.Base.FromUserId = h.conn.UserID
+		textMsg.Base = base
 		data, err := proto.Marshal(&textMsg)
 		if err != nil {
 			return err
@@ -169,4 +201,12 @@ func (h *MessageHandler) repackPayload(msg *types.WSMessage) error {
 		// 对于未处理的类型，payload 保持不变
 	}
 	return nil
+}
+
+func (h *MessageHandler) sendError(err *types.ErrorMessage) {
+	if err == nil {
+		return
+	}
+	resp, _ := protocol.NewWSMessage(types.MessageType_ERROR, err)
+	h.conn.Send(resp)
 }

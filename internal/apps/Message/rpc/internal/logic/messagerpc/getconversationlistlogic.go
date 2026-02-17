@@ -24,17 +24,19 @@ func NewGetConversationListLogic(ctx context.Context, svcCtx *svc.ServiceContext
 }
 
 func (l *GetConversationListLogic) GetConversationList(in *message.GetConversationListReq) (*message.GetConversationListResp, error) {
-	userConvs, err := l.svcCtx.MessageService.GetConversationList(l.ctx, in.UserId)
+	convs, err := l.svcCtx.MessageService.GetConversation(l.ctx, in.SessionIds)
 	if err != nil {
 		return nil, err
 	}
 
 	var list []*message.Conversation
-	for _, uc := range userConvs {
+	for _, c := range convs {
 		list = append(list, &message.Conversation{
-			ConversationId: uc.ConversationID,
-			UnreadCount:    uc.UnreadCount,
-			MaxSeq:         uc.LastReadSeq,
+			ConversationId: c.ConversationID,
+			Type:           int32(c.Type),
+			MaxSeq:         c.MaxSeq,
+			CreateTime:     c.CreateTime.UnixMilli(),
+			UpdateTime:     c.UpdateTime.UnixMilli(),
 		})
 	}
 

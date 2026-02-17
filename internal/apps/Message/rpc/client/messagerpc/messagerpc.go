@@ -14,25 +14,26 @@ import (
 )
 
 type (
-	Conversation            = message.Conversation
-	GetConversationListReq  = message.GetConversationListReq
-	GetConversationListResp = message.GetConversationListResp
-	GetHistoryReq           = message.GetHistoryReq
-	GetHistoryResp          = message.GetHistoryResp
-	Message                 = message.Message
-	ReadMessageReq          = message.ReadMessageReq
-	ReadMessageResp         = message.ReadMessageResp
-	SendMessageReq          = message.SendMessageReq
-	SendMessageResp         = message.SendMessageResp
-	UpdateConversationReq   = message.UpdateConversationReq
-	UpdateConversationResp  = message.UpdateConversationResp
+	Conversation             = message.Conversation
+	GetConversationListReq   = message.GetConversationListReq
+	GetConversationListResp  = message.GetConversationListResp
+	GetHistoryReq            = message.GetHistoryReq
+	GetHistoryResp           = message.GetHistoryResp
+	GetUserConversationsReq  = message.GetUserConversationsReq
+	GetUserConversationsResp = message.GetUserConversationsResp
+	Message                  = message.Message
+	ReadMessageReq           = message.ReadMessageReq
+	ReadMessageResp          = message.ReadMessageResp
+	UpdateConversationReq    = message.UpdateConversationReq
+	UpdateConversationResp   = message.UpdateConversationResp
+	UserConversation         = message.UserConversation
 
 	MessageRpc interface {
-		SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error)
 		GetHistory(ctx context.Context, in *GetHistoryReq, opts ...grpc.CallOption) (*GetHistoryResp, error)
 		GetConversationList(ctx context.Context, in *GetConversationListReq, opts ...grpc.CallOption) (*GetConversationListResp, error)
 		ReadMessage(ctx context.Context, in *ReadMessageReq, opts ...grpc.CallOption) (*ReadMessageResp, error)
 		UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error)
+		GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
 	}
 
 	defaultMessageRpc struct {
@@ -44,11 +45,6 @@ func NewMessageRpc(cli zrpc.Client) MessageRpc {
 	return &defaultMessageRpc{
 		cli: cli,
 	}
-}
-
-func (m *defaultMessageRpc) SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error) {
-	client := message.NewMessageRpcClient(m.cli.Conn())
-	return client.SendMessage(ctx, in, opts...)
 }
 
 func (m *defaultMessageRpc) GetHistory(ctx context.Context, in *GetHistoryReq, opts ...grpc.CallOption) (*GetHistoryResp, error) {
@@ -69,4 +65,9 @@ func (m *defaultMessageRpc) ReadMessage(ctx context.Context, in *ReadMessageReq,
 func (m *defaultMessageRpc) UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error) {
 	client := message.NewMessageRpcClient(m.cli.Conn())
 	return client.UpdateConversation(ctx, in, opts...)
+}
+
+func (m *defaultMessageRpc) GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error) {
+	client := message.NewMessageRpcClient(m.cli.Conn())
+	return client.GetUserConversations(ctx, in, opts...)
 }

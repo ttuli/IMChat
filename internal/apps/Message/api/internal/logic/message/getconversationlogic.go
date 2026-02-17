@@ -6,33 +6,28 @@ import (
 	"IM2/internal/apps/Message/api/svc"
 	"IM2/internal/apps/Message/api/types"
 	"IM2/internal/apps/Message/rpc/client/messagerpc"
-	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type GetConversationListLogic struct {
+type GetConversationLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-// 获取会话列表
-func NewGetConversationListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetConversationListLogic {
-	return &GetConversationListLogic{
+// 批量获取会话详情
+func NewGetConversationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetConversationLogic {
+	return &GetConversationLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *GetConversationListLogic) GetConversationList(req *types.GetConversationListReq) (resp *types.GetConversationListResp, err error) {
-	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
-
+func (l *GetConversationLogic) GetConversation(req *types.GetConversationReq) (resp *types.GetConversationResp, err error) {
 	res, err := l.svcCtx.MessageRpc.GetConversationList(l.ctx, &messagerpc.GetConversationListReq{
-		UserId: userID,
-		Limit:  int32(req.Limit),
-		Offset: int32(req.Offset),
+		SessionIds: req.ConversationIDs,
 	})
 	if err != nil {
 		return nil, err
@@ -43,9 +38,11 @@ func (l *GetConversationListLogic) GetConversationList(req *types.GetConversatio
 		list = append(list, types.Conversation{
 			ConversationID: c.ConversationId,
 			Type:           c.Type,
-			UnreadCount:    c.UnreadCount,
+			MaxSeq:         c.MaxSeq,
+			CreateTime:     c.CreateTime,
+			UpdateTime:     c.UpdateTime,
 		})
 	}
 
-	return &types.GetConversationListResp{List: list}, nil
+	return &types.GetConversationResp{Conversations: list}, nil
 }

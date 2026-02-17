@@ -18,6 +18,12 @@ type Config struct {
 	// Redis 配置 (用于路由 KV 存储)
 	Redis redis.RedisConf
 
+	// MySQL 配置
+	DAO struct {
+		MysqlSource string
+		CacheSource redis.RedisConf
+	}
+
 	// NATS 配置 (用于跨节点消息转发)
 	Nats NatsConf
 
@@ -45,4 +51,6 @@ type WebSocketConf struct {
 	ReadBufferSize int
 	// 写缓冲区大小
 	WriteBufferSize int
+	// 协议版本
+	Version int32
 }

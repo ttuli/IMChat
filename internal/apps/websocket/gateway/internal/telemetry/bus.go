@@ -1,14 +1,13 @@
 package telemetry
 
 import (
+	"IM2/pkg/logger"
 	"context"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 const (
@@ -87,7 +86,7 @@ func (b *Bus) Publish(err error) {
 	select {
 	case b.eventCh <- event:
 	default:
-		logx.Errorf("[TelemetryBus] event channel full, dropping event: component=%s operation=%s err=%v",
+		logger.Errorf("[TelemetryBus] event channel full, dropping event: component=%s operation=%s err=%v",
 			component, operation, err)
 	}
 }
@@ -113,14 +112,14 @@ func (b *Bus) Start(ctx context.Context) {
 			}
 		}
 	}()
-	logx.Infof("[TelemetryBus] started on node %s with %d handler(s)", b.nodeID, len(b.handlers))
+	logger.Infof("[TelemetryBus] started on node %s with %d handler(s)", b.nodeID, len(b.handlers))
 }
 
 // Stop 关闭总线, 等待消费协程退出
 func (b *Bus) Stop() {
 	close(b.eventCh)
 	b.wg.Wait()
-	logx.Infof("[TelemetryBus] stopped on node %s", b.nodeID)
+	logger.Infof("[TelemetryBus] stopped on node %s", b.nodeID)
 }
 
 // drain 排空 channel 中的剩余事件
@@ -148,6 +147,6 @@ func (b *Bus) dispatch(event ErrorEvent) {
 // DefaultLogHandler 默认日志处理器
 // 使用 logx 输出错误事件详情
 func DefaultLogHandler(event ErrorEvent) {
-	logx.Errorf("[TelemetryBus] node=%s component=%s operation=%s err=%v",
+	logger.Errorf("[TelemetryBus] node=%s component=%s operation=%s err=%v",
 		event.NodeID, event.Component, event.Operation, event.Err)
 }

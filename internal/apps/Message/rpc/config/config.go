@@ -7,10 +7,14 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	Redis      redis.RedisConf
+	Redis redis.RedisConf
 
 	Mongo struct {
 		Uri string
+	}
+
+	Nats struct {
+		Url string
 	}
 
 	DAO struct {

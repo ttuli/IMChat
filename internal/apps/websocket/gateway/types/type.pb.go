@@ -514,6 +514,52 @@ func (GroupOperationType) EnumDescriptor() ([]byte, []int) {
 	return file_type_proto_rawDescGZIP(), []int{6}
 }
 
+type ConversationType int32
+
+const (
+	ConversationType_CONVERSATION_TYPE_PRIVATE ConversationType = 0 // 私聊
+	ConversationType_CONVERSATION_TYPE_GROUP   ConversationType = 1 // 群聊
+)
+
+// Enum value maps for ConversationType.
+var (
+	ConversationType_name = map[int32]string{
+		0: "CONVERSATION_TYPE_PRIVATE",
+		1: "CONVERSATION_TYPE_GROUP",
+	}
+	ConversationType_value = map[string]int32{
+		"CONVERSATION_TYPE_PRIVATE": 0,
+		"CONVERSATION_TYPE_GROUP":   1,
+	}
+)
+
+func (x ConversationType) Enum() *ConversationType {
+	p := new(ConversationType)
+	*p = x
+	return p
+}
+
+func (x ConversationType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ConversationType) Descriptor() protoreflect.EnumDescriptor {
+	return file_type_proto_enumTypes[7].Descriptor()
+}
+
+func (ConversationType) Type() protoreflect.EnumType {
+	return &file_type_proto_enumTypes[7]
+}
+
+func (x ConversationType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ConversationType.Descriptor instead.
+func (ConversationType) EnumDescriptor() ([]byte, []int) {
+	return file_type_proto_rawDescGZIP(), []int{7}
+}
+
 type NotificationType int32
 
 const (
@@ -550,11 +596,11 @@ func (x NotificationType) String() string {
 }
 
 func (NotificationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_type_proto_enumTypes[7].Descriptor()
+	return file_type_proto_enumTypes[8].Descriptor()
 }
 
 func (NotificationType) Type() protoreflect.EnumType {
-	return &file_type_proto_enumTypes[7]
+	return &file_type_proto_enumTypes[8]
 }
 
 func (x NotificationType) Number() protoreflect.EnumNumber {
@@ -563,7 +609,7 @@ func (x NotificationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NotificationType.Descriptor instead.
 func (NotificationType) EnumDescriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{7}
+	return file_type_proto_rawDescGZIP(), []int{8}
 }
 
 type ApplyStatus int32
@@ -605,11 +651,11 @@ func (x ApplyStatus) String() string {
 }
 
 func (ApplyStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_type_proto_enumTypes[8].Descriptor()
+	return file_type_proto_enumTypes[9].Descriptor()
 }
 
 func (ApplyStatus) Type() protoreflect.EnumType {
-	return &file_type_proto_enumTypes[8]
+	return &file_type_proto_enumTypes[9]
 }
 
 func (x ApplyStatus) Number() protoreflect.EnumNumber {
@@ -618,7 +664,7 @@ func (x ApplyStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ApplyStatus.Descriptor instead.
 func (ApplyStatus) EnumDescriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{8}
+	return file_type_proto_rawDescGZIP(), []int{9}
 }
 
 type ApplySource int32
@@ -663,11 +709,11 @@ func (x ApplySource) String() string {
 }
 
 func (ApplySource) Descriptor() protoreflect.EnumDescriptor {
-	return file_type_proto_enumTypes[9].Descriptor()
+	return file_type_proto_enumTypes[10].Descriptor()
 }
 
 func (ApplySource) Type() protoreflect.EnumType {
-	return &file_type_proto_enumTypes[9]
+	return &file_type_proto_enumTypes[10]
 }
 
 func (x ApplySource) Number() protoreflect.EnumNumber {
@@ -676,7 +722,7 @@ func (x ApplySource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ApplySource.Descriptor instead.
 func (ApplySource) EnumDescriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{9}
+	return file_type_proto_rawDescGZIP(), []int{10}
 }
 
 type Gender int32
@@ -715,11 +761,11 @@ func (x Gender) String() string {
 }
 
 func (Gender) Descriptor() protoreflect.EnumDescriptor {
-	return file_type_proto_enumTypes[10].Descriptor()
+	return file_type_proto_enumTypes[11].Descriptor()
 }
 
 func (Gender) Type() protoreflect.EnumType {
-	return &file_type_proto_enumTypes[10]
+	return &file_type_proto_enumTypes[11]
 }
 
 func (x Gender) Number() protoreflect.EnumNumber {
@@ -728,7 +774,7 @@ func (x Gender) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Gender.Descriptor instead.
 func (Gender) EnumDescriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{10}
+	return file_type_proto_rawDescGZIP(), []int{11}
 }
 
 type JoinType int32
@@ -764,11 +810,11 @@ func (x JoinType) String() string {
 }
 
 func (JoinType) Descriptor() protoreflect.EnumDescriptor {
-	return file_type_proto_enumTypes[11].Descriptor()
+	return file_type_proto_enumTypes[12].Descriptor()
 }
 
 func (JoinType) Type() protoreflect.EnumType {
-	return &file_type_proto_enumTypes[11]
+	return &file_type_proto_enumTypes[12]
 }
 
 func (x JoinType) Number() protoreflect.EnumNumber {
@@ -777,7 +823,7 @@ func (x JoinType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use JoinType.Descriptor instead.
 func (JoinType) EnumDescriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{11}
+	return file_type_proto_rawDescGZIP(), []int{12}
 }
 
 type UserStatus int32
@@ -810,11 +856,11 @@ func (x UserStatus) String() string {
 }
 
 func (UserStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_type_proto_enumTypes[12].Descriptor()
+	return file_type_proto_enumTypes[13].Descriptor()
 }
 
 func (UserStatus) Type() protoreflect.EnumType {
-	return &file_type_proto_enumTypes[12]
+	return &file_type_proto_enumTypes[13]
 }
 
 func (x UserStatus) Number() protoreflect.EnumNumber {
@@ -823,7 +869,7 @@ func (x UserStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UserStatus.Descriptor instead.
 func (UserStatus) EnumDescriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{12}
+	return file_type_proto_rawDescGZIP(), []int{13}
 }
 
 // 常见错误码定义
@@ -878,11 +924,11 @@ func (x ErrorCode) String() string {
 }
 
 func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_type_proto_enumTypes[13].Descriptor()
+	return file_type_proto_enumTypes[14].Descriptor()
 }
 
 func (ErrorCode) Type() protoreflect.EnumType {
-	return &file_type_proto_enumTypes[13]
+	return &file_type_proto_enumTypes[14]
 }
 
 func (x ErrorCode) Number() protoreflect.EnumNumber {
@@ -891,7 +937,7 @@ func (x ErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErrorCode.Descriptor instead.
 func (ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{13}
+	return file_type_proto_rawDescGZIP(), []int{14}
 }
 
 // WebSocket传输的顶层消息
@@ -1776,11 +1822,11 @@ func (x *CustomMessage) GetData() string {
 // 消息确认(ACK)
 type MessageAck struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MsgId         int64                  `protobuf:"varint,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`           // 消息ID
-	UserId        uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`        // 用户ID
-	AckTime       int64                  `protobuf:"varint,3,opt,name=ack_time,json=ackTime,proto3" json:"ack_time,omitempty"`     // 确认时间
-	Status        AckStatus              `protobuf:"varint,4,opt,name=status,proto3,enum=types.AckStatus" json:"status,omitempty"` // 确认状态
-	ErrorMsg      string                 `protobuf:"bytes,5,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`   // 错误信息
+	MsgId         string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`             // 消息ID
+	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`    // 客户端ID
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // 会话ID
+	Status        AckStatus              `protobuf:"varint,4,opt,name=status,proto3,enum=types.AckStatus" json:"status,omitempty"`  // 确认状态
+	ErrorMsg      string                 `protobuf:"bytes,5,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`    // 错误信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1815,25 +1861,25 @@ func (*MessageAck) Descriptor() ([]byte, []int) {
 	return file_type_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *MessageAck) GetMsgId() int64 {
+func (x *MessageAck) GetMsgId() string {
 	if x != nil {
 		return x.MsgId
 	}
-	return 0
+	return ""
 }
 
-func (x *MessageAck) GetUserId() uint64 {
+func (x *MessageAck) GetClientId() string {
 	if x != nil {
-		return x.UserId
+		return x.ClientId
 	}
-	return 0
+	return ""
 }
 
-func (x *MessageAck) GetAckTime() int64 {
+func (x *MessageAck) GetSessionId() string {
 	if x != nil {
-		return x.AckTime
+		return x.SessionId
 	}
-	return 0
+	return ""
 }
 
 func (x *MessageAck) GetStatus() AckStatus {
@@ -2538,6 +2584,106 @@ func (x *GroupNotification) GetGroupInfo() *GroupInfo {
 	return nil
 }
 
+type Conversation struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId  string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`       // 会话ID
+	Type            ConversationType       `protobuf:"varint,2,opt,name=type,proto3,enum=types.ConversationType" json:"type,omitempty"`                    // 会话类型
+	TargetId        uint32                 `protobuf:"varint,3,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`                        // 目标ID
+	LastContent     string                 `protobuf:"bytes,4,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"`                // 最后消息ID
+	LastMessageTime int64                  `protobuf:"varint,5,opt,name=last_message_time,json=lastMessageTime,proto3" json:"last_message_time,omitempty"` // 最后消息时间
+	UnreadCount     int64                  `protobuf:"varint,6,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`               // 未读消息数
+	CreateTime      int64                  `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                  // 创建时间
+	UpdateTime      int64                  `protobuf:"varint,8,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`                  // 更新时间
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *Conversation) Reset() {
+	*x = Conversation{}
+	mi := &file_type_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Conversation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Conversation) ProtoMessage() {}
+
+func (x *Conversation) ProtoReflect() protoreflect.Message {
+	mi := &file_type_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
+func (*Conversation) Descriptor() ([]byte, []int) {
+	return file_type_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *Conversation) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *Conversation) GetType() ConversationType {
+	if x != nil {
+		return x.Type
+	}
+	return ConversationType_CONVERSATION_TYPE_PRIVATE
+}
+
+func (x *Conversation) GetTargetId() uint32 {
+	if x != nil {
+		return x.TargetId
+	}
+	return 0
+}
+
+func (x *Conversation) GetLastContent() string {
+	if x != nil {
+		return x.LastContent
+	}
+	return ""
+}
+
+func (x *Conversation) GetLastMessageTime() int64 {
+	if x != nil {
+		return x.LastMessageTime
+	}
+	return 0
+}
+
+func (x *Conversation) GetUnreadCount() int64 {
+	if x != nil {
+		return x.UnreadCount
+	}
+	return 0
+}
+
+func (x *Conversation) GetCreateTime() int64 {
+	if x != nil {
+		return x.CreateTime
+	}
+	return 0
+}
+
+func (x *Conversation) GetUpdateTime() int64 {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return 0
+}
+
 // 系统通知
 type SystemNotification struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -2553,7 +2699,7 @@ type SystemNotification struct {
 
 func (x *SystemNotification) Reset() {
 	*x = SystemNotification{}
-	mi := &file_type_proto_msgTypes[20]
+	mi := &file_type_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2565,7 +2711,7 @@ func (x *SystemNotification) String() string {
 func (*SystemNotification) ProtoMessage() {}
 
 func (x *SystemNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_type_proto_msgTypes[20]
+	mi := &file_type_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2578,7 +2724,7 @@ func (x *SystemNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemNotification.ProtoReflect.Descriptor instead.
 func (*SystemNotification) Descriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{20}
+	return file_type_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *SystemNotification) GetNotificationId() string {
@@ -2642,7 +2788,7 @@ type Friend struct {
 
 func (x *Friend) Reset() {
 	*x = Friend{}
-	mi := &file_type_proto_msgTypes[21]
+	mi := &file_type_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2654,7 +2800,7 @@ func (x *Friend) String() string {
 func (*Friend) ProtoMessage() {}
 
 func (x *Friend) ProtoReflect() protoreflect.Message {
-	mi := &file_type_proto_msgTypes[21]
+	mi := &file_type_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2667,7 +2813,7 @@ func (x *Friend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Friend.ProtoReflect.Descriptor instead.
 func (*Friend) Descriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{21}
+	return file_type_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *Friend) GetUserId() uint64 {
@@ -2758,7 +2904,7 @@ type FriendRequest struct {
 
 func (x *FriendRequest) Reset() {
 	*x = FriendRequest{}
-	mi := &file_type_proto_msgTypes[22]
+	mi := &file_type_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2770,7 +2916,7 @@ func (x *FriendRequest) String() string {
 func (*FriendRequest) ProtoMessage() {}
 
 func (x *FriendRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_type_proto_msgTypes[22]
+	mi := &file_type_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2783,7 +2929,7 @@ func (x *FriendRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FriendRequest.ProtoReflect.Descriptor instead.
 func (*FriendRequest) Descriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{22}
+	return file_type_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *FriendRequest) GetId() uint64 {
@@ -2867,7 +3013,7 @@ type UserInfo struct {
 
 func (x *UserInfo) Reset() {
 	*x = UserInfo{}
-	mi := &file_type_proto_msgTypes[23]
+	mi := &file_type_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2879,7 +3025,7 @@ func (x *UserInfo) String() string {
 func (*UserInfo) ProtoMessage() {}
 
 func (x *UserInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_type_proto_msgTypes[23]
+	mi := &file_type_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2892,7 +3038,7 @@ func (x *UserInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserInfo.ProtoReflect.Descriptor instead.
 func (*UserInfo) Descriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{23}
+	return file_type_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *UserInfo) GetUserId() uint64 {
@@ -2970,15 +3116,16 @@ type ErrorMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorCode     int32                  `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`                                                     // 错误码
 	ErrorMsg      string                 `protobuf:"bytes,2,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`                                                         // 错误信息
-	RequestId     string                 `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                                                      // 关联的请求ID
-	Details       map[string]string      `protobuf:"bytes,4,rep,name=details,proto3" json:"details,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 错误详情
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                                                      // 关联会话ID
+	RequestId     string                 `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                                                      // 关联的请求ID
+	Details       map[string]string      `protobuf:"bytes,5,rep,name=details,proto3" json:"details,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 错误详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ErrorMessage) Reset() {
 	*x = ErrorMessage{}
-	mi := &file_type_proto_msgTypes[24]
+	mi := &file_type_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2990,7 +3137,7 @@ func (x *ErrorMessage) String() string {
 func (*ErrorMessage) ProtoMessage() {}
 
 func (x *ErrorMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_type_proto_msgTypes[24]
+	mi := &file_type_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3003,7 +3150,7 @@ func (x *ErrorMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorMessage.ProtoReflect.Descriptor instead.
 func (*ErrorMessage) Descriptor() ([]byte, []int) {
-	return file_type_proto_rawDescGZIP(), []int{24}
+	return file_type_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ErrorMessage) GetErrorCode() int32 {
@@ -3016,6 +3163,13 @@ func (x *ErrorMessage) GetErrorCode() int32 {
 func (x *ErrorMessage) GetErrorMsg() string {
 	if x != nil {
 		return x.ErrorMsg
+	}
+	return ""
+}
+
+func (x *ErrorMessage) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
 	}
 	return ""
 }
@@ -3120,12 +3274,13 @@ const file_type_proto_rawDesc = "" +
 	"\x04base\x18\x01 \x01(\v2\x12.types.BaseMessageR\x04base\x12\x1f\n" +
 	"\vcustom_type\x18\x02 \x01(\tR\n" +
 	"customType\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\tR\x04data\"\x9e\x01\n" +
+	"\x04data\x18\x03 \x01(\tR\x04data\"\xa6\x01\n" +
 	"\n" +
 	"MessageAck\x12\x15\n" +
-	"\x06msg_id\x18\x01 \x01(\x03R\x05msgId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x19\n" +
-	"\back_time\x18\x03 \x01(\x03R\aackTime\x12(\n" +
+	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
+	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12(\n" +
 	"\x06status\x18\x04 \x01(\x0e2\x10.types.AckStatusR\x06status\x12\x1b\n" +
 	"\terror_msg\x18\x05 \x01(\tR\berrorMsg\"\x85\x01\n" +
 	"\vMessageRead\x12\x17\n" +
@@ -3195,7 +3350,18 @@ const file_type_proto_rawDesc = "" +
 	"\aop_time\x18\x05 \x01(\x03R\x06opTime\x12\x16\n" +
 	"\x06reason\x18\x06 \x01(\tR\x06reason\x12/\n" +
 	"\n" +
-	"group_info\x18\a \x01(\v2\x10.types.GroupInfoR\tgroupInfo\"\xad\x02\n" +
+	"group_info\x18\a \x01(\v2\x10.types.GroupInfoR\tgroupInfo\"\xb5\x02\n" +
+	"\fConversation\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12+\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x17.types.ConversationTypeR\x04type\x12\x1b\n" +
+	"\ttarget_id\x18\x03 \x01(\rR\btargetId\x12!\n" +
+	"\flast_content\x18\x04 \x01(\tR\vlastContent\x12*\n" +
+	"\x11last_message_time\x18\x05 \x01(\x03R\x0flastMessageTime\x12!\n" +
+	"\funread_count\x18\x06 \x01(\x03R\vunreadCount\x12\x1f\n" +
+	"\vcreate_time\x18\a \x01(\x03R\n" +
+	"createTime\x12\x1f\n" +
+	"\vupdate_time\x18\b \x01(\x03R\n" +
+	"updateTime\"\xad\x02\n" +
 	"\x12SystemNotification\x12'\n" +
 	"\x0fnotification_id\x18\x01 \x01(\tR\x0enotificationId\x12+\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x17.types.NotificationTypeR\x04type\x12\x14\n" +
@@ -3247,14 +3413,16 @@ const file_type_proto_rawDesc = "" +
 	"createTime\x12\x1f\n" +
 	"\vupdate_time\x18\n" +
 	" \x01(\x03R\n" +
-	"updateTime\"\xe1\x01\n" +
+	"updateTime\"\x80\x02\n" +
 	"\fErrorMessage\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x01 \x01(\x05R\terrorCode\x12\x1b\n" +
 	"\terror_msg\x18\x02 \x01(\tR\berrorMsg\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x03 \x01(\tR\trequestId\x12:\n" +
-	"\adetails\x18\x04 \x03(\v2 .types.ErrorMessage.DetailsEntryR\adetails\x1a:\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x04 \x01(\tR\trequestId\x12:\n" +
+	"\adetails\x18\x05 \x03(\v2 .types.ErrorMessage.DetailsEntryR\adetails\x1a:\n" +
 	"\fDetailsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*\xfc\x04\n" +
@@ -3342,7 +3510,10 @@ const file_type_proto_rawDesc = "" +
 	"\x0fGROUP_OP_INVITE\x10\x05\x12\x18\n" +
 	"\x14GROUP_OP_UPDATE_INFO\x10\x06\x12\x11\n" +
 	"\rGROUP_OP_MUTE\x10\a\x12\x13\n" +
-	"\x0fGROUP_OP_UNMUTE\x10\b*\x94\x01\n" +
+	"\x0fGROUP_OP_UNMUTE\x10\b*N\n" +
+	"\x10ConversationType\x12\x1d\n" +
+	"\x19CONVERSATION_TYPE_PRIVATE\x10\x00\x12\x1b\n" +
+	"\x17CONVERSATION_TYPE_GROUP\x10\x01*\x94\x01\n" +
 	"\x10NotificationType\x12\x1c\n" +
 	"\x18NOTIFICATION_TYPE_SYSTEM\x10\x00\x12\"\n" +
 	"\x1eNOTIFICATION_TYPE_ANNOUNCEMENT\x10\x01\x12\x1e\n" +
@@ -3399,8 +3570,8 @@ func file_type_proto_rawDescGZIP() []byte {
 	return file_type_proto_rawDescData
 }
 
-var file_type_proto_enumTypes = make([]protoimpl.EnumInfo, 14)
-var file_type_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_type_proto_enumTypes = make([]protoimpl.EnumInfo, 15)
+var file_type_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_type_proto_goTypes = []any{
 	(MessageType)(0),           // 0: types.MessageType
 	(MessageStatus)(0),         // 1: types.MessageStatus
@@ -3409,76 +3580,79 @@ var file_type_proto_goTypes = []any{
 	(GroupRole)(0),             // 4: types.GroupRole
 	(GroupApplyStatus)(0),      // 5: types.GroupApplyStatus
 	(GroupOperationType)(0),    // 6: types.GroupOperationType
-	(NotificationType)(0),      // 7: types.NotificationType
-	(ApplyStatus)(0),           // 8: types.ApplyStatus
-	(ApplySource)(0),           // 9: types.ApplySource
-	(Gender)(0),                // 10: types.Gender
-	(JoinType)(0),              // 11: types.JoinType
-	(UserStatus)(0),            // 12: types.UserStatus
-	(ErrorCode)(0),             // 13: types.ErrorCode
-	(*WSMessage)(nil),          // 14: types.WSMessage
-	(*InternalMessage)(nil),    // 15: types.InternalMessage
-	(*BaseMessage)(nil),        // 16: types.BaseMessage
-	(*TextMessage)(nil),        // 17: types.TextMessage
-	(*AtInfo)(nil),             // 18: types.AtInfo
-	(*ImageMessage)(nil),       // 19: types.ImageMessage
-	(*VideoMessage)(nil),       // 20: types.VideoMessage
-	(*AudioMessage)(nil),       // 21: types.AudioMessage
-	(*FileMessage)(nil),        // 22: types.FileMessage
-	(*LocationMessage)(nil),    // 23: types.LocationMessage
-	(*CustomMessage)(nil),      // 24: types.CustomMessage
-	(*MessageAck)(nil),         // 25: types.MessageAck
-	(*MessageRead)(nil),        // 26: types.MessageRead
-	(*MessageRecall)(nil),      // 27: types.MessageRecall
-	(*UserOnlineStatus)(nil),   // 28: types.UserOnlineStatus
-	(*TypingStatus)(nil),       // 29: types.TypingStatus
-	(*GroupInfo)(nil),          // 30: types.GroupInfo
-	(*GroupMember)(nil),        // 31: types.GroupMember
-	(*GroupApply)(nil),         // 32: types.GroupApply
-	(*GroupNotification)(nil),  // 33: types.GroupNotification
-	(*SystemNotification)(nil), // 34: types.SystemNotification
-	(*Friend)(nil),             // 35: types.Friend
-	(*FriendRequest)(nil),      // 36: types.FriendRequest
-	(*UserInfo)(nil),           // 37: types.UserInfo
-	(*ErrorMessage)(nil),       // 38: types.ErrorMessage
-	nil,                        // 39: types.InternalMessage.InternalExtEntry
-	nil,                        // 40: types.BaseMessage.ExtEntry
-	nil,                        // 41: types.SystemNotification.DataEntry
-	nil,                        // 42: types.ErrorMessage.DetailsEntry
+	(ConversationType)(0),      // 7: types.ConversationType
+	(NotificationType)(0),      // 8: types.NotificationType
+	(ApplyStatus)(0),           // 9: types.ApplyStatus
+	(ApplySource)(0),           // 10: types.ApplySource
+	(Gender)(0),                // 11: types.Gender
+	(JoinType)(0),              // 12: types.JoinType
+	(UserStatus)(0),            // 13: types.UserStatus
+	(ErrorCode)(0),             // 14: types.ErrorCode
+	(*WSMessage)(nil),          // 15: types.WSMessage
+	(*InternalMessage)(nil),    // 16: types.InternalMessage
+	(*BaseMessage)(nil),        // 17: types.BaseMessage
+	(*TextMessage)(nil),        // 18: types.TextMessage
+	(*AtInfo)(nil),             // 19: types.AtInfo
+	(*ImageMessage)(nil),       // 20: types.ImageMessage
+	(*VideoMessage)(nil),       // 21: types.VideoMessage
+	(*AudioMessage)(nil),       // 22: types.AudioMessage
+	(*FileMessage)(nil),        // 23: types.FileMessage
+	(*LocationMessage)(nil),    // 24: types.LocationMessage
+	(*CustomMessage)(nil),      // 25: types.CustomMessage
+	(*MessageAck)(nil),         // 26: types.MessageAck
+	(*MessageRead)(nil),        // 27: types.MessageRead
+	(*MessageRecall)(nil),      // 28: types.MessageRecall
+	(*UserOnlineStatus)(nil),   // 29: types.UserOnlineStatus
+	(*TypingStatus)(nil),       // 30: types.TypingStatus
+	(*GroupInfo)(nil),          // 31: types.GroupInfo
+	(*GroupMember)(nil),        // 32: types.GroupMember
+	(*GroupApply)(nil),         // 33: types.GroupApply
+	(*GroupNotification)(nil),  // 34: types.GroupNotification
+	(*Conversation)(nil),       // 35: types.Conversation
+	(*SystemNotification)(nil), // 36: types.SystemNotification
+	(*Friend)(nil),             // 37: types.Friend
+	(*FriendRequest)(nil),      // 38: types.FriendRequest
+	(*UserInfo)(nil),           // 39: types.UserInfo
+	(*ErrorMessage)(nil),       // 40: types.ErrorMessage
+	nil,                        // 41: types.InternalMessage.InternalExtEntry
+	nil,                        // 42: types.BaseMessage.ExtEntry
+	nil,                        // 43: types.SystemNotification.DataEntry
+	nil,                        // 44: types.ErrorMessage.DetailsEntry
 }
 var file_type_proto_depIdxs = []int32{
 	0,  // 0: types.WSMessage.type:type_name -> types.MessageType
-	14, // 1: types.InternalMessage.message:type_name -> types.WSMessage
-	39, // 2: types.InternalMessage.internal_ext:type_name -> types.InternalMessage.InternalExtEntry
+	15, // 1: types.InternalMessage.message:type_name -> types.WSMessage
+	41, // 2: types.InternalMessage.internal_ext:type_name -> types.InternalMessage.InternalExtEntry
 	1,  // 3: types.BaseMessage.status:type_name -> types.MessageStatus
-	40, // 4: types.BaseMessage.ext:type_name -> types.BaseMessage.ExtEntry
-	16, // 5: types.TextMessage.base:type_name -> types.BaseMessage
-	18, // 6: types.TextMessage.at_list:type_name -> types.AtInfo
-	16, // 7: types.ImageMessage.base:type_name -> types.BaseMessage
-	16, // 8: types.VideoMessage.base:type_name -> types.BaseMessage
-	16, // 9: types.AudioMessage.base:type_name -> types.BaseMessage
-	16, // 10: types.FileMessage.base:type_name -> types.BaseMessage
-	16, // 11: types.LocationMessage.base:type_name -> types.BaseMessage
-	16, // 12: types.CustomMessage.base:type_name -> types.BaseMessage
+	42, // 4: types.BaseMessage.ext:type_name -> types.BaseMessage.ExtEntry
+	17, // 5: types.TextMessage.base:type_name -> types.BaseMessage
+	19, // 6: types.TextMessage.at_list:type_name -> types.AtInfo
+	17, // 7: types.ImageMessage.base:type_name -> types.BaseMessage
+	17, // 8: types.VideoMessage.base:type_name -> types.BaseMessage
+	17, // 9: types.AudioMessage.base:type_name -> types.BaseMessage
+	17, // 10: types.FileMessage.base:type_name -> types.BaseMessage
+	17, // 11: types.LocationMessage.base:type_name -> types.BaseMessage
+	17, // 12: types.CustomMessage.base:type_name -> types.BaseMessage
 	2,  // 13: types.MessageAck.status:type_name -> types.AckStatus
 	3,  // 14: types.UserOnlineStatus.status:type_name -> types.OnlineStatus
 	4,  // 15: types.GroupMember.role:type_name -> types.GroupRole
 	5,  // 16: types.GroupApply.status:type_name -> types.GroupApplyStatus
 	6,  // 17: types.GroupNotification.op_type:type_name -> types.GroupOperationType
-	30, // 18: types.GroupNotification.group_info:type_name -> types.GroupInfo
-	7,  // 19: types.SystemNotification.type:type_name -> types.NotificationType
-	41, // 20: types.SystemNotification.data:type_name -> types.SystemNotification.DataEntry
-	8,  // 21: types.FriendRequest.status:type_name -> types.ApplyStatus
-	9,  // 22: types.FriendRequest.source:type_name -> types.ApplySource
-	10, // 23: types.UserInfo.gender:type_name -> types.Gender
-	11, // 24: types.UserInfo.join_type:type_name -> types.JoinType
-	12, // 25: types.UserInfo.status:type_name -> types.UserStatus
-	42, // 26: types.ErrorMessage.details:type_name -> types.ErrorMessage.DetailsEntry
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	31, // 18: types.GroupNotification.group_info:type_name -> types.GroupInfo
+	7,  // 19: types.Conversation.type:type_name -> types.ConversationType
+	8,  // 20: types.SystemNotification.type:type_name -> types.NotificationType
+	43, // 21: types.SystemNotification.data:type_name -> types.SystemNotification.DataEntry
+	9,  // 22: types.FriendRequest.status:type_name -> types.ApplyStatus
+	10, // 23: types.FriendRequest.source:type_name -> types.ApplySource
+	11, // 24: types.UserInfo.gender:type_name -> types.Gender
+	12, // 25: types.UserInfo.join_type:type_name -> types.JoinType
+	13, // 26: types.UserInfo.status:type_name -> types.UserStatus
+	44, // 27: types.ErrorMessage.details:type_name -> types.ErrorMessage.DetailsEntry
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_type_proto_init() }
@@ -3491,8 +3665,8 @@ func file_type_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_type_proto_rawDesc), len(file_type_proto_rawDesc)),
-			NumEnums:      14,
-			NumMessages:   29,
+			NumEnums:      15,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

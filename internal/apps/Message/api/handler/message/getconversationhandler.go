@@ -9,17 +9,17 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
-// 获取会话列表
-func GetConversationListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+// 批量获取会话详情
+func GetConversationHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.GetConversationListReq
+		var req types.GetConversationReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
-		l := message.NewGetConversationListLogic(r.Context(), svcCtx)
-		resp, err := l.GetConversationList(&req)
+		l := message.NewGetConversationLogic(r.Context(), svcCtx)
+		resp, err := l.GetConversation(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

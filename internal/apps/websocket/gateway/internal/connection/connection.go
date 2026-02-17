@@ -2,12 +2,12 @@ package connection
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/types"
-	"IM2/pkg/xerr"
 
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -31,6 +31,7 @@ type Connection struct {
 	Platform string
 	Conn     *websocket.Conn
 	Codec    protocol.Codec
+	Version  int32
 
 	sendChan  chan []byte
 	closeChan chan struct{}
@@ -40,13 +41,14 @@ type Connection struct {
 }
 
 // NewConnection 创建新连接
-func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Conn, codec protocol.Codec) *Connection {
+func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Conn, codec protocol.Codec, version int32) *Connection {
 	return &Connection{
 		UserID:    userID,
 		DeviceID:  deviceID,
 		Platform:  platform,
 		Conn:      conn,
 		Codec:     codec,
+		Version:   version,
 		sendChan:  make(chan []byte, 256),
 		closeChan: make(chan struct{}),
 	}
@@ -54,6 +56,7 @@ func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Con
 
 // Send 发送消息
 func (c *Connection) Send(msg *types.WSMessage) error {
+	msg.Version = c.Version
 	data, err := c.Codec.Encode(msg)
 	if err != nil {
 		return err
@@ -67,10 +70,16 @@ func (c *Connection) SendRaw(data []byte) error {
 	case c.sendChan <- data:
 		return nil
 	case <-c.closeChan:
-		return xerr.New(xerr.ErrInternalServer, "connection closed")
+		return errors.New("connection closed")
 	default:
-		return xerr.New(xerr.ErrInternalServer, "send buffer full")
+		return errors.New("send buffer full")
 	}
+}
+
+// SendError 发送错误消息
+func (c *Connection) SendError(msg *types.ErrorMessage) error {
+	wsMsg, _ := protocol.NewWSMessage(types.MessageType_ERROR, msg)
+	return c.Send(wsMsg)
 }
 
 // Close 关闭连接

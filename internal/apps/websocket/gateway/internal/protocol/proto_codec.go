@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"IM2/internal/apps/websocket/gateway/types"
-	"IM2/pkg/xerr"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -19,7 +18,7 @@ func NewProtoCodec() *ProtoCodec {
 func (c *ProtoCodec) Encode(msg *types.WSMessage) ([]byte, error) {
 	data, err := proto.Marshal(msg)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "proto encode WSMessage failed")
+		return nil, err
 	}
 	return data, nil
 }
@@ -28,7 +27,7 @@ func (c *ProtoCodec) Encode(msg *types.WSMessage) ([]byte, error) {
 func (c *ProtoCodec) Decode(data []byte) (*types.WSMessage, error) {
 	msg := &types.WSMessage{}
 	if err := proto.Unmarshal(data, msg); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "proto decode WSMessage failed")
+		return nil, err
 	}
 	return msg, nil
 }
@@ -37,7 +36,7 @@ func (c *ProtoCodec) Decode(data []byte) (*types.WSMessage, error) {
 func (c *ProtoCodec) EncodeInternal(msg *types.InternalMessage) ([]byte, error) {
 	data, err := proto.Marshal(msg)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode internal message failed")
+		return nil, err
 	}
 	return data, nil
 }
@@ -46,7 +45,7 @@ func (c *ProtoCodec) EncodeInternal(msg *types.InternalMessage) ([]byte, error) 
 func (c *ProtoCodec) DecodeInternal(data []byte) (*types.InternalMessage, error) {
 	msg := &types.InternalMessage{}
 	if err := proto.Unmarshal(data, msg); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode internal message failed")
+		return nil, err
 	}
 	return msg, nil
 }

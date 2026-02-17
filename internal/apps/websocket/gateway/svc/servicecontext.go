@@ -8,6 +8,7 @@ import (
 	"IM2/internal/apps/Group/rpc/client/grouprpc"
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/internal/connection"
+	"IM2/internal/apps/websocket/gateway/internal/dao"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/pubsub"
 	"IM2/internal/apps/websocket/gateway/internal/router"
@@ -30,6 +31,7 @@ type ServiceContext struct {
 	NatsConn          *nats.Conn
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
+	MessageDao        *dao.MessageDAO
 
 	GroupRpc grouprpc.GroupRpc
 }
@@ -85,6 +87,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		NatsConn:          natsConn,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
+		MessageDao:        dao.NewMessageDAO(c.DAO.MysqlSource, c.DAO.CacheSource),
 		GroupRpc:          grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc)),
 	}
 

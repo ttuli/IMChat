@@ -23,11 +23,6 @@ func NewMessageRpcServer(svcCtx *svc.ServiceContext) *MessageRpcServer {
 	}
 }
 
-func (s *MessageRpcServer) SendMessage(ctx context.Context, in *message.SendMessageReq) (*message.SendMessageResp, error) {
-	l := messagerpclogic.NewSendMessageLogic(ctx, s.svcCtx)
-	return l.SendMessage(in)
-}
-
 func (s *MessageRpcServer) GetHistory(ctx context.Context, in *message.GetHistoryReq) (*message.GetHistoryResp, error) {
 	l := messagerpclogic.NewGetHistoryLogic(ctx, s.svcCtx)
 	return l.GetHistory(in)
@@ -46,4 +41,9 @@ func (s *MessageRpcServer) ReadMessage(ctx context.Context, in *message.ReadMess
 func (s *MessageRpcServer) UpdateConversation(ctx context.Context, in *message.UpdateConversationReq) (*message.UpdateConversationResp, error) {
 	l := messagerpclogic.NewUpdateConversationLogic(ctx, s.svcCtx)
 	return l.UpdateConversation(in)
+}
+
+func (s *MessageRpcServer) GetUserConversations(ctx context.Context, in *message.GetUserConversationsReq) (*message.GetUserConversationsResp, error) {
+	l := messagerpclogic.NewGetUserConversationsLogic(ctx, s.svcCtx)
+	return l.GetUserConversations(in)
 }

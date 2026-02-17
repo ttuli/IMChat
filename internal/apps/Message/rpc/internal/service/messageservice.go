@@ -2,23 +2,14 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"IM2/internal/model"
 )
-
-// SendMessageResult 发送消息的返回结果
-type SendMessageResult struct {
-	Seq        uint64
-	CreateTime time.Time
-}
 
 // MessageService 消息服务接口
 type MessageService interface {
 	// ========== 消息操作 ==========
 
-	// SendMessage 发送消息（生成Seq、存MongoDB、更新会话）
-	SendMessage(ctx context.Context, msgID, conversationID string, fromUserID uint64, msgType int16, content, mediaURL string, extra map[string]any) (*SendMessageResult, error)
 	// GetHistory 获取历史消息（基于Seq游标分页）
 	GetHistory(ctx context.Context, conversationID string, cursorSeq uint64, limit int) ([]*model.Message, error)
 
@@ -30,4 +21,8 @@ type MessageService interface {
 	ReadMessage(ctx context.Context, userID uint64, conversationID string, seq uint64) error
 	// UpdateConversation 更新会话设置（置顶/免打扰/静音）
 	UpdateConversation(ctx context.Context, userID uint64, conversationID string, isTop, isDisturb, isMute int32) error
+	// GetConversation 批量获取会话详情
+	GetConversation(ctx context.Context, conversationIDs []string) ([]*model.Conversation, error)
+	// GetUserConversations 获取用户所有会话（含未读数等用户维度信息）
+	GetUserConversations(ctx context.Context, userID uint64) ([]*model.UserConversation, error)
 }

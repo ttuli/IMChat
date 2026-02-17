@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"IM2/internal/apps/Group/rpc/group"
@@ -60,12 +59,14 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// 创建连接
-	conn := connection.NewConnection(userID, deviceID, platform, wsConn, h.codec)
-
-	fmt.Println("conn add")
+	conn := connection.NewConnection(userID, deviceID, platform, wsConn, h.codec, h.svcCtx.Config.WebSocket.Version)
 	// 注册连接
 	if err := h.svcCtx.ConnectionManager.AddConnection(conn.UserID, conn); err != nil {
-		resultx.ErrorCtx(r.Context(), w, xerr.Wrap(err, xerr.ErrWsConnAdd, "建立连接失败"))
+		h.svcCtx.TelemetryBus.Publish(err)
+		conn.SendError(&types.ErrorMessage{
+			ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+			ErrorMsg:  "与服务器建立连接失败",
+		})
 		conn.Close()
 		return
 	}
@@ -74,7 +75,11 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	// 注册路由
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
-		resultx.ErrorCtx(r.Context(), w, xerr.Wrap(err, xerr.ErrWsConnAdd, "注册路由失败"))
+		h.svcCtx.TelemetryBus.Publish(err)
+		conn.SendError(&types.ErrorMessage{
+			ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+			ErrorMsg:  "与服务器建立连接失败",
+		})
 		conn.Close()
 		return
 	}
@@ -111,7 +116,10 @@ func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) {
 		logx.Errorf("get user %d groups failed: %v", userID, err)
 		// 获取群列表失败是严重错误，断开连接让客户端重连
 		if conn, ok := h.svcCtx.ConnectionManager.GetLocalConnection(userID); ok {
-			h.sendError(conn.Conn, 500, "internal server error: failed to load groups")
+			conn.SendError(&types.ErrorMessage{
+				ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+				ErrorMsg:  "与服务器建立连接失败",
+			})
 			conn.Close()
 		}
 		return
@@ -130,13 +138,6 @@ func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) {
 		}
 	}
 	logger.Infof("added user %d to %d groups", userID, len(resp.Data))
-}
-
-// sendError 发送错误消息
-func (h *WSHandler) sendError(wsConn *websocket.Conn, code int32, message string) {
-	errMsg := protocol.NewErrorWSMessage(code, message)
-	data, _ := h.codec.Encode(errMsg)
-	wsConn.WriteMessage(websocket.TextMessage, data)
 }
 
 // ConfigureUpgrader 配置升级器

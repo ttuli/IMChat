@@ -1,10 +1,10 @@
 package protocol
 
 import (
+	"errors"
 	"time"
 
 	"IM2/internal/apps/websocket/gateway/types"
-	"IM2/pkg/xerr"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -14,12 +14,11 @@ func NewWSMessage(msgType types.MessageType, payload proto.Message) (*types.WSMe
 	msg := &types.WSMessage{
 		Timestamp: time.Now().UnixMilli(),
 		Type:      msgType,
-		Version:   1,
 	}
 	if payload != nil {
 		data, err := proto.Marshal(payload)
 		if err != nil {
-			return nil, xerr.Wrap(err, xerr.ErrEncoding, "marshal payload failed")
+			return nil, err
 		}
 		msg.Payload = data
 	}
@@ -37,17 +36,32 @@ func NewErrorWSMessage(code int32, message string) *types.WSMessage {
 		Timestamp: time.Now().UnixMilli(),
 		Type:      types.MessageType_ERROR,
 		Payload:   data,
-		Version:   1,
 	}
+}
+
+func NewAckMessage(base *types.BaseMessage, st types.AckStatus) *types.WSMessage {
+	wm := &types.WSMessage{
+		Timestamp: time.Now().UnixMilli(),
+		Type:      types.MessageType_MSG_ACK,
+	}
+	ack := &types.MessageAck{
+		MsgId:     base.MsgId,
+		ClientId:  base.ClientId,
+		SessionId: base.SessionId,
+		Status:    st,
+	}
+	data, _ := proto.Marshal(ack)
+	wm.Payload = data
+	return wm
 }
 
 // DecodePayload 从 WSMessage 中解码 payload 到指定 proto message
 func DecodePayload[T proto.Message](msg *types.WSMessage, target T) error {
 	if len(msg.Payload) == 0 {
-		return xerr.New(xerr.ErrInvalidParams, "empty payload")
+		return errors.New("empty payload")
 	}
 	if err := proto.Unmarshal(msg.Payload, target); err != nil {
-		return xerr.Wrap(err, xerr.ErrDecoding, "unmarshal payload failed")
+		return err
 	}
 	return nil
 }
