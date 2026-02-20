@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v3.19.4
-// source: file.proto
+// source: file_api.proto
 
 package types
 
@@ -47,7 +47,7 @@ type PolicyToken struct {
 
 func (x *PolicyToken) Reset() {
 	*x = PolicyToken{}
-	mi := &file_file_proto_msgTypes[0]
+	mi := &file_file_api_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -59,7 +59,7 @@ func (x *PolicyToken) String() string {
 func (*PolicyToken) ProtoMessage() {}
 
 func (x *PolicyToken) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[0]
+	mi := &file_file_api_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -72,7 +72,7 @@ func (x *PolicyToken) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PolicyToken.ProtoReflect.Descriptor instead.
 func (*PolicyToken) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{0}
+	return file_file_api_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *PolicyToken) GetPolicy() string {
@@ -152,7 +152,7 @@ type CallbackParam struct {
 
 func (x *CallbackParam) Reset() {
 	*x = CallbackParam{}
-	mi := &file_file_proto_msgTypes[1]
+	mi := &file_file_api_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -164,7 +164,7 @@ func (x *CallbackParam) String() string {
 func (*CallbackParam) ProtoMessage() {}
 
 func (x *CallbackParam) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[1]
+	mi := &file_file_api_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -177,7 +177,7 @@ func (x *CallbackParam) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallbackParam.ProtoReflect.Descriptor instead.
 func (*CallbackParam) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{1}
+	return file_file_api_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CallbackParam) GetCallbackUrl() string {
@@ -223,7 +223,7 @@ type CallbackData struct {
 
 func (x *CallbackData) Reset() {
 	*x = CallbackData{}
-	mi := &file_file_proto_msgTypes[2]
+	mi := &file_file_api_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +235,7 @@ func (x *CallbackData) String() string {
 func (*CallbackData) ProtoMessage() {}
 
 func (x *CallbackData) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[2]
+	mi := &file_file_api_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +248,7 @@ func (x *CallbackData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallbackData.ProtoReflect.Descriptor instead.
 func (*CallbackData) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{2}
+	return file_file_api_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CallbackData) GetId() uint64 {
@@ -310,7 +310,7 @@ type GetPostSignatureReq struct {
 
 func (x *GetPostSignatureReq) Reset() {
 	*x = GetPostSignatureReq{}
-	mi := &file_file_proto_msgTypes[3]
+	mi := &file_file_api_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -322,7 +322,7 @@ func (x *GetPostSignatureReq) String() string {
 func (*GetPostSignatureReq) ProtoMessage() {}
 
 func (x *GetPostSignatureReq) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[3]
+	mi := &file_file_api_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -335,7 +335,7 @@ func (x *GetPostSignatureReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPostSignatureReq.ProtoReflect.Descriptor instead.
 func (*GetPostSignatureReq) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{3}
+	return file_file_api_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetPostSignatureReq) GetFileType() int32 {
@@ -345,12 +345,11 @@ func (x *GetPostSignatureReq) GetFileType() int32 {
 	return 0
 }
 
-var File_file_proto protoreflect.FileDescriptor
+var File_file_api_proto protoreflect.FileDescriptor
 
-const file_file_proto_rawDesc = "" +
+const file_file_api_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"file.proto\x12\x05types\"\xab\x02\n" +
+	"\x0efile_api.proto\x12\x05types\"\xab\x02\n" +
 	"\vPolicyToken\x12\x16\n" +
 	"\x06policy\x18\x01 \x01(\tR\x06policy\x12%\n" +
 	"\x0esecurity_token\x18\x02 \x01(\tR\rsecurityToken\x125\n" +
@@ -379,25 +378,25 @@ const file_file_proto_rawDesc = "" +
 	"Z\b./;typesb\x06proto3"
 
 var (
-	file_file_proto_rawDescOnce sync.Once
-	file_file_proto_rawDescData []byte
+	file_file_api_proto_rawDescOnce sync.Once
+	file_file_api_proto_rawDescData []byte
 )
 
-func file_file_proto_rawDescGZIP() []byte {
-	file_file_proto_rawDescOnce.Do(func() {
-		file_file_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)))
+func file_file_api_proto_rawDescGZIP() []byte {
+	file_file_api_proto_rawDescOnce.Do(func() {
+		file_file_api_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_file_api_proto_rawDesc), len(file_file_api_proto_rawDesc)))
 	})
-	return file_file_proto_rawDescData
+	return file_file_api_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_file_proto_goTypes = []any{
+var file_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_file_api_proto_goTypes = []any{
 	(*PolicyToken)(nil),         // 0: types.PolicyToken
 	(*CallbackParam)(nil),       // 1: types.CallbackParam
 	(*CallbackData)(nil),        // 2: types.CallbackData
 	(*GetPostSignatureReq)(nil), // 3: types.GetPostSignatureReq
 }
-var file_file_proto_depIdxs = []int32{
+var file_file_api_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -405,26 +404,26 @@ var file_file_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_file_proto_init() }
-func file_file_proto_init() {
-	if File_file_proto != nil {
+func init() { file_file_api_proto_init() }
+func file_file_api_proto_init() {
+	if File_file_api_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_api_proto_rawDesc), len(file_file_api_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_file_proto_goTypes,
-		DependencyIndexes: file_file_proto_depIdxs,
-		MessageInfos:      file_file_proto_msgTypes,
+		GoTypes:           file_file_api_proto_goTypes,
+		DependencyIndexes: file_file_api_proto_depIdxs,
+		MessageInfos:      file_file_api_proto_msgTypes,
 	}.Build()
-	File_file_proto = out.File
-	file_file_proto_goTypes = nil
-	file_file_proto_depIdxs = nil
+	File_file_api_proto = out.File
+	file_file_api_proto_goTypes = nil
+	file_file_api_proto_depIdxs = nil
 }

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v3.19.4
-// source: user.proto
+// source: user_api.proto
 
 package types
 
@@ -50,7 +50,7 @@ type UserInfo struct {
 
 func (x *UserInfo) Reset() {
 	*x = UserInfo{}
-	mi := &file_user_proto_msgTypes[0]
+	mi := &file_user_api_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -62,7 +62,7 @@ func (x *UserInfo) String() string {
 func (*UserInfo) ProtoMessage() {}
 
 func (x *UserInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[0]
+	mi := &file_user_api_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -75,7 +75,7 @@ func (x *UserInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserInfo.ProtoReflect.Descriptor instead.
 func (*UserInfo) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{0}
+	return file_user_api_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *UserInfo) GetUserId() uint64 {
@@ -173,7 +173,7 @@ type Friend struct {
 
 func (x *Friend) Reset() {
 	*x = Friend{}
-	mi := &file_user_proto_msgTypes[1]
+	mi := &file_user_api_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -185,7 +185,7 @@ func (x *Friend) String() string {
 func (*Friend) ProtoMessage() {}
 
 func (x *Friend) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[1]
+	mi := &file_user_api_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -198,7 +198,7 @@ func (x *Friend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Friend.ProtoReflect.Descriptor instead.
 func (*Friend) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{1}
+	return file_user_api_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Friend) GetUserId() uint64 {
@@ -284,7 +284,7 @@ type FriendRequest struct {
 
 func (x *FriendRequest) Reset() {
 	*x = FriendRequest{}
-	mi := &file_user_proto_msgTypes[2]
+	mi := &file_user_api_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -296,7 +296,7 @@ func (x *FriendRequest) String() string {
 func (*FriendRequest) ProtoMessage() {}
 
 func (x *FriendRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[2]
+	mi := &file_user_api_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +309,7 @@ func (x *FriendRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FriendRequest.ProtoReflect.Descriptor instead.
 func (*FriendRequest) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{2}
+	return file_user_api_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *FriendRequest) GetRequestId() uint64 {
@@ -394,7 +394,7 @@ type GetUserInfoReq struct {
 
 func (x *GetUserInfoReq) Reset() {
 	*x = GetUserInfoReq{}
-	mi := &file_user_proto_msgTypes[3]
+	mi := &file_user_api_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -406,7 +406,7 @@ func (x *GetUserInfoReq) String() string {
 func (*GetUserInfoReq) ProtoMessage() {}
 
 func (x *GetUserInfoReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[3]
+	mi := &file_user_api_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,7 +419,7 @@ func (x *GetUserInfoReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserInfoReq.ProtoReflect.Descriptor instead.
 func (*GetUserInfoReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{3}
+	return file_user_api_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetUserInfoReq) GetIds() []uint64 {
@@ -467,7 +467,7 @@ type GetUserInfoResp struct {
 
 func (x *GetUserInfoResp) Reset() {
 	*x = GetUserInfoResp{}
-	mi := &file_user_proto_msgTypes[4]
+	mi := &file_user_api_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -479,7 +479,7 @@ func (x *GetUserInfoResp) String() string {
 func (*GetUserInfoResp) ProtoMessage() {}
 
 func (x *GetUserInfoResp) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[4]
+	mi := &file_user_api_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -492,7 +492,7 @@ func (x *GetUserInfoResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserInfoResp.ProtoReflect.Descriptor instead.
 func (*GetUserInfoResp) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{4}
+	return file_user_api_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetUserInfoResp) GetData() []*UserInfo {
@@ -521,7 +521,7 @@ type UpdateInfoReq struct {
 
 func (x *UpdateInfoReq) Reset() {
 	*x = UpdateInfoReq{}
-	mi := &file_user_proto_msgTypes[5]
+	mi := &file_user_api_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -533,7 +533,7 @@ func (x *UpdateInfoReq) String() string {
 func (*UpdateInfoReq) ProtoMessage() {}
 
 func (x *UpdateInfoReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[5]
+	mi := &file_user_api_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +546,7 @@ func (x *UpdateInfoReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateInfoReq.ProtoReflect.Descriptor instead.
 func (*UpdateInfoReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{5}
+	return file_user_api_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UpdateInfoReq) GetUserName() string {
@@ -593,7 +593,7 @@ type GetFriendsReq struct {
 
 func (x *GetFriendsReq) Reset() {
 	*x = GetFriendsReq{}
-	mi := &file_user_proto_msgTypes[6]
+	mi := &file_user_api_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -605,7 +605,7 @@ func (x *GetFriendsReq) String() string {
 func (*GetFriendsReq) ProtoMessage() {}
 
 func (x *GetFriendsReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[6]
+	mi := &file_user_api_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -618,7 +618,7 @@ func (x *GetFriendsReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFriendsReq.ProtoReflect.Descriptor instead.
 func (*GetFriendsReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{6}
+	return file_user_api_proto_rawDescGZIP(), []int{6}
 }
 
 // GetFriendsResp
@@ -631,7 +631,7 @@ type GetFriendsResp struct {
 
 func (x *GetFriendsResp) Reset() {
 	*x = GetFriendsResp{}
-	mi := &file_user_proto_msgTypes[7]
+	mi := &file_user_api_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -643,7 +643,7 @@ func (x *GetFriendsResp) String() string {
 func (*GetFriendsResp) ProtoMessage() {}
 
 func (x *GetFriendsResp) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[7]
+	mi := &file_user_api_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -656,7 +656,7 @@ func (x *GetFriendsResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFriendsResp.ProtoReflect.Descriptor instead.
 func (*GetFriendsResp) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{7}
+	return file_user_api_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetFriendsResp) GetData() []*Friend {
@@ -681,7 +681,7 @@ type CreateFriendReq struct {
 
 func (x *CreateFriendReq) Reset() {
 	*x = CreateFriendReq{}
-	mi := &file_user_proto_msgTypes[8]
+	mi := &file_user_api_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -693,7 +693,7 @@ func (x *CreateFriendReq) String() string {
 func (*CreateFriendReq) ProtoMessage() {}
 
 func (x *CreateFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[8]
+	mi := &file_user_api_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +706,7 @@ func (x *CreateFriendReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateFriendReq.ProtoReflect.Descriptor instead.
 func (*CreateFriendReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{8}
+	return file_user_api_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *CreateFriendReq) GetFriendId() uint64 {
@@ -747,7 +747,7 @@ type UpdateFriendReq struct {
 
 func (x *UpdateFriendReq) Reset() {
 	*x = UpdateFriendReq{}
-	mi := &file_user_proto_msgTypes[9]
+	mi := &file_user_api_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -759,7 +759,7 @@ func (x *UpdateFriendReq) String() string {
 func (*UpdateFriendReq) ProtoMessage() {}
 
 func (x *UpdateFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[9]
+	mi := &file_user_api_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -772,7 +772,7 @@ func (x *UpdateFriendReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateFriendReq.ProtoReflect.Descriptor instead.
 func (*UpdateFriendReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{9}
+	return file_user_api_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateFriendReq) GetFriendId() uint64 {
@@ -814,7 +814,7 @@ type DeleteFriendReq struct {
 
 func (x *DeleteFriendReq) Reset() {
 	*x = DeleteFriendReq{}
-	mi := &file_user_proto_msgTypes[10]
+	mi := &file_user_api_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -826,7 +826,7 @@ func (x *DeleteFriendReq) String() string {
 func (*DeleteFriendReq) ProtoMessage() {}
 
 func (x *DeleteFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[10]
+	mi := &file_user_api_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -839,7 +839,7 @@ func (x *DeleteFriendReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteFriendReq.ProtoReflect.Descriptor instead.
 func (*DeleteFriendReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{10}
+	return file_user_api_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeleteFriendReq) GetFriendId() uint64 {
@@ -864,7 +864,7 @@ type NewFriendApplyReq struct {
 
 func (x *NewFriendApplyReq) Reset() {
 	*x = NewFriendApplyReq{}
-	mi := &file_user_proto_msgTypes[11]
+	mi := &file_user_api_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -876,7 +876,7 @@ func (x *NewFriendApplyReq) String() string {
 func (*NewFriendApplyReq) ProtoMessage() {}
 
 func (x *NewFriendApplyReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[11]
+	mi := &file_user_api_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -889,7 +889,7 @@ func (x *NewFriendApplyReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewFriendApplyReq.ProtoReflect.Descriptor instead.
 func (*NewFriendApplyReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{11}
+	return file_user_api_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NewFriendApplyReq) GetToUserId() uint64 {
@@ -923,7 +923,7 @@ type NewFriendApplyResp struct {
 
 func (x *NewFriendApplyResp) Reset() {
 	*x = NewFriendApplyResp{}
-	mi := &file_user_proto_msgTypes[12]
+	mi := &file_user_api_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -935,7 +935,7 @@ func (x *NewFriendApplyResp) String() string {
 func (*NewFriendApplyResp) ProtoMessage() {}
 
 func (x *NewFriendApplyResp) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[12]
+	mi := &file_user_api_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -948,7 +948,7 @@ func (x *NewFriendApplyResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewFriendApplyResp.ProtoReflect.Descriptor instead.
 func (*NewFriendApplyResp) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{12}
+	return file_user_api_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NewFriendApplyResp) GetData() *FriendRequest {
@@ -973,7 +973,7 @@ type HandleFriendApplyReq struct {
 
 func (x *HandleFriendApplyReq) Reset() {
 	*x = HandleFriendApplyReq{}
-	mi := &file_user_proto_msgTypes[13]
+	mi := &file_user_api_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -985,7 +985,7 @@ func (x *HandleFriendApplyReq) String() string {
 func (*HandleFriendApplyReq) ProtoMessage() {}
 
 func (x *HandleFriendApplyReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[13]
+	mi := &file_user_api_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -998,7 +998,7 @@ func (x *HandleFriendApplyReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleFriendApplyReq.ProtoReflect.Descriptor instead.
 func (*HandleFriendApplyReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{13}
+	return file_user_api_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *HandleFriendApplyReq) GetRequestId() uint64 {
@@ -1031,7 +1031,7 @@ type GetPendingFriendAppliesReq struct {
 
 func (x *GetPendingFriendAppliesReq) Reset() {
 	*x = GetPendingFriendAppliesReq{}
-	mi := &file_user_proto_msgTypes[14]
+	mi := &file_user_api_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1043,7 +1043,7 @@ func (x *GetPendingFriendAppliesReq) String() string {
 func (*GetPendingFriendAppliesReq) ProtoMessage() {}
 
 func (x *GetPendingFriendAppliesReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[14]
+	mi := &file_user_api_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1056,7 +1056,7 @@ func (x *GetPendingFriendAppliesReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingFriendAppliesReq.ProtoReflect.Descriptor instead.
 func (*GetPendingFriendAppliesReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{14}
+	return file_user_api_proto_rawDescGZIP(), []int{14}
 }
 
 // GetPendingFriendAppliesResp
@@ -1069,7 +1069,7 @@ type GetPendingFriendAppliesResp struct {
 
 func (x *GetPendingFriendAppliesResp) Reset() {
 	*x = GetPendingFriendAppliesResp{}
-	mi := &file_user_proto_msgTypes[15]
+	mi := &file_user_api_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1081,7 +1081,7 @@ func (x *GetPendingFriendAppliesResp) String() string {
 func (*GetPendingFriendAppliesResp) ProtoMessage() {}
 
 func (x *GetPendingFriendAppliesResp) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[15]
+	mi := &file_user_api_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1094,7 +1094,7 @@ func (x *GetPendingFriendAppliesResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingFriendAppliesResp.ProtoReflect.Descriptor instead.
 func (*GetPendingFriendAppliesResp) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{15}
+	return file_user_api_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetPendingFriendAppliesResp) GetData() []*FriendRequest {
@@ -1123,7 +1123,7 @@ type SearchFriendReq struct {
 
 func (x *SearchFriendReq) Reset() {
 	*x = SearchFriendReq{}
-	mi := &file_user_proto_msgTypes[16]
+	mi := &file_user_api_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1135,7 +1135,7 @@ func (x *SearchFriendReq) String() string {
 func (*SearchFriendReq) ProtoMessage() {}
 
 func (x *SearchFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[16]
+	mi := &file_user_api_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1148,7 +1148,7 @@ func (x *SearchFriendReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchFriendReq.ProtoReflect.Descriptor instead.
 func (*SearchFriendReq) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{16}
+	return file_user_api_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *SearchFriendReq) GetName() string {
@@ -1197,7 +1197,7 @@ type SearchFriendResp struct {
 
 func (x *SearchFriendResp) Reset() {
 	*x = SearchFriendResp{}
-	mi := &file_user_proto_msgTypes[17]
+	mi := &file_user_api_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1209,7 +1209,7 @@ func (x *SearchFriendResp) String() string {
 func (*SearchFriendResp) ProtoMessage() {}
 
 func (x *SearchFriendResp) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[17]
+	mi := &file_user_api_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1222,7 +1222,7 @@ func (x *SearchFriendResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchFriendResp.ProtoReflect.Descriptor instead.
 func (*SearchFriendResp) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{17}
+	return file_user_api_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SearchFriendResp) GetData() []*UserInfo {
@@ -1239,12 +1239,11 @@ func (x *SearchFriendResp) GetTotal() int64 {
 	return 0
 }
 
-var File_user_proto protoreflect.FileDescriptor
+var File_user_api_proto protoreflect.FileDescriptor
 
-const file_user_proto_rawDesc = "" +
+const file_user_api_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"user.proto\x12\x05types\"\xac\x02\n" +
+	"\x0euser_api.proto\x12\x05types\"\xac\x02\n" +
 	"\bUserInfo\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1b\n" +
 	"\tuser_name\x18\x02 \x01(\tR\buserName\x12\x16\n" +
@@ -1338,19 +1337,19 @@ const file_user_proto_rawDesc = "" +
 	"Z\b./;typesb\x06proto3"
 
 var (
-	file_user_proto_rawDescOnce sync.Once
-	file_user_proto_rawDescData []byte
+	file_user_api_proto_rawDescOnce sync.Once
+	file_user_api_proto_rawDescData []byte
 )
 
-func file_user_proto_rawDescGZIP() []byte {
-	file_user_proto_rawDescOnce.Do(func() {
-		file_user_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)))
+func file_user_api_proto_rawDescGZIP() []byte {
+	file_user_api_proto_rawDescOnce.Do(func() {
+		file_user_api_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_user_api_proto_rawDesc), len(file_user_api_proto_rawDesc)))
 	})
-	return file_user_proto_rawDescData
+	return file_user_api_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
-var file_user_proto_goTypes = []any{
+var file_user_api_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_user_api_proto_goTypes = []any{
 	(*UserInfo)(nil),                    // 0: types.UserInfo
 	(*Friend)(nil),                      // 1: types.Friend
 	(*FriendRequest)(nil),               // 2: types.FriendRequest
@@ -1370,7 +1369,7 @@ var file_user_proto_goTypes = []any{
 	(*SearchFriendReq)(nil),             // 16: types.SearchFriendReq
 	(*SearchFriendResp)(nil),            // 17: types.SearchFriendResp
 }
-var file_user_proto_depIdxs = []int32{
+var file_user_api_proto_depIdxs = []int32{
 	0, // 0: types.GetUserInfoResp.data:type_name -> types.UserInfo
 	1, // 1: types.GetFriendsResp.data:type_name -> types.Friend
 	2, // 2: types.NewFriendApplyResp.data:type_name -> types.FriendRequest
@@ -1383,26 +1382,26 @@ var file_user_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_user_proto_init() }
-func file_user_proto_init() {
-	if File_user_proto != nil {
+func init() { file_user_api_proto_init() }
+func file_user_api_proto_init() {
+	if File_user_api_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_api_proto_rawDesc), len(file_user_api_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_user_proto_goTypes,
-		DependencyIndexes: file_user_proto_depIdxs,
-		MessageInfos:      file_user_proto_msgTypes,
+		GoTypes:           file_user_api_proto_goTypes,
+		DependencyIndexes: file_user_api_proto_depIdxs,
+		MessageInfos:      file_user_api_proto_msgTypes,
 	}.Build()
-	File_user_proto = out.File
-	file_user_proto_goTypes = nil
-	file_user_proto_depIdxs = nil
+	File_user_api_proto = out.File
+	file_user_api_proto_goTypes = nil
+	file_user_api_proto_depIdxs = nil
 }
