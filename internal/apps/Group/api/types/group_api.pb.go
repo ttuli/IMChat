@@ -452,14 +452,14 @@ func (x *CreateGroupResp) GetData() *Group {
 // GetGroupReq
 type GetGroupReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"group_id,optional"
-	GroupIds []uint64 `protobuf:"varint,1,rep,packed,name=group_ids,json=groupIds,proto3" json:"group_ids,omitempty" form:"group_id,optional"`
-	// @gotags: form:"name_keyword,optional"
-	NameKeyword string `protobuf:"bytes,2,opt,name=name_keyword,json=nameKeyword,proto3" json:"name_keyword,omitempty" form:"name_keyword,optional"`
-	// @gotags: form:"limit,optional,default=30"
-	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty" form:"limit,optional,default=30"`
-	// @gotags: form:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty" form:"offset,optional,default=0"`
+	// @gotags: form:"group_id,optional" json:"group_id,optional"
+	GroupIds []uint64 `protobuf:"varint,1,rep,packed,name=group_ids,json=groupIds,proto3" json:"group_id,optional" form:"group_id,optional"`
+	// @gotags: form:"name_keyword,optional" json:"name_keyword,optional"
+	NameKeyword string `protobuf:"bytes,2,opt,name=name_keyword,json=nameKeyword,proto3" json:"name_keyword,optional" form:"name_keyword,optional"`
+	// @gotags: form:"limit,optional,default=30" json:"limit,optional,default=30"
+	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,optional,default=30" form:"limit,optional,default=30"`
+	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
+	Offset        int32 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -525,8 +525,8 @@ func (x *GetGroupReq) GetOffset() int32 {
 // GetGroupMembersReq
 type GetGroupMembersReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"group_id"
-	GroupId       uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty" form:"group_id"`
+	// @gotags: form:"group_id" json:"group_id"
+	GroupId       uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id" form:"group_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

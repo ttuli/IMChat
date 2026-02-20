@@ -302,8 +302,8 @@ func (x *CallbackData) GetMimeType() string {
 
 type GetPostSignatureReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"file_type"
-	FileType      int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty" form:"file_type"`
+	// @gotags: form:"file_type" json:"file_type"
+	FileType      int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type" form:"file_type"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

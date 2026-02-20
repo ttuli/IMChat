@@ -104,7 +104,7 @@ message UpdateConversationReq {
 
 // GetConversationReq
 message GetConversationReq {
-  // @gotags: form:"conversation_ids"
+  // @gotags: form:"conversation_ids" json:"conversation_ids"
   repeated string conversation_ids = 1;
 }
 

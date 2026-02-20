@@ -52,6 +52,6 @@ message CallbackData {
 }
 
 message GetPostSignatureReq {
-  // @gotags: form:"file_type"
+  // @gotags: form:"file_type" json:"file_type"
   int32 file_type = 1;
 }

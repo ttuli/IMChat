@@ -598,8 +598,8 @@ func (x *UpdateConversationReq) GetIsMute() int32 {
 // GetConversationReq
 type GetConversationReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"conversation_ids"
-	ConversationIds []string `protobuf:"bytes,1,rep,name=conversation_ids,json=conversationIds,proto3" json:"conversation_ids,omitempty" form:"conversation_ids"`
+	// @gotags: form:"conversation_ids" json:"conversation_ids"
+	ConversationIds []string `protobuf:"bytes,1,rep,name=conversation_ids,json=conversationIds,proto3" json:"conversation_ids" form:"conversation_ids"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
