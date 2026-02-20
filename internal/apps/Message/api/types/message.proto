@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package types;
+
+option go_package = "./;types";
+
+// Message
+message Message {
+  // @gotags: json:"msg_id"
+  string msg_id = 1;
+  // @gotags: json:"client_id"
+  string client_id = 2;
+  // @gotags: json:"conversation_id"
+  string conversation_id = 3;
+  // @gotags: json:"from_user_id"
+  uint64 from_user_id = 4;
+  // @gotags: json:"msg_type"
+  int32 msg_type = 5;
+  // @gotags: json:"seq"
+  uint64 seq = 6;
+  // @gotags: json:"content"
+  string content = 7;
+  // @gotags: json:"media_url"
+  string media_url = 8;
+  // @gotags: json:"extra"
+  string extra = 9;
+  // @gotags: json:"status"
+  int32 status = 10;
+  // @gotags: json:"create_time"
+  int64 create_time = 11;
+}
+
+// Conversation
+message Conversation {
+  // @gotags: json:"conversation_id"
+  string conversation_id = 1;
+  // @gotags: json:"type"
+  int32 type = 2;
+  // @gotags: json:"max_seq"
+  uint64 max_seq = 3;
+  // @gotags: json:"create_time"
+  int64 create_time = 4;
+  // @gotags: json:"update_time"
+  int64 update_time = 5;
+}
+
+// UserConversation
+message UserConversation {
+  // @gotags: json:"user_id"
+  uint64 user_id = 1;
+  // @gotags: json:"conversation_id"
+  string conversation_id = 2;
+  // @gotags: json:"is_top"
+  bool is_top = 3;
+  // @gotags: json:"is_disturb"
+  bool is_disturb = 4;
+  // @gotags: json:"is_mute"
+  bool is_mute = 5;
+  // @gotags: json:"last_read_seq"
+  uint64 last_read_seq = 6;
+  // @gotags: json:"create_time"
+  int64 create_time = 7;
+  // @gotags: json:"update_time"
+  int64 update_time = 8;
+}
+
+// GetHistoryReq
+message GetHistoryReq {
+  // @gotags: form:"conversation_id"
+  string conversation_id = 1;
+  // @gotags: form:"cursor_seq,optional"
+  uint64 cursor_seq = 2;
+  // @gotags: form:"limit,optional,default=20"
+  int32 limit = 3;
+  // @gotags: form:"forward,optional"
+  bool forward = 4;
+}
+
+// GetHistoryResp
+message GetHistoryResp {
+  // @gotags: json:"list"
+  repeated Message list = 1;
+}
+
+// ReadMessageReq
+message ReadMessageReq {
+  // @gotags: json:"conversation_id"
+  string conversation_id = 1;
+  // @gotags: json:"seq"
+  uint64 seq = 2;
+}
+
+// UpdateConversationReq
+message UpdateConversationReq {
+  // @gotags: json:"conversation_id"
+  string conversation_id = 1;
+  // @gotags: json:"is_top,optional"
+  int32 is_top = 2;
+  // @gotags: json:"is_disturb,optional"
+  int32 is_disturb = 3;
+  // @gotags: json:"is_mute,optional"
+  int32 is_mute = 4;
+}
+
+// GetConversationReq
+message GetConversationReq {
+  // @gotags: form:"conversation_ids"
+  repeated string conversation_ids = 1;
+}
+
+// GetConversationResp
+message GetConversationResp {
+  // @gotags: json:"conversations"
+  repeated Conversation conversations = 1;
+}
+
+// GetUserConversationsResp
+message GetUserConversationsResp {
+  // @gotags: json:"conversations"
+  repeated UserConversation conversations = 1;
+}

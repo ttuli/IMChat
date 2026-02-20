@@ -31,9 +31,9 @@ func (l *MuteMemberLogic) MuteMember(req *types.MuteMemberReq) error {
 	operatorID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	_, err := l.svcCtx.GroupRpc.MuteMember(l.ctx, &grouprpc.MuteMemberReq{
-		GroupId:    req.GroupID,
+		GroupId:    req.GroupId,
 		OperatorId: operatorID,
-		UserId:     req.UserID,
+		UserId:     req.UserId,
 		MuteUntil:  req.MuteUntil,
 	})
 	return err

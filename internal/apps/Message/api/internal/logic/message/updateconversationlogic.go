@@ -31,7 +31,7 @@ func (l *UpdateConversationLogic) UpdateConversation(req *types.UpdateConversati
 
 	_, err := l.svcCtx.MessageRpc.UpdateConversation(l.ctx, &messagerpc.UpdateConversationReq{
 		UserId:         userID,
-		ConversationId: req.ConversationID,
+		ConversationId: req.ConversationId,
 		IsTop:          req.IsTop,
 		IsDisturb:      req.IsDisturb,
 		IsMute:         req.IsMute,

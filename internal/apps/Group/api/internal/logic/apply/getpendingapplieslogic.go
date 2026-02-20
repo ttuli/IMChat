@@ -37,15 +37,15 @@ func (l *GetPendingAppliesLogic) GetPendingApplies(req *types.GetPendingAppliesR
 		return nil, err
 	}
 
-	data := make([]types.GroupRequest, 0, len(rpcResp.Data))
+	data := make([]*types.GroupRequest, 0, len(rpcResp.Data))
 	for _, d := range rpcResp.Data {
-		data = append(data, types.GroupRequest{
-			RequestID:   strconv.FormatUint(d.Id, 10),
-			SenderID:    d.FromUserId,
-			GroupID:     d.GroupId,
+		data = append(data, &types.GroupRequest{
+			RequestId:   strconv.FormatUint(d.Id, 10),
+			SenderId:    d.FromUserId,
+			GroupId:     d.GroupId,
 			Message:     d.ApplyMsg,
-			Status:      int(d.Status),
-			HandlerID:   d.HandlerId,
+			Status:      int32(d.Status),
+			HandlerId:   d.HandlerId,
 			RequestTime: d.RequestTime,
 			HandleTime:  d.HandleTime,
 		})

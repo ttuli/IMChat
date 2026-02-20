@@ -41,7 +41,7 @@ func NewGetPostSignatureLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq) (resp *types.PolicyToken, err error) {
 	id := tokenmanager.ExtractIDFromCtx(l.ctx)
 
-	var region,bucketName,dir,callbackUrl,product string
+	var region, bucketName, dir, callbackUrl, product string
 	switch file.FileType(req.FileType) {
 	case file.FileTypeAvatar:
 		region = l.svcCtx.Config.Oss.Avatar.Region
@@ -135,15 +135,15 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	callbackBase64 := base64.StdEncoding.EncodeToString(callback_str)
 	// 构建返回给前端的表单
 	policyToken := &types.PolicyToken{
-		Policy:           stringToSign,
-		SecurityToken:    *cred.SecurityToken,
-		SignatureVersion: "OSS4-HMAC-SHA256",
-		Credential:       fmt.Sprintf("%v/%v/%v/%v/aliyun_v4_request", *cred.AccessKeyId, date, region, product),
-		Date:             utcTime.UTC().Format("20060102T150405Z"),
-		Signature:        signature,
-		Host:             host,           // 返回 OSS 上传地址
-		Dir:              dir,            // 返回上传目录
-		Callback:         callbackBase64, // 返回上传回调参数
+		Policy:               stringToSign,
+		SecurityToken:        *cred.SecurityToken,
+		XOssSignatureVersion: "OSS4-HMAC-SHA256",
+		XOssCredential:       fmt.Sprintf("%v/%v/%v/%v/aliyun_v4_request", *cred.AccessKeyId, date, region, product),
+		XOssDate:             utcTime.UTC().Format("20060102T150405Z"),
+		Signature:            signature,
+		Host:                 host,           // 返回 OSS 上传地址
+		Dir:                  dir,            // 返回上传目录
+		Callback:             callbackBase64, // 返回上传回调参数
 	}
 	return policyToken, nil
 }

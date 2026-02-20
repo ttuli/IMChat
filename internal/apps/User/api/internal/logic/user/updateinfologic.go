@@ -30,7 +30,7 @@ func (l *UpdateInfoLogic) UpdateInfo(req *types.UpdateInfoReq) error {
 
 	_, err := l.svcCtx.UpdateInfo(l.ctx, &user.UpdateInfoReq{
 		UserId:            tokenmanager.ExtractIDFromCtx(l.ctx),
-		Name:              req.Name,
+		Name:              req.UserName,
 		Gender:            int32(req.Gender),
 		JoinType:          int32(req.JoinType),
 		Avatar:            req.Avatar,

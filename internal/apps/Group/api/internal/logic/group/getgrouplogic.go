@@ -27,7 +27,7 @@ func NewGetGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetGroup
 
 func (l *GetGroupLogic) GetGroup(req *types.GetGroupReq) (resp *types.GetGroupResp, err error) {
 	rpcResp, err := l.svcCtx.GroupRpc.GetGroup(l.ctx, &grouprpc.GetGroupReq{
-		GroupIds:    req.GroupIDs,
+		GroupIds:    req.GroupIds,
 		NameKeyword: req.NameKeyword,
 		Limit:       int32(req.Limit),
 		Offset:      int32(req.Offset),
@@ -36,7 +36,7 @@ func (l *GetGroupLogic) GetGroup(req *types.GetGroupReq) (resp *types.GetGroupRe
 		return nil, err
 	}
 
-	data := make([]types.Group, 0, len(rpcResp.Data))
+	data := make([]*types.Group, 0, len(rpcResp.Data))
 	for _, d := range rpcResp.Data {
 		data = append(data, convertGroup(d))
 	}

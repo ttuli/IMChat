@@ -34,7 +34,7 @@ func (l *CreateGroupLogic) CreateGroup(req *types.CreateGroupReq) (resp *types.C
 		Name:      req.Name,
 		OwnerId:   ownerID,
 		Avatar:    req.Avatar,
-		MemberIds: req.MemberIDs,
+		MemberIds: req.MemberIds,
 	})
 	if err != nil {
 		return nil, err
@@ -45,18 +45,18 @@ func (l *CreateGroupLogic) CreateGroup(req *types.CreateGroupReq) (resp *types.C
 	}, nil
 }
 
-func convertGroup(data *grouprpc.Group) types.Group {
+func convertGroup(data *grouprpc.Group) *types.Group {
 	if data == nil {
-		return types.Group{}
+		return nil
 	}
-	return types.Group{
-		GroupID:     data.GroupId,
+	return &types.Group{
+		Id:          data.GroupId,
 		Name:        data.Name,
 		Avatar:      data.Avatar,
-		OwnerID:     data.OwnerId,
+		OwnerId:     data.OwnerId,
 		CreatedAt:   data.CreatedAt,
 		UpdatedAt:   data.UpdatedAt,
-		MemberCount: int(data.MemberCount),
+		MemberCount: int32(data.MemberCount),
 		Notice:      data.Notice,
 	}
 }

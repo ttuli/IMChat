@@ -33,8 +33,8 @@ func (l *SearchFriendLogic) SearchFriend(req *types.SearchFriendReq) (resp *type
 	}
 
 	// 根据不同的查询参数设置
-	if req.ID != 0 {
-		rpcReq.Ids = []uint64{req.ID}
+	if req.Id != 0 {
+		rpcReq.Ids = []uint64{req.Id}
 	} else if req.Phone != "" {
 		rpcReq.Phone = req.Phone
 	} else if req.Name != "" {
@@ -46,10 +46,10 @@ func (l *SearchFriendLogic) SearchFriend(req *types.SearchFriendReq) (resp *type
 		return nil, err
 	}
 
-	data := make([]types.UserInfo, 0, len(res.Data))
+	data := make([]*types.UserInfo, 0, len(res.Data))
 	for _, v := range res.Data {
-		data = append(data, types.UserInfo{
-			UserID:            v.UserId,
+		data = append(data, &types.UserInfo{
+			UserId:            v.UserId,
 			UserName:          v.UserName,
 			Gender:            v.Gender,
 			Avatar:            v.Avatar,

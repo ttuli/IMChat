@@ -31,7 +31,7 @@ func (l *CreateFriendLogic) CreateFriend(req *types.CreateFriendReq) error {
 
 	_, err := l.svcCtx.CreateFriend(l.ctx, &user.CreateFriendReq{
 		UserId:   userID,
-		FriendId: req.FriendID,
+		FriendId: req.FriendId,
 		Source:   int32(req.Source),
 		Remark:   req.Remark,
 	})

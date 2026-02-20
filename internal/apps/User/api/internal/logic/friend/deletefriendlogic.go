@@ -31,7 +31,7 @@ func (l *DeleteFriendLogic) DeleteFriend(req *types.DeleteFriendReq) error {
 
 	_, err := l.svcCtx.DeleteFriend(l.ctx, &user.DeleteFriendReq{
 		UserId:   userID,
-		FriendId: req.FriendID,
+		FriendId: req.FriendId,
 	})
 
 	return err

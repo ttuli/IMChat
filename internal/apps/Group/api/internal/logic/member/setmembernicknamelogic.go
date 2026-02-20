@@ -31,7 +31,7 @@ func (l *SetMemberNicknameLogic) SetMemberNickname(req *types.SetMemberNicknameR
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	_, err := l.svcCtx.GroupRpc.SetMemberNickname(l.ctx, &grouprpc.SetMemberNicknameReq{
-		GroupId:  req.GroupID,
+		GroupId:  req.GroupId,
 		UserId:   userID,
 		Nickname: req.Nickname,
 	})

@@ -28,9 +28,9 @@ func NewSetMemberRoleLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Set
 
 func (l *SetMemberRoleLogic) SetMemberRole(req *types.SetMemberRoleReq) error {
 	_, err := l.svcCtx.GroupRpc.SetMemberRole(l.ctx, &grouprpc.SetMemberRoleReq{
-		GroupId:    req.GroupID,
-		OperatorId: req.OperatorID,
-		UserId:     req.UserID,
+		GroupId:    req.GroupId,
+		OperatorId: req.OperatorId,
+		UserId:     req.UserId,
 		Role:       group.GroupRole(req.Role),
 	})
 	return err

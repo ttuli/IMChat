@@ -31,16 +31,16 @@ func (l *InviteMembersLogic) InviteMembers(req *types.InviteMembersReq) (resp *t
 	operatorID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	rpcResp, err := l.svcCtx.GroupRpc.InviteMembers(l.ctx, &grouprpc.InviteMembersReq{
-		GroupId:    req.GroupID,
+		GroupId:    req.GroupId,
 		OperatorId: operatorID,
-		MemberIds:  req.MemberIDs,
+		MemberIds:  req.MemberIds,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.InviteMembersResp{
-		SuccessCount: int(rpcResp.SuccessCount),
-		FailedIDs:    rpcResp.FailedIds,
+		SuccessCount: rpcResp.SuccessCount,
+		FailedIds:    rpcResp.FailedIds,
 	}, nil
 }

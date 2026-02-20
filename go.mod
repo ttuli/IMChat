@@ -18,6 +18,7 @@ require (
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/spf13/viper v1.21.0
 	github.com/zeromicro/go-zero v1.9.3
+	go.mongodb.org/mongo-driver v1.17.9
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.37.0
 	google.golang.org/grpc v1.65.0
@@ -97,7 +98,6 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.15 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.15 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.15 // indirect
-	go.mongodb.org/mongo-driver v1.17.9 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.24.0 // indirect

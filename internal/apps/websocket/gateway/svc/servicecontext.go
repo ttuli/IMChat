@@ -46,7 +46,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 
 	// 创建编解码器
-	codec := protocol.NewJSONCodec()
+	codec := protocol.NewProtoCodec()
 
 	// 创建 Redis 客户端 (用于路由 KV 存储)
 	redisClient := redis.NewClient(&redis.Options{
@@ -70,7 +70,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	bus.RegisterHandler(telemetry.DefaultLogHandler)
 
 	// 创建路由器
-	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus)
+	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus, pubsub.SubjectConfig{
+		NodeSubjectPrefix: c.Nats.NodeSubjectPrefix,
+		DBSubject:         c.Nats.DBSubject,
+	})
 
 	// 创建连接管理器
 	connMgr := connection.NewDefaultManager(nodeID, r, bus)

@@ -31,7 +31,7 @@ func (l *NewFriendApplyLogic) NewFriendApply(req *types.NewFriendApplyReq) (resp
 
 	res, err := l.svcCtx.NewFriendApply(l.ctx, &user.NewFriendApplyReq{
 		FromUserId: userID,
-		ToUserId:   req.ToUserID,
+		ToUserId:   req.ToUserId,
 		ApplyMsg:   req.ApplyMsg,
 	})
 	if err != nil {
@@ -39,12 +39,12 @@ func (l *NewFriendApplyLogic) NewFriendApply(req *types.NewFriendApplyReq) (resp
 	}
 
 	return &types.NewFriendApplyResp{
-		Data: types.FriendRequest{
-			RequestID:   res.Data.Id,
-			FromUserID:  res.Data.FromUserId,
-			ToUserID:    res.Data.ToUserId,
+		Data: &types.FriendRequest{
+			RequestId:   res.Data.Id,
+			FromUserId:  res.Data.FromUserId,
+			ToUserId:    res.Data.ToUserId,
 			ApplyMsg:    res.Data.ApplyMsg,
-			Status:      int(res.Data.Status),
+			Status:      int32(res.Data.Status),
 			RequestTime: res.Data.RequestTime,
 		},
 	}, nil

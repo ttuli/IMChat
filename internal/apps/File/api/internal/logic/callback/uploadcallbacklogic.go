@@ -33,7 +33,7 @@ func (l *UploadCallbackLogic) UploadCallback(req *types.CallbackData) error {
 	if req.FileName == "" {
 		return xerr.New(xerr.ErrInvalidParams, "empty filename")
 	}
-	if req.ID == 0 {
+	if req.Id == 0 {
 		return xerr.New(xerr.ErrInvalidParams, "empty id")
 	}
 
@@ -43,7 +43,7 @@ func (l *UploadCallbackLogic) UploadCallback(req *types.CallbackData) error {
 		bucketName := l.svcCtx.Config.Oss.Avatar.BucketName
 		avatar := fmt.Sprintf("https://%s.oss-%s.aliyuncs.com/%s", bucketName, region, req.FileName)
 		_, err := l.svcCtx.UpdateInfo(l.ctx, &user.UpdateInfoReq{
-			UserId: req.ID,
+			UserId: req.Id,
 			Avatar: avatar,
 		})
 		if err != nil {

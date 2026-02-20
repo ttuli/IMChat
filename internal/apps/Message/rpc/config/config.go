@@ -5,17 +5,18 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
+type ListenerConfig struct {
+	Url               string
+	NodeSubjectPrefix string
+	DBSubject         string
+	DBAddress         string
+}
+
 type Config struct {
 	zrpc.RpcServerConf
-	Redis redis.RedisConf
+	Redisx redis.RedisConf
 
-	Mongo struct {
-		Uri string
-	}
-
-	Nats struct {
-		Url string
-	}
+	Listener ListenerConfig
 
 	DAO struct {
 		ConversationTable string

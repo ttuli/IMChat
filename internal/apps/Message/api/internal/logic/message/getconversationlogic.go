@@ -27,16 +27,16 @@ func NewGetConversationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *G
 
 func (l *GetConversationLogic) GetConversation(req *types.GetConversationReq) (resp *types.GetConversationResp, err error) {
 	res, err := l.svcCtx.MessageRpc.GetConversationList(l.ctx, &messagerpc.GetConversationListReq{
-		SessionIds: req.ConversationIDs,
+		SessionIds: req.ConversationIds,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	list := make([]types.Conversation, 0, len(res.Conversations))
+	list := make([]*types.Conversation, 0, len(res.Conversations))
 	for _, c := range res.Conversations {
-		list = append(list, types.Conversation{
-			ConversationID: c.ConversationId,
+		list = append(list, &types.Conversation{
+			ConversationId: c.ConversationId,
 			Type:           c.Type,
 			MaxSeq:         c.MaxSeq,
 			CreateTime:     c.CreateTime,

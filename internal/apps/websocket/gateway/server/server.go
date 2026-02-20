@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"IM2/internal/apps/websocket/gateway/svc"
-	"IM2/internal/apps/websocket/gateway/types"
+	"IM2/internal/common"
 	"IM2/pkg/logger"
 )
 
@@ -91,7 +91,7 @@ func (s *GatewayServer) Stop() error {
 }
 
 // handleInternalMessage 处理跨节点消息
-func (s *GatewayServer) handleInternalMessage(ctx context.Context, msg *types.InternalMessage) error {
+func (s *GatewayServer) handleInternalMessage(ctx context.Context, msg *common.InternalMessage) error {
 	// 获取本地连接
 	conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.TargetUserId)
 	if !ok {

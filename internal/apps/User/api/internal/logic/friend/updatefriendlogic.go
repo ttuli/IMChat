@@ -29,21 +29,12 @@ func NewUpdateFriendLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upda
 func (l *UpdateFriendLogic) UpdateFriend(req *types.UpdateFriendReq) error {
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
-	// 处理可选的 bool 指针
-	var blocked, starred bool
-	if req.Blocked != nil {
-		blocked = *req.Blocked
-	}
-	if req.Starred != nil {
-		starred = *req.Starred
-	}
-
 	_, err := l.svcCtx.UpdateFriend(l.ctx, &user.UpdateFriendReq{
 		UserId:   userID,
-		FriendId: req.FriendID,
+		FriendId: req.FriendId,
 		Remark:   req.Remark,
-		Blocked:  blocked,
-		Starred:  starred,
+		Blocked:  req.Blocked,
+		Starred:  req.Starred,
 	})
 
 	return err

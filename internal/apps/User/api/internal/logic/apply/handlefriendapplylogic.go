@@ -30,7 +30,7 @@ func (l *HandleFriendApplyLogic) HandleFriendApply(req *types.HandleFriendApplyR
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	_, err := l.svcCtx.HandleFriendApply(l.ctx, &user.HandleFriendApplyReq{
-		Id:           req.RequestID,
+		Id:           req.RequestId,
 		OperatorId:   userID,
 		Status:       int32(req.Result),
 		RejectReason: req.RejectReason,

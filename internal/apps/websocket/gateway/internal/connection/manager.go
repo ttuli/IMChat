@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
-	"IM2/internal/apps/websocket/gateway/types"
+	"IM2/internal/common"
 	"IM2/pkg/xerr"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -20,9 +20,9 @@ type Manager interface {
 	// GetLocalConnection 获取本地连接
 	GetLocalConnection(userID uint64) (*Connection, bool)
 	// SendToUser 发送消息给用户
-	SendToUser(ctx context.Context, userID uint64, msg *types.WSMessage) error
+	SendToUser(ctx context.Context, userID uint64, msg *common.WSMessage) error
 	// Broadcast 广播消息给多个用户
-	Broadcast(ctx context.Context, userIDs []uint64, msg *types.WSMessage) error
+	Broadcast(ctx context.Context, userIDs []uint64, msg *common.WSMessage) error
 	// LocalUserCount 本地用户数量
 	LocalUserCount() int
 	// GetAllLocalUserIDs 获取所有本地用户ID
@@ -50,7 +50,7 @@ type DefaultManager struct {
 // MessageRouter 消息路由接口(用于跨节点通信)
 type MessageRouter interface {
 	// RouteMessage 路由消息到目标用户
-	RouteMessage(ctx context.Context, targetUserID uint64, msg *types.WSMessage) error
+	RouteMessage(ctx context.Context, targetUserID uint64, msg *common.WSMessage) error
 }
 
 // NewDefaultManager 创建默认连接管理器
@@ -133,7 +133,7 @@ func (m *DefaultManager) GetLocalConnection(userID uint64) (*Connection, bool) {
 }
 
 // SendToUser 发送消息给用户
-func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *types.WSMessage) error {
+func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *common.WSMessage) error {
 	// 先尝试本地发送
 	if conn, ok := m.GetLocalConnection(userID); ok {
 		if err := conn.Send(msg); err != nil {
@@ -156,7 +156,7 @@ func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *typ
 }
 
 // Broadcast 广播消息给多个用户
-func (m *DefaultManager) Broadcast(ctx context.Context, userIDs []uint64, msg *types.WSMessage) error {
+func (m *DefaultManager) Broadcast(ctx context.Context, userIDs []uint64, msg *common.WSMessage) error {
 	var wg sync.WaitGroup
 	var errOnce sync.Once
 	var firstErr error

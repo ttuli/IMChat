@@ -31,7 +31,7 @@ func (l *LeaveGroupLogic) LeaveGroup(req *types.LeaveGroupReq) error {
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	_, err := l.svcCtx.GroupRpc.LeaveGroup(l.ctx, &grouprpc.LeaveGroupReq{
-		GroupId: req.GroupID,
+		GroupId: req.GroupId,
 		UserId:  userID,
 	})
 	return err

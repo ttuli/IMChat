@@ -1,0 +1,237 @@
+syntax = "proto3";
+
+package types;
+
+option go_package = "./;types";
+
+// GroupMember
+message GroupMember {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"user_id"
+  uint64 user_id = 2;
+  // @gotags: json:"role"
+  int32 role = 3;
+  // @gotags: json:"nickname"
+  string nickname = 4;
+  // @gotags: json:"mute_until"
+  int64 mute_until = 5;
+  // @gotags: json:"joined_at"
+  int64 joined_at = 6;
+  // @gotags: json:"extra"
+  string extra = 7;
+}
+
+// Group
+message Group {
+  // @gotags: json:"id"
+  uint64 id = 1;
+  // @gotags: json:"name"
+  string name = 2;
+  // @gotags: json:"avatar"
+  string avatar = 3;
+  // @gotags: json:"owner_id"
+  uint64 owner_id = 4;
+  // @gotags: json:"notice"
+  string notice = 5;
+  // @gotags: json:"member_count"
+  int32 member_count = 6;
+  // @gotags: json:"created_at"
+  int64 created_at = 7;
+  // @gotags: json:"updated_at"
+  int64 updated_at = 8;
+}
+
+// GroupRequest
+message GroupRequest {
+  // @gotags: json:"request_id"
+  string request_id = 1;
+  // @gotags: json:"sender_id"
+  uint64 sender_id = 2;
+  // @gotags: json:"group_id"
+  uint64 group_id = 3;
+  // @gotags: json:"message"
+  string message = 4;
+  // @gotags: json:"status"
+  int32 status = 5;
+  // @gotags: json:"handler_id,omitempty"
+  uint64 handler_id = 6;
+  // @gotags: json:"request_time"
+  int64 request_time = 7;
+  // @gotags: json:"handle_time"
+  int64 handle_time = 8;
+}
+
+// CreateGroupReq
+message CreateGroupReq {
+  // @gotags: json:"name"
+  string name = 1;
+  // @gotags: json:"avatar,optional"
+  string avatar = 2;
+  // @gotags: json:"member_ids,optional"
+  repeated uint64 member_ids = 3;
+}
+
+// CreateGroupResp
+message CreateGroupResp {
+  // @gotags: json:"data"
+  Group data = 1;
+}
+
+// GetGroupReq
+message GetGroupReq {
+  // @gotags: form:"group_id,optional"
+  repeated uint64 group_ids = 1;
+  // @gotags: form:"name_keyword,optional"
+  string name_keyword = 2;
+  // @gotags: form:"limit,optional,default=30"
+  int32 limit = 3;
+  // @gotags: form:"offset,optional,default=0"
+  int32 offset = 4;
+}
+
+// GetGroupMembersReq
+message GetGroupMembersReq {
+  // @gotags: form:"group_id"
+  uint64 group_id = 1;
+}
+
+// GetGroupMembersResp
+message GetGroupMembersResp {
+  // @gotags: json:"data"
+  repeated GroupMember data = 1;
+}
+
+// GetGroupResp
+message GetGroupResp {
+  // @gotags: json:"data"
+  repeated Group data = 1;
+  // @gotags: json:"total"
+  int64 total = 2;
+}
+
+// UpdateGroupReq
+message UpdateGroupReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"name,optional"
+  string name = 2;
+  // @gotags: json:"avatar,optional"
+  string avatar = 3;
+  // @gotags: json:"notice,optional"
+  string notice = 4;
+}
+
+// JoinGroupReq
+message JoinGroupReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"message,optional"
+  string message = 2;
+}
+
+// JoinGroupResp
+message JoinGroupResp {
+  // @gotags: json:"data"
+  GroupRequest data = 1;
+}
+
+// HandleGroupApplyReq
+message HandleGroupApplyReq {
+  // @gotags: json:"apply_id"
+  string apply_id = 1;
+  // @gotags: json:"result"
+  int32 result = 2;
+  // @gotags: json:"operator_id"
+  uint64 operator_id = 3;
+  // @gotags: json:"reject_reason,optional"
+  string reject_reason = 4;
+}
+
+// InviteMembersReq
+message InviteMembersReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"member_ids"
+  repeated uint64 member_ids = 2;
+}
+
+// InviteMembersResp
+message InviteMembersResp {
+  // @gotags: json:"success_count"
+  int32 success_count = 1;
+  // @gotags: json:"failed_ids,omitempty"
+  repeated uint64 failed_ids = 2;
+}
+
+// RemoveMemberReq
+message RemoveMemberReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"user_id"
+  uint64 user_id = 2;
+  // @gotags: json:"operator_id"
+  uint64 operator_id = 3;
+}
+
+// LeaveGroupReq
+message LeaveGroupReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+}
+
+// DismissGroupReq
+message DismissGroupReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"operator_id"
+  uint64 operator_id = 2;
+}
+
+// SetMemberRoleReq
+message SetMemberRoleReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"user_id"
+  uint64 user_id = 2;
+  // @gotags: json:"role"
+  int32 role = 3;
+  // @gotags: json:"operator_id"
+  uint64 operator_id = 4;
+}
+
+// SetMemberNicknameReq
+message SetMemberNicknameReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"nickname"
+  string nickname = 2;
+}
+
+// MuteMemberReq
+message MuteMemberReq {
+  // @gotags: json:"group_id"
+  uint64 group_id = 1;
+  // @gotags: json:"user_id"
+  uint64 user_id = 2;
+  // @gotags: json:"mute_until"
+  int64 mute_until = 3;
+}
+
+// GetUserGroupsReq
+message GetUserGroupsReq {}
+
+// GetUserGroupsResp
+message GetUserGroupsResp {
+  // @gotags: json:"data"
+  repeated uint64 data = 1;
+}
+
+// GetPendingAppliesReq
+message GetPendingAppliesReq {}
+
+// GetPendingAppliesResp
+message GetPendingAppliesResp {
+  // @gotags: json:"data"
+  repeated GroupRequest data = 1;
+}

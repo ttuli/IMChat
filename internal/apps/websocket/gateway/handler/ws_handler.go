@@ -9,7 +9,7 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/connection"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/svc"
-	"IM2/internal/apps/websocket/gateway/types"
+	"IM2/internal/common"
 	"IM2/pkg/logger"
 	"IM2/pkg/resultx"
 	tokenmanager "IM2/pkg/tokenManager"
@@ -63,8 +63,8 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// 注册连接
 	if err := h.svcCtx.ConnectionManager.AddConnection(conn.UserID, conn); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
-		conn.SendError(&types.ErrorMessage{
-			ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+		conn.SendError(&common.ErrorMessage{
+			ErrorCode: int32(common.ErrorCode_SERVER_ERROR),
 			ErrorMsg:  "与服务器建立连接失败",
 		})
 		conn.Close()
@@ -76,8 +76,8 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// 注册路由
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
-		conn.SendError(&types.ErrorMessage{
-			ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+		conn.SendError(&common.ErrorMessage{
+			ErrorCode: int32(common.ErrorCode_SERVER_ERROR),
 			ErrorMsg:  "与服务器建立连接失败",
 		})
 		conn.Close()
@@ -100,9 +100,9 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 // createMessageHandler 创建消息处理函数
-func (h *WSHandler) createMessageHandler(ctx context.Context, conn *connection.Connection) func(*types.WSMessage) error {
+func (h *WSHandler) createMessageHandler(ctx context.Context, conn *connection.Connection) func(*common.WSMessage) error {
 	msgHandler := NewMessageHandler(h.svcCtx, conn)
-	return func(msg *types.WSMessage) error {
+	return func(msg *common.WSMessage) error {
 		return msgHandler.Handle(ctx, msg)
 	}
 }
@@ -116,8 +116,8 @@ func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) {
 		logx.Errorf("get user %d groups failed: %v", userID, err)
 		// 获取群列表失败是严重错误，断开连接让客户端重连
 		if conn, ok := h.svcCtx.ConnectionManager.GetLocalConnection(userID); ok {
-			conn.SendError(&types.ErrorMessage{
-				ErrorCode: int32(types.ErrorCode_SERVER_ERROR),
+			conn.SendError(&common.ErrorMessage{
+				ErrorCode: int32(common.ErrorCode_SERVER_ERROR),
 				ErrorMsg:  "与服务器建立连接失败",
 			})
 			conn.Close()

@@ -36,13 +36,13 @@ func (l *GetFriendsLogic) GetFriends(req *types.GetFriendsReq) (resp *types.GetF
 		return nil, err
 	}
 
-	data := make([]types.Friend, 0, len(res.Data))
+	data := make([]*types.Friend, 0, len(res.Data))
 	for _, f := range res.Data {
-		data = append(data, types.Friend{
-			UserID:     f.UserId,
-			FriendID:   f.FriendId,
+		data = append(data, &types.Friend{
+			UserId:     f.UserId,
+			FriendId:   f.FriendId,
 			Remark:     f.Remark,
-			Source:     int8(f.Source),
+			Source:     int32(f.Source),
 			Blocked:    f.Blocked,
 			Starred:    f.Starred,
 			CreateTime: f.CreateTime,

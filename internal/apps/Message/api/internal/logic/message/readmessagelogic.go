@@ -31,7 +31,7 @@ func (l *ReadMessageLogic) ReadMessage(req *types.ReadMessageReq) error {
 
 	_, err := l.svcCtx.MessageRpc.ReadMessage(l.ctx, &messagerpc.ReadMessageReq{
 		UserId:         userID,
-		ConversationId: req.ConversationID,
+		ConversationId: req.ConversationId,
 		Seq:            req.Seq,
 	})
 	return err

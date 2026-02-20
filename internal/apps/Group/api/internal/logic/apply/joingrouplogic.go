@@ -31,7 +31,7 @@ func (l *JoinGroupLogic) JoinGroup(req *types.JoinGroupReq) (resp *types.JoinGro
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	rpcResp, err := l.svcCtx.GroupRpc.JoinGroup(l.ctx, &grouprpc.JoinGroupReq{
-		GroupId:    req.GroupID,
+		GroupId:    req.GroupId,
 		FromUserId: userID,
 		ApplyMsg:   req.Message,
 	})
@@ -41,13 +41,13 @@ func (l *JoinGroupLogic) JoinGroup(req *types.JoinGroupReq) (resp *types.JoinGro
 
 	data := rpcResp.Data
 	return &types.JoinGroupResp{
-		Data: types.GroupRequest{
-			RequestID:   strconv.FormatUint(data.Id, 10),
-			SenderID:    data.FromUserId,
-			GroupID:     data.GroupId,
+		Data: &types.GroupRequest{
+			RequestId:   strconv.FormatUint(data.Id, 10),
+			SenderId:    data.FromUserId,
+			GroupId:     data.GroupId,
 			Message:     data.ApplyMsg,
-			Status:      int(data.Status),
-			HandlerID:   data.HandlerId,
+			Status:      int32(data.Status),
+			HandlerId:   data.HandlerId,
 			RequestTime: data.RequestTime,
 			HandleTime:  data.HandleTime,
 		},

@@ -29,14 +29,14 @@ func NewHandleGroupApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *HandleGroupApplyLogic) HandleGroupApply(req *types.HandleGroupApplyReq) error {
-	applyID, err := strconv.ParseUint(req.ApplyID, 10, 64)
+	applyID, err := strconv.ParseUint(req.ApplyId, 10, 64)
 	if err != nil {
 		return xerr.New(xerr.ErrInvalidParams, "申请ID格式错误")
 	}
 
 	_, err = l.svcCtx.GroupRpc.HandleGroupApply(l.ctx, &grouprpc.HandleGroupApplyReq{
 		Id:           applyID,
-		OperatorId:   req.OperatorID,
+		OperatorId:   req.OperatorId,
 		Status:       group.ApplyStatus(req.Result),
 		RejectReason: req.RejectReason,
 	})

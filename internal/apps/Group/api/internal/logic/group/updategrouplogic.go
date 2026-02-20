@@ -31,7 +31,7 @@ func (l *UpdateGroupLogic) UpdateGroup(req *types.UpdateGroupReq) error {
 	operatorID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	_, err := l.svcCtx.GroupRpc.UpdateGroup(l.ctx, &grouprpc.UpdateGroupReq{
-		GroupId:    req.GroupID,
+		GroupId:    req.GroupId,
 		OperatorId: operatorID,
 		Name:       req.Name,
 		Avatar:     req.Avatar,

@@ -9,7 +9,7 @@ import (
 
 // GetConversationList 获取用户会话列表
 func (s *messageService) GetConversationList(ctx context.Context, userID uint64) ([]*model.UserConversation, error) {
-	convs, err := s.messageDAO.FindUserConversations(ctx, userID)
+	convs, err := s.conversationDAO.FindUserConversations(ctx, userID)
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询会话列表失败")
 	}
@@ -19,7 +19,7 @@ func (s *messageService) GetConversationList(ctx context.Context, userID uint64)
 // ReadMessage 消息已读上报
 func (s *messageService) ReadMessage(ctx context.Context, userID uint64, conversationID string, seq uint64) error {
 	// 清零未读并更新已读游标
-	if err := s.messageDAO.ClearUnread(ctx, userID, conversationID, 0, seq); err != nil {
+	if err := s.conversationDAO.ClearUnread(ctx, userID, conversationID, 0, seq); err != nil {
 		return xerr.Wrap(err, xerr.ErrDatabase, "更新已读状态失败")
 	}
 	return nil
@@ -30,21 +30,17 @@ func (s *messageService) ReadMessage(ctx context.Context, userID uint64, convers
 func (s *messageService) UpdateConversation(ctx context.Context, userID uint64, conversationID string, isTop, isDisturb, isMute int32) error {
 	updates := make(map[string]any)
 
-	if isTop == 1 {
-		updates["is_top"] = true
-	} else if isTop == 2 {
-		updates["is_top"] = false
-	}
-
-	if isDisturb == 1 {
+	switch isTop {
+	case 1:
 		updates["is_disturb"] = true
-	} else if isDisturb == 2 {
+	case 2:
 		updates["is_disturb"] = false
 	}
 
-	if isMute == 1 {
+	switch isMute {
+	case 1:
 		updates["is_mute"] = true
-	} else if isMute == 2 {
+	case 2:
 		updates["is_mute"] = false
 	}
 
@@ -52,7 +48,7 @@ func (s *messageService) UpdateConversation(ctx context.Context, userID uint64, 
 		return nil
 	}
 
-	if err := s.messageDAO.UpdateUserConversation(ctx, userID, conversationID, updates); err != nil {
+	if err := s.conversationDAO.UpdateUserConversation(ctx, userID, conversationID, updates); err != nil {
 		return xerr.Wrap(err, xerr.ErrDatabase, "更新会话设置失败")
 	}
 	return nil
@@ -60,7 +56,7 @@ func (s *messageService) UpdateConversation(ctx context.Context, userID uint64, 
 
 // GetConversation 批量获取会话详情
 func (s *messageService) GetConversation(ctx context.Context, conversationIDs []string) ([]*model.Conversation, error) {
-	convs, err := s.messageDAO.FindConversationsByIDs(ctx, conversationIDs)
+	convs, err := s.conversationDAO.FindConversationsByIDs(ctx, conversationIDs)
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrDatabase, "批量查询会话失败")
 	}
@@ -69,7 +65,7 @@ func (s *messageService) GetConversation(ctx context.Context, conversationIDs []
 
 // GetUserConversations 获取用户所有会话
 func (s *messageService) GetUserConversations(ctx context.Context, userID uint64) ([]*model.UserConversation, error) {
-	convs, err := s.messageDAO.FindUserConversations(ctx, userID)
+	convs, err := s.conversationDAO.FindUserConversations(ctx, userID)
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询用户会话失败")
 	}

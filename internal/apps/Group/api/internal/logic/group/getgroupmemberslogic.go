@@ -27,18 +27,18 @@ func NewGetGroupMembersLogic(ctx context.Context, svcCtx *svc.ServiceContext) *G
 
 func (l *GetGroupMembersLogic) GetGroupMembers(req *types.GetGroupMembersReq) (resp *types.GetGroupMembersResp, err error) {
 	res, err := l.svcCtx.GroupRpc.GetGroupMemberIDs(l.ctx, &group.GetGroupMemberIDsReq{
-		GroupId: req.GroupID,
+		GroupId: req.GroupId,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	var members []types.GroupMember
+	var members []*types.GroupMember
 	for _, m := range res.Members {
-		members = append(members, types.GroupMember{
-			GroupID:   m.GroupId,
-			UserID:    m.UserId,
-			Role:      int8(m.Role),
+		members = append(members, &types.GroupMember{
+			GroupId:   m.GroupId,
+			UserId:    m.UserId,
+			Role:      int32(m.Role),
 			Nickname:  m.Nickname,
 			Extra:     m.Extra,
 			MuteUntil: m.MuteUntil,

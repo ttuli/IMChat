@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package types;
+
+option go_package = "./;types";
+
+// LoginReq
+message LoginReq {
+  // @gotags: json:"account"
+  int64 account = 1;
+  // @gotags: json:"password"
+  string password = 2;
+  // @gotags: json:"device_id"
+  string device_id = 3;
+  // @gotags: json:"platform"
+  string platform = 4;
+}
+
+// LoginResp
+message LoginResp {
+  // @gotags: json:"token"
+  string token = 1;
+  // @gotags: json:"refresh_token"
+  string refresh_token = 2;
+}
+
+// LogoutReq
+message LogoutReq {
+  // @gotags: json:"remove_rt"
+  bool remove_rt = 1;
+}
+
+// RegisterReq
+message RegisterReq {
+  // @gotags: json:"name"
+  string name = 1;
+  // @gotags: json:"password"
+  string password = 2;
+  // @gotags: json:"phone"
+  string phone = 3;
+  // @gotags: json:"auth_code"
+  string auth_code = 4;
+}
+
+// RegisterResp
+message RegisterResp {
+  // @gotags: json:"id"
+  uint64 id = 1;
+}
+
+// GetAuthCodeReq
+message GetAuthCodeReq {
+  // @gotags: json:"phone"
+  string phone = 1;
+}
+
+// GetAuthCodeResp
+message GetAuthCodeResp {}
+
+// RefreshReq
+message RefreshReq {
+  // @gotags: json:"device_id"
+  string device_id = 1;
+  // @gotags: json:"platform"
+  string platform = 2;
+  // @gotags: json:"refresh_token,omitempty"
+  string refresh_token = 3;
+}
+
+// RefreshResp
+message RefreshResp {
+  // @gotags: json:"token"
+  string token = 1;
+  // @gotags: json:"refresh_token"
+  string refresh_token = 2;
+}
+
+

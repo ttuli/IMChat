@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package types;
+
+option go_package = "./;types";
+
+message PolicyToken {
+  // @gotags: json:"policy"
+  string policy = 1;
+  // @gotags: json:"security_token"
+  string security_token = 2;
+  // @gotags: json:"x_oss_signature_version"
+  string x_oss_signature_version = 3;
+  // @gotags: json:"x_oss_credential"
+  string x_oss_credential = 4;
+  // @gotags: json:"x_oss_date"
+  string x_oss_date = 5;
+  // @gotags: json:"signature"
+  string signature = 6;
+  // @gotags: json:"host"
+  string host = 7;
+  // @gotags: json:"dir"
+  string dir = 8;
+  // @gotags: json:"callback"
+  string callback = 9;
+}
+
+message CallbackParam {
+  // @gotags: json:"callbackUrl"
+  string callbackUrl = 1;
+  // @gotags: json:"callbackBody"
+  string callbackBody = 2;
+  // @gotags: json:"callbackBodyType"
+  string callbackBodyType = 3;
+}
+
+message CallbackData {
+  // @gotags: form:"id"
+  uint64 id = 1;
+  // @gotags: form:"file_type"
+  int32 file_type = 2;
+  // @gotags: form:"width"
+  int32 width = 3;
+  // @gotags: form:"height"
+  int32 height = 4;
+  // @gotags: form:"size"
+  uint64 size = 5;
+  // @gotags: form:"file_name"
+  string file_name = 6;
+  // @gotags: form:"mime_type"
+  string mime_type = 7;
+}
+
+message GetPostSignatureReq {
+  // @gotags: form:"file_type"
+  int32 file_type = 1;
+}

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
-	"IM2/internal/apps/websocket/gateway/types"
+	"IM2/internal/common"
 
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -55,7 +55,7 @@ func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Con
 }
 
 // Send 发送消息
-func (c *Connection) Send(msg *types.WSMessage) error {
+func (c *Connection) Send(msg *common.WSMessage) error {
 	msg.Version = c.Version
 	data, err := c.Codec.Encode(msg)
 	if err != nil {
@@ -77,8 +77,8 @@ func (c *Connection) SendRaw(data []byte) error {
 }
 
 // SendError 发送错误消息
-func (c *Connection) SendError(msg *types.ErrorMessage) error {
-	wsMsg, _ := protocol.NewWSMessage(types.MessageType_ERROR, msg)
+func (c *Connection) SendError(msg *common.ErrorMessage) error {
+	wsMsg, _ := protocol.NewWSMessage(common.MessageType_ERROR, msg)
 	return c.Send(wsMsg)
 }
 
@@ -101,7 +101,7 @@ func (c *Connection) IsClosed() bool {
 }
 
 // ReadPump 读取消息循环
-func (c *Connection) ReadPump(ctx context.Context, handler func(*types.WSMessage) error) {
+func (c *Connection) ReadPump(ctx context.Context, handler func(*common.WSMessage) error) {
 	defer c.Close()
 
 	c.Conn.SetReadLimit(maxMessageSize)

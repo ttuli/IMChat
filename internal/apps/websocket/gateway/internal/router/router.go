@@ -9,7 +9,7 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/pubsub"
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
-	"IM2/internal/apps/websocket/gateway/types"
+	"IM2/internal/common"
 
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
@@ -36,11 +36,11 @@ type Router struct {
 }
 
 // NewRouter 创建路由器
-func NewRouter(client *redis.Client, natsConn *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus) *Router {
+func NewRouter(client *redis.Client, natsConn *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig pubsub.SubjectConfig) *Router {
 	return &Router{
 		client:       client,
 		nodeID:       nodeID,
-		publisher:    pubsub.NewPublisher(natsConn, codec, nodeID),
+		publisher:    pubsub.NewPublisher(natsConn, codec, nodeID, subjectConfig),
 		telemetryBus: bus,
 	}
 }
@@ -103,7 +103,7 @@ func (r *Router) IsLocalUser(ctx context.Context, userID uint64) (bool, error) {
 }
 
 // RouteMessage 路由消息到目标用户
-func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *types.WSMessage) error {
+func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *common.WSMessage) error {
 	// 获取目标用户所在节点
 	targetNodeID, err := r.GetUserNode(ctx, targetUserID)
 	if err != nil {
@@ -116,7 +116,7 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *typ
 	}
 
 	// 通过 Pub/Sub 转发到目标节点
-	internalMsg := &types.InternalMessage{
+	internalMsg := &common.InternalMessage{
 		TargetUserId: targetUserID,
 		Message:      msg,
 	}
@@ -124,7 +124,7 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *typ
 	return r.publisher.PublishToNode(ctx, targetNodeID, internalMsg)
 }
 
-func (r *Router) RouteMsgToDB(ctx context.Context, msg *types.WSMessage) error {
+func (r *Router) RouteMsgToDB(ctx context.Context, msg *common.WSMessage) error {
 	return r.publisher.PublishToDB(ctx, msg)
 }
 

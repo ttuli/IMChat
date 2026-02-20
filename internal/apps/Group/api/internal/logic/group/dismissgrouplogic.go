@@ -27,8 +27,8 @@ func NewDismissGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dism
 
 func (l *DismissGroupLogic) DismissGroup(req *types.DismissGroupReq) error {
 	_, err := l.svcCtx.GroupRpc.DismissGroup(l.ctx, &grouprpc.DismissGroupReq{
-		GroupId:    req.GroupID,
-		OperatorId: req.OperatorID,
+		GroupId:    req.GroupId,
+		OperatorId: req.OperatorId,
 	})
 	return err
 }

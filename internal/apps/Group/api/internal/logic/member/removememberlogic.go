@@ -27,9 +27,9 @@ func NewRemoveMemberLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Remo
 
 func (l *RemoveMemberLogic) RemoveMember(req *types.RemoveMemberReq) error {
 	_, err := l.svcCtx.GroupRpc.RemoveMember(l.ctx, &grouprpc.RemoveMemberReq{
-		GroupId:    req.GroupID,
-		OperatorId: req.OperatorID,
-		UserId:     req.UserID,
+		GroupId:    req.GroupId,
+		OperatorId: req.OperatorId,
+		UserId:     req.UserId,
 	})
 	return err
 }

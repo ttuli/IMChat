@@ -27,12 +27,12 @@ func NewGetUserInfoLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUs
 }
 
 func (l *GetUserInfoLogic) GetUserInfo(req *types.GetUserInfoReq) (resp *types.GetUserInfoResp, err error) {
-	if len(req.IDs) == 0 && req.Phone == "" && req.Name == "" {
+	if len(req.Ids) == 0 && req.Phone == "" && req.Name == "" {
 		id := tokenmanager.ExtractIDFromCtx(l.ctx)
-		req.IDs = append(req.IDs, id)
+		req.Ids = append(req.Ids, id)
 	}
 	res, err := l.svcCtx.GetUserInfo(l.ctx, &user.GetUserInfoReq{
-		Ids:    req.IDs,
+		Ids:    req.Ids,
 		Phone:  req.Phone,
 		Name:   req.Name,
 		Limit:  int32(req.Limit),
@@ -42,10 +42,10 @@ func (l *GetUserInfoLogic) GetUserInfo(req *types.GetUserInfoReq) (resp *types.G
 		return nil, err
 	}
 
-	data := make([]types.UserInfo, 0)
+	data := make([]*types.UserInfo, 0)
 	for _, v := range res.Data {
-		u := types.UserInfo{
-			UserID:            v.UserId,
+		u := &types.UserInfo{
+			UserId:            v.UserId,
 			UserName:          v.UserName,
 			Gender:            v.Gender,
 			Avatar:            v.Avatar,

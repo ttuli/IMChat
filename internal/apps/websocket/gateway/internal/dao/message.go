@@ -6,12 +6,14 @@ import (
 	"strconv"
 	"time"
 
+	"IM2/internal/common"
 	"IM2/internal/model"
 
 	"github.com/redis/go-redis/v9"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -48,6 +50,7 @@ func NewMessageDAO(mysqlDSN string, redisConf zeroredis.RedisConf) *MessageDAO {
 
 // GetConversationMaxSeq 获取会话的最大消息序号
 // 优先从 Redis 缓存读取，缓存未命中则查 MySQL 并回填缓存
+// 如果 MySQL 中不存在，则自动创建会话
 func (m *MessageDAO) GetConversationMaxSeq(ctx context.Context, conversationID string) (uint64, error) {
 	cacheKey := convSeqPrefix + conversationID
 
@@ -151,6 +154,17 @@ func (m *MessageDAO) getMaxSeqFromDB(ctx context.Context, conversationID, cacheK
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			// 会话不存在，自动创建
+
+			newConv := model.Conversation{
+				ConversationID: conversationID,
+				Type:           int8(common.GetConversationType(conversationID)),
+				MaxSeq:         0,
+			}
+			// 忽略唯一键冲突错误（可能并发创建）
+			if createErr := m.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&newConv).Error; createErr != nil {
+				return 0, fmt.Errorf("auto create conversation failed: %w", createErr)
+			}
 			return 0, nil
 		}
 		return 0, fmt.Errorf("query conversation max_seq failed: %w", err)

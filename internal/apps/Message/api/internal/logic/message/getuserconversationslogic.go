@@ -36,11 +36,11 @@ func (l *GetUserConversationsLogic) GetUserConversations() (resp *types.GetUserC
 		return nil, err
 	}
 
-	list := make([]types.UserConversation, 0, len(res.Conversations))
+	list := make([]*types.UserConversation, 0, len(res.Conversations))
 	for _, c := range res.Conversations {
-		list = append(list, types.UserConversation{
-			UserID:         c.UserId,
-			ConversationID: c.ConversationId,
+		list = append(list, &types.UserConversation{
+			UserId:         c.UserId,
+			ConversationId: c.ConversationId,
 			IsTop:          c.IsTop,
 			IsDisturb:      c.IsDisturb,
 			IsMute:         c.IsMute,

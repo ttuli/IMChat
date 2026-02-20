@@ -29,7 +29,7 @@ func (l *LogoutLogic) Logout(req *types.LogoutReq) error {
 	uid := tokenmanager.ExtractIDFromCtx(l.ctx)
 	_, err := l.svcCtx.AuthRpc.Logout(l.ctx, &authrpc.LogoutRequest{
 		UserID:   uid,
-		RemoveRT: req.RemoveRT,
+		RemoveRT: req.RemoveRt,
 	})
 	return err
 }

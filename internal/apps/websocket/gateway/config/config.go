@@ -39,6 +39,9 @@ type Config struct {
 type NatsConf struct {
 	// NATS 服务器地址，例如 nats://localhost:4222
 	Url string `json:"url"`
+
+	NodeSubjectPrefix string
+	DBSubject         string
 }
 
 // WebSocketConf WebSocket 配置
