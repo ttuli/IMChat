@@ -525,8 +525,8 @@ func (x *GetGroupReq) GetOffset() int32 {
 // GetGroupMembersReq
 type GetGroupMembersReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"group_id" json:"group_id"
-	GroupId       uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id" form:"group_id"`
+	// @gotags: form:"group_id,optional" json:"group_id,optional"
+	GroupId       uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id,optional" form:"group_id,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

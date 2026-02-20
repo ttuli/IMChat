@@ -92,7 +92,7 @@ message GetGroupReq {
 
 // GetGroupMembersReq
 message GetGroupMembersReq {
-  // @gotags: form:"group_id" json:"group_id"
+  // @gotags: form:"group_id,optional" json:"group_id,optional"
   uint64 group_id = 1;
 }
 
