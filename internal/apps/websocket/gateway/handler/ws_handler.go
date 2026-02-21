@@ -94,9 +94,6 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	// 启动读循环(阻塞)
 	conn.ReadPump(ctx, h.createMessageHandler(ctx, conn))
-
-	h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID)
-	h.svcCtx.ConnectionManager.RemoveGroupConnection(conn.UserID, conn)
 }
 
 // createMessageHandler 创建消息处理函数
