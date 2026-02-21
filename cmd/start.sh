@@ -102,11 +102,19 @@ start_service() {
     local service="$1"
     local entry="${SERVICE_ENTRY[$service]}"
     local log_file="$LOG_DIR/${service}.log"
+    local bin_dir="$PROJECT_ROOT/build"
+    local bin_file="$bin_dir/$service"
+
+    log_info "正在编译 ${BOLD}$service${NC} ..."
+    mkdir -p "$bin_dir"
+    cd "$PROJECT_ROOT"
+    if ! go build -o "$bin_file" "./$entry" 2>>"$log_file"; then
+        log_error "${BOLD}$service${NC} 编译失败，请检查日志: $log_file"
+        return 1
+    fi
 
     log_info "正在启动 ${BOLD}$service${NC} ..."
-
-    cd "$PROJECT_ROOT"
-    nohup go run "$entry" >> "$log_file" 2>&1 &
+    nohup "$bin_file" >> "$log_file" 2>&1 &
     local pid=$!
 
     save_pid "$service" "$pid"
@@ -117,6 +125,23 @@ start_service() {
 
 do_start() {
     ensure_dirs
+
+    # 如果有旧的 PID 文件且存在运行中的进程，先停止它们
+    if [[ -f "$PID_FILE" ]]; then
+        local has_running=false
+        while IFS=' ' read -r service pid; do
+            [[ -z "$service" || -z "$pid" ]] && continue
+            if kill -0 "$pid" 2>/dev/null; then
+                has_running=true
+                break
+            fi
+        done < "$PID_FILE"
+
+        if [[ "$has_running" == true ]]; then
+            log_warn "检测到旧服务仍在运行，正在自动停止..."
+            do_stop
+        fi
+    fi
 
     # 清除旧的 PID 文件
     > "$PID_FILE"
@@ -129,11 +154,11 @@ do_start() {
     for service in "${RPC_SERVICES[@]}"; do
         if is_excluded "$service"; then
             log_warn "跳过 ${BOLD}$service${NC} (已排除)"
-            ((skipped_count++))
+            ((skipped_count++)) || true
             continue
         fi
         start_service "$service"
-        ((started_count++))
+        ((started_count++)) || true
         log_info "等待 ${RPC_WAIT}s 确保 $service 就绪..."
         sleep "$RPC_WAIT"
     done
@@ -143,11 +168,11 @@ do_start() {
     for service in "${API_SERVICES[@]}"; do
         if is_excluded "$service"; then
             log_warn "跳过 ${BOLD}$service${NC} (已排除)"
-            ((skipped_count++))
+            ((skipped_count++)) || true
             continue
         fi
         start_service "$service"
-        ((started_count++))
+        ((started_count++)) || true
     done
 
     # 3. 汇总
@@ -164,43 +189,53 @@ do_start() {
 do_stop() {
     log_header "停止所有 IM2 服务"
 
-    if [[ ! -f "$PID_FILE" ]]; then
-        log_warn "PID 文件不存在: $PID_FILE"
-        log_warn "没有已记录的服务可以停止"
-        return 0
-    fi
-
     local stopped=0
     local failed=0
 
-    while IFS=' ' read -r service pid; do
-        [[ -z "$service" || -z "$pid" ]] && continue
-        if kill -0 "$pid" 2>/dev/null; then
-            log_info "正在停止 ${BOLD}$service${NC} (PID: $pid)..."
-            kill "$pid" 2>/dev/null
-            ((stopped++))
-        else
-            log_warn "${BOLD}$service${NC} (PID: $pid) 已不存在"
-            ((failed++))
-        fi
-    done < "$PID_FILE"
-
-    # 等待进程退出
-    if [[ $stopped -gt 0 ]]; then
-        log_info "等待进程退出..."
-        sleep 2
-
-        # 强制终止仍在运行的进程
+    if [[ -f "$PID_FILE" ]]; then
         while IFS=' ' read -r service pid; do
             [[ -z "$service" || -z "$pid" ]] && continue
             if kill -0 "$pid" 2>/dev/null; then
-                log_warn "${BOLD}$service${NC} (PID: $pid) 未正常退出，强制终止..."
-                kill -9 "$pid" 2>/dev/null || true
+                log_info "正在停止 ${BOLD}$service${NC} (PID: $pid)..."
+                kill "$pid" 2>/dev/null
+                ((stopped++)) || true
+            else
+                log_warn "${BOLD}$service${NC} (PID: $pid) 已不存在"
+                ((failed++)) || true
             fi
         done < "$PID_FILE"
+
+        # 等待进程退出
+        if [[ $stopped -gt 0 ]]; then
+            log_info "等待进程退出..."
+            sleep 2
+
+            # 强制终止仍在运行的进程
+            while IFS=' ' read -r service pid; do
+                [[ -z "$service" || -z "$pid" ]] && continue
+                if kill -0 "$pid" 2>/dev/null; then
+                    log_warn "${BOLD}$service${NC} (PID: $pid) 未正常退出，强制终止..."
+                    kill -9 "$pid" 2>/dev/null || true
+                fi
+            done < "$PID_FILE"
+        fi
+
+        rm -f "$PID_FILE"
+    else
+        log_warn "PID 文件不存在: $PID_FILE"
     fi
 
-    rm -f "$PID_FILE"
+    # 清理编译产生的二进制文件
+    local bin_dir="$PROJECT_ROOT/build"
+    if [[ -d "$bin_dir" ]]; then
+        # 杀掉任何仍在运行的 bin 目录下的残留进程
+        for bin_file in "$bin_dir"/*; do
+            [[ -f "$bin_file" ]] || continue
+            pkill -f "^$bin_file" 2>/dev/null || true
+        done
+        rm -rf "$bin_dir"
+        log_info "已清理编译产物: $bin_dir"
+    fi
 
     echo ""
     log_info "已停止 ${BOLD}$stopped${NC} 个服务"
@@ -229,10 +264,10 @@ do_status() {
         [[ -z "$service" || -z "$pid" ]] && continue
         if kill -0 "$pid" 2>/dev/null; then
             printf "  %-20s %-10s ${GREEN}%-10s${NC}\n" "$service" "$pid" "运行中"
-            ((running++))
+            ((running++)) || true
         else
             printf "  %-20s %-10s ${RED}%-10s${NC}\n" "$service" "$pid" "已停止"
-            ((dead++))
+            ((dead++)) || true
         fi
     done < "$PID_FILE"
 
