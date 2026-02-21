@@ -10,6 +10,13 @@ message ErrorResp {
     string rawError = 3;
 }
 
+// API 通用响应包装
+message ApiResponse {
+    int32 code = 1;         // 状态码 (0表示成功)
+    string message = 2;     // 响应提示信息
+    bytes data = 3;         // 响应数据(序列化后的pb字节流)
+}
+
 // ==================== 主消息包装 ====================
 
 // WebSocket传输的顶层消息
@@ -277,8 +284,6 @@ message GroupMember {
   GroupRole role = 3;             // 群角色
   string nickname = 4;            // 群昵称
   int64 mute_until = 5;           // 禁言截止时间
-  bool is_top = 6;                // 是否置顶
-  bool is_disturb = 7;            // 是否免打扰
   int64 joined_at = 8;            // 加入时间
   string extra = 9;               // 扩展字段
 }
@@ -388,8 +393,6 @@ message Friend {
   bool starred = 4;               // 是否星标
   bool blocked = 5;               // 是否拉黑
   FriendSource source = 6;        // 来源
-  bool is_top = 7;                // 是否置顶
-  bool is_disturb = 8;            // 是否免打扰
   int64 create_time = 9;          // 成为好友时间
   string extra = 10;              // 扩展字段
 }

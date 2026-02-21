@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"IM2/internal/apps/Group/rpc/group"
-	"IM2/internal/apps/Group/rpc/internal/logic/grouprpc"
+	grouprpclogic "IM2/internal/apps/Group/rpc/internal/logic/grouprpc"
 	"IM2/internal/apps/Group/rpc/svc"
 )
 

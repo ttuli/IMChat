@@ -31,7 +31,7 @@ func (l *GetPendingAppliesLogic) GetPendingApplies(req *types.GetPendingAppliesR
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	rpcResp, err := l.svcCtx.GroupRpc.GetPendingApplies(l.ctx, &grouprpc.GetPendingAppliesReq{
-		UserId:   userID,
+		UserId: userID,
 	})
 	if err != nil {
 		return nil, err
@@ -52,6 +52,6 @@ func (l *GetPendingAppliesLogic) GetPendingApplies(req *types.GetPendingAppliesR
 	}
 
 	return &types.GetPendingAppliesResp{
-		Data:     data,
+		Data: data,
 	}, nil
 }

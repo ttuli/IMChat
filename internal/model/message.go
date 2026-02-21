@@ -21,10 +21,3 @@ type Message struct {
 	Status         int8               `bson:"status" json:"status"`                   // 状态: 0-正常 1-撤回 2-删除
 	CreateTime     time.Time          `bson:"create_time" json:"create_time"`         // 创建时间
 }
-
-// 消息状态常量
-const (
-	MsgStatusNormal   int8 = 0 // 正常
-	MsgStatusRecalled int8 = 1 // 撤回
-	MsgStatusDeleted  int8 = 2 // 删除
-)

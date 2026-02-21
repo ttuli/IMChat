@@ -1,11 +1,12 @@
 package repository
 
 import (
-	"IM2/internal/model"
 	"context"
 	"errors"
 	"fmt"
 	"sync"
+
+	"IM2/internal/model"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

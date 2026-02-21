@@ -6,7 +6,7 @@ import (
 	"IM2/internal/apps/User/api/svc"
 	"IM2/internal/apps/User/api/types"
 	"IM2/internal/apps/User/rpc/user"
-	"IM2/pkg/tokenManager"
+	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

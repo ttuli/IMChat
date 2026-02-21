@@ -26,10 +26,10 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 
 func (l *LoginLogic) Login(in *auth.LoginRequest) (*auth.LoginReply, error) {
 	resp, err := l.svcCtx.AuthService.Login(l.ctx, &service.LoginRequest{
-		Account:    in.Account,
-		Password:   in.Password,
-		DeviceID:   in.DeviceId,
-		Platform:   in.Platform,
+		Account:  in.Account,
+		Password: in.Password,
+		DeviceID: in.DeviceId,
+		Platform: in.Platform,
 	})
 	if err != nil {
 		return nil, err

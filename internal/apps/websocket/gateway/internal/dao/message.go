@@ -8,6 +8,7 @@ import (
 
 	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
@@ -48,28 +49,33 @@ func NewMessageDAO(mysqlDSN string, redisConf zeroredis.RedisConf) *MessageDAO {
 	}
 }
 
-// GetConversationMaxSeq 获取会话的最大消息序号
-// 优先从 Redis 缓存读取，缓存未命中则查 MySQL 并回填缓存
-// 如果 MySQL 中不存在，则自动创建会话
-func (m *MessageDAO) GetConversationMaxSeq(ctx context.Context, conversationID string) (uint64, error) {
+// IncrConversationSeq 原子递增会话消息序号，返回新的 seq
+// 1. 尝试 Redis INCR（缓存命中时直接原子递增）
+// 2. 缓存未命中则从 MySQL 加载 + 递增，回填 Redis
+// 3. 异步更新 MySQL 的 max_seq
+func (m *MessageDAO) IncrConversationSeq(ctx context.Context, conversationID string) (uint64, error) {
 	cacheKey := convSeqPrefix + conversationID
 
-	// 1. 先查 Redis
-	val, err := m.redis.Get(ctx, cacheKey).Result()
-	if err == nil {
-		seq, parseErr := strconv.ParseUint(val, 10, 64)
-		if parseErr == nil {
-			return seq, nil
-		}
-		// 缓存值异常，删除后走 DB
-		m.redis.Del(ctx, cacheKey)
-	} else if err != redis.Nil {
-		// Redis 异常，降级查 DB
-		return m.getMaxSeqFromDB(ctx, conversationID, cacheKey)
+	// 1. 尝试直接 INCR（key 存在时原子递增）
+	newSeq, err := m.redis.Incr(ctx, cacheKey).Result()
+	if err == nil && newSeq > 1 {
+		// key 已存在且递增成功（newSeq > 1 说明之前已经有值）
+		m.redis.Expire(ctx, cacheKey, convSeqExpire)
+		seq := uint64(newSeq)
+		// 异步同步到 MySQL
+		go m.syncSeqToDB(conversationID, seq)
+		return seq, nil
 	}
 
-	// 2. 缓存未命中，查 MySQL
-	return m.getMaxSeqFromDB(ctx, conversationID, cacheKey)
+	// newSeq == 1 说明 key 之前不存在（INCR 对不存在的 key 会初始化为 0 再 +1）
+	// 需要先从 DB 加载正确的值
+	if err == nil && newSeq == 1 {
+		// 先删除这个错误的 key，后面会用 DB 值重新设置
+		m.redis.Del(ctx, cacheKey)
+	}
+
+	// 2. 从 DB 加载并递增
+	return m.incrSeqFromDB(ctx, conversationID, cacheKey)
 }
 
 // BatchGetConversationMaxSeq 批量获取多个会话的 MaxSeq
@@ -131,6 +137,7 @@ func (m *MessageDAO) BatchGetConversationMaxSeq(ctx context.Context, conversatio
 		}
 		if _, pipeErr := pipe.Exec(ctx); pipeErr != nil {
 			// 回填失败不影响返回结果，仅记录
+			logger.Errorf("batch backfill conversation max_seq failed: %v", pipeErr)
 		}
 
 		// 不存在的会话 ID 默认 seq=0
@@ -144,8 +151,8 @@ func (m *MessageDAO) BatchGetConversationMaxSeq(ctx context.Context, conversatio
 	return result, nil
 }
 
-// getMaxSeqFromDB 从 MySQL 查询 MaxSeq 并回填 Redis 缓存
-func (m *MessageDAO) getMaxSeqFromDB(ctx context.Context, conversationID, cacheKey string) (uint64, error) {
+// incrSeqFromDB 从 MySQL 递增 max_seq 并回填 Redis 缓存
+func (m *MessageDAO) incrSeqFromDB(ctx context.Context, conversationID, cacheKey string) (uint64, error) {
 	var conv model.Conversation
 	err := m.db.WithContext(ctx).
 		Select("max_seq").
@@ -154,28 +161,46 @@ func (m *MessageDAO) getMaxSeqFromDB(ctx context.Context, conversationID, cacheK
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			// 会话不存在，自动创建
-
+			// 会话不存在，自动创建，max_seq 初始化为 1
 			newConv := model.Conversation{
 				ConversationID: conversationID,
 				Type:           int8(common.GetConversationType(conversationID)),
-				MaxSeq:         0,
+				MaxSeq:         1,
 			}
-			// 忽略唯一键冲突错误（可能并发创建）
-			if createErr := m.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&newConv).Error; createErr != nil {
+			if createErr := m.db.WithContext(ctx).Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "conversation_id"}},
+				DoUpdates: clause.Assignments(map[string]interface{}{"max_seq": gorm.Expr("max_seq + 1")}),
+			}).Create(&newConv).Error; createErr != nil {
 				return 0, fmt.Errorf("auto create conversation failed: %w", createErr)
 			}
-			return 0, nil
+			// 回填 Redis
+			m.redis.Set(ctx, cacheKey, strconv.FormatUint(1, 10), convSeqExpire)
+			return 1, nil
 		}
 		return 0, fmt.Errorf("query conversation max_seq failed: %w", err)
 	}
 
-	// 异步回填缓存，避免阻塞主流程
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		m.redis.Set(ctx, cacheKey, strconv.FormatUint(conv.MaxSeq, 10), convSeqExpire)
-	}()
+	// 递增 DB
+	newSeq := conv.MaxSeq + 1
+	if updateErr := m.db.WithContext(ctx).
+		Model(&model.Conversation{}).
+		Where("conversation_id = ?", conversationID).
+		Update("max_seq", newSeq).Error; updateErr != nil {
+		return 0, fmt.Errorf("update conversation max_seq failed: %w", updateErr)
+	}
 
-	return conv.MaxSeq, nil
+	// 回填 Redis
+	m.redis.Set(ctx, cacheKey, strconv.FormatUint(newSeq, 10), convSeqExpire)
+
+	return newSeq, nil
+}
+
+// syncSeqToDB 异步将 Redis 中的 seq 同步到 MySQL
+func (m *MessageDAO) syncSeqToDB(conversationID string, seq uint64) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	m.db.WithContext(ctx).
+		Model(&model.Conversation{}).
+		Where("conversation_id = ?", conversationID).
+		Update("max_seq", seq)
 }

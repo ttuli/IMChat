@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"IM2/internal/apps/Auth/rpc/auth"
-	"IM2/internal/apps/Auth/rpc/internal/logic/authrpc"
+	authrpclogic "IM2/internal/apps/Auth/rpc/internal/logic/authrpc"
 	"IM2/internal/apps/Auth/rpc/svc"
 )
 

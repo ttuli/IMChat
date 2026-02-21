@@ -10,7 +10,7 @@ type Config struct {
 
 	DAO struct {
 		UserDAO struct {
-			DataSource string
+			DataSource  string
 			RedisSource redis.RedisConf
 		}
 		FriendDAO      string

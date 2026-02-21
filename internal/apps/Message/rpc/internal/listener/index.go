@@ -1,13 +1,14 @@
 package listener
 
 import (
+	"context"
+	"time"
+
 	"IM2/internal/apps/Message/rpc/config"
 	"IM2/internal/apps/Message/rpc/internal/dao"
 	"IM2/internal/common"
 	"IM2/internal/model"
 	"IM2/pkg/logger"
-	"context"
-	"time"
 
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
@@ -117,7 +118,7 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) {
 		Content:        content,
 		MediaURL:       mediaURL,
 		Extra:          extra,
-		Status:         model.MsgStatusNormal,
+		Status:         int8(common.MessageStatus_MESSAGE_STATUS_SENT),
 		CreateTime:     time.UnixMilli(wsMsg.Timestamp),
 	}
 

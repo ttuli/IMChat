@@ -18,9 +18,9 @@ type SubjectConfig struct {
 
 // Publisher NATS 消息发布者
 type Publisher struct {
-	conn   *nats.Conn
-	codec  protocol.Codec
-	nodeID string
+	conn          *nats.Conn
+	codec         protocol.Codec
+	nodeID        string
 	subjectConfig SubjectConfig
 }
 

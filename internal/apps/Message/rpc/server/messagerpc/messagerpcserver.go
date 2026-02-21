@@ -7,9 +7,9 @@ package server
 import (
 	"context"
 
-	"IM2/internal/apps/Message/rpc/internal/logic/messagerpc"
-	"IM2/internal/apps/Message/rpc/svc"
+	messagerpclogic "IM2/internal/apps/Message/rpc/internal/logic/messagerpc"
 	"IM2/internal/apps/Message/rpc/message"
+	"IM2/internal/apps/Message/rpc/svc"
 )
 
 type MessageRpcServer struct {

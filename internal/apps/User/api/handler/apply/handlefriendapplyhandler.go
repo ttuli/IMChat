@@ -3,10 +3,12 @@ package apply
 import (
 	"net/http"
 
+	"github.com/zeromicro/go-zero/rest/httpx"
+
 	"IM2/internal/apps/User/api/internal/logic/apply"
 	"IM2/internal/apps/User/api/svc"
 	"IM2/internal/apps/User/api/types"
-	"github.com/zeromicro/go-zero/rest/httpx"
+	"IM2/pkg/resultx"
 )
 
 // 处理好友申请
@@ -14,14 +16,14 @@ func HandleFriendApplyHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.HandleFriendApplyReq
 		if err := httpx.Parse(r, &req); err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
+			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 			return
 		}
 
 		l := apply.NewHandleFriendApplyLogic(r.Context(), svcCtx)
 		err := l.HandleFriendApply(&req)
 		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
+			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
 			httpx.Ok(w)
 		}

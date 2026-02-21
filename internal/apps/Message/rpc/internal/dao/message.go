@@ -46,7 +46,6 @@ func (m *MessageDAO) InsertMessage(ctx context.Context, msg *model.Message) erro
 func (m *MessageDAO) FindByConversation(ctx context.Context, conversationID string, cursorSeq uint64, limit int) ([]*model.Message, error) {
 	filter := bson.M{
 		"conversation_id": conversationID,
-		"status":          model.MsgStatusNormal,
 	}
 
 	if cursorSeq > 0 {

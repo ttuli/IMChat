@@ -1,13 +1,14 @@
 package telemetry
 
 import (
-	"IM2/pkg/logger"
 	"context"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	"IM2/pkg/logger"
 )
 
 const (
