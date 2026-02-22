@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"IM2/internal/common"
 	"IM2/pkg/logger"
@@ -86,10 +87,10 @@ func ErrorHandler(ctx context.Context, err error) (int, any) {
 }
 
 // OkProtoCtx 根据 Accept 头协商响应格式
-// Accept: application/x-protobuf → 返回 protobuf 二进制 (包装在 common.ApiResponse 中)
+// Accept 包含 application/x-protobuf → 返回 protobuf 二进制 (包装在 common.ApiResponse 中)
 // 其他 → 返回 JSON（包裹在 Response 结构中）
 func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg proto.Message) {
-	if r.Header.Get("Accept") == "application/x-protobuf" {
+	if strings.Contains(r.Header.Get("Accept"), "application/x-protobuf") {
 		data, err := proto.Marshal(msg)
 		if err != nil {
 			httpx.WriteJsonCtx(ctx, w, http.StatusInternalServerError, &Response{
@@ -122,10 +123,10 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 }
 
 // ErrorProtoCtx 根据 Accept 头协商错误响应格式
-// Accept: application/x-protobuf → 返回 protobuf 二进制 (包装在 common.ApiResponse 中)
+// Accept 包含 application/x-protobuf → 返回 protobuf 二进制 (包装在 common.ApiResponse 中)
 // 其他 → 返回 JSON
 func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
-	if r.Header.Get("Accept") != "application/x-protobuf" {
+	if !strings.Contains(r.Header.Get("Accept"), "application/x-protobuf") {
 		// 回退到 JSON 错误处理
 		var e *xerr.Error
 		if customErr, ok := err.(*xerr.Error); ok {
