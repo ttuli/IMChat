@@ -40,20 +40,32 @@ func (m *MessageDAO) InsertMessage(ctx context.Context, msg *model.Message) erro
 	return err
 }
 
-// FindByConversation 按会话查询消息 (基于 Seq 游标分页)
-// cursorSeq: 上一页最后一条消息的 Seq，首次传 0 表示从最新开始
-// 返回按 seq DESC 排列的消息列表
-func (m *MessageDAO) FindByConversation(ctx context.Context, conversationID string, cursorSeq uint64, limit int) ([]*model.Message, error) {
-	filter := bson.M{
-		"conversation_id": conversationID,
+// FindByConversation 按会话做范围查询（基于 Seq 区间分页）。
+// startSeq: 区间起始（含），负数表示无下界。
+// endSeq:   区间终止（含），负数表示无上界。
+// 排序规则：startSeq≥0 且 endSeq<0（向新消息拉取）→ ASC；其余 → DESC（向旧消息拉取）。
+func (m *MessageDAO) FindByConversation(ctx context.Context, conversationID string, startSeq, endSeq int64, limit int) ([]*model.Message, error) {
+	seqFilter := bson.M{}
+	if startSeq >= 0 {
+		seqFilter["$gte"] = startSeq
+	}
+	if endSeq >= 0 {
+		seqFilter["$lte"] = endSeq
 	}
 
-	if cursorSeq > 0 {
-		filter["seq"] = bson.M{"$lt": cursorSeq}
+	filter := bson.M{"conversation_id": conversationID}
+	if len(seqFilter) > 0 {
+		filter["seq"] = seqFilter
+	}
+
+	// startSeq 有下界、endSeq 无上界 → 向新消息方向拉取，升序
+	sortOrder := -1
+	if startSeq >= 0 && endSeq < 0 {
+		sortOrder = 1
 	}
 
 	opts := options.Find().
-		SetSort(bson.D{{Key: "seq", Value: -1}}).
+		SetSort(bson.D{{Key: "seq", Value: sortOrder}}).
 		SetLimit(int64(limit))
 
 	cursor, err := m.db.Collection(mongoCollMessage).Find(ctx, filter, opts)

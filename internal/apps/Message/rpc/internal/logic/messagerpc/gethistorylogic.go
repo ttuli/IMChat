@@ -24,7 +24,7 @@ func NewGetHistoryLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetHis
 }
 
 func (l *GetHistoryLogic) GetHistory(in *message.GetHistoryReq) (*message.GetHistoryResp, error) {
-	msgs, err := l.svcCtx.MessageService.GetHistory(l.ctx, in.ConversationId, in.CursorSeq, int(in.Limit))
+	msgs, err := l.svcCtx.MessageService.GetHistory(l.ctx, in.ConversationId, in.StartSeq, in.EndSeq, int(in.Limit))
 	if err != nil {
 		return nil, err
 	}

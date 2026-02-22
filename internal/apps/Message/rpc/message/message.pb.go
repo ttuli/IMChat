@@ -7,12 +7,11 @@
 package message
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -325,9 +324,9 @@ func (x *UserConversation) GetUpdateTime() int64 {
 type GetHistoryReq struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	CursorSeq      uint64                 `protobuf:"varint,2,opt,name=cursor_seq,json=cursorSeq,proto3" json:"cursor_seq,omitempty"` // 上一次拉取的seq，首次传0(最新)
-	Limit          int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
-	Forward        bool                   `protobuf:"varint,4,opt,name=forward,proto3" json:"forward,omitempty"` // true: 向旧消息拉取(History), false: 向新消息拉取(Sync)
+	StartSeq       int64                  `protobuf:"varint,2,opt,name=start_seq,json=startSeq,proto3" json:"start_seq,omitempty"`
+	EndSeq         int64                  `protobuf:"varint,3,opt,name=end_seq,json=endSeq,proto3" json:"end_seq,omitempty"`
+	Limit          int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -369,9 +368,16 @@ func (x *GetHistoryReq) GetConversationId() string {
 	return ""
 }
 
-func (x *GetHistoryReq) GetCursorSeq() uint64 {
+func (x *GetHistoryReq) GetStartSeq() int64 {
 	if x != nil {
-		return x.CursorSeq
+		return x.StartSeq
+	}
+	return 0
+}
+
+func (x *GetHistoryReq) GetEndSeq() int64 {
+	if x != nil {
+		return x.EndSeq
 	}
 	return 0
 }
@@ -381,13 +387,6 @@ func (x *GetHistoryReq) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
-}
-
-func (x *GetHistoryReq) GetForward() bool {
-	if x != nil {
-		return x.Forward
-	}
-	return false
 }
 
 type GetHistoryResp struct {
@@ -857,13 +856,12 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\vcreate_time\x18\a \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
 	"\vupdate_time\x18\b \x01(\x03R\n" +
-	"updateTime\"\x87\x01\n" +
+	"updateTime\"\x84\x01\n" +
 	"\rGetHistoryReq\x12'\n" +
-	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1d\n" +
-	"\n" +
-	"cursor_seq\x18\x02 \x01(\x04R\tcursorSeq\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x18\n" +
-	"\aforward\x18\x04 \x01(\bR\aforward\">\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1b\n" +
+	"\tstart_seq\x18\x02 \x01(\x03R\bstartSeq\x12\x17\n" +
+	"\aend_seq\x18\x03 \x01(\x03R\x06endSeq\x12\x14\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\">\n" +
 	"\x0eGetHistoryResp\x12,\n" +
 	"\bmessages\x18\x01 \x03(\v2\x10.message.MessageR\bmessages\"9\n" +
 	"\x16GetConversationListReq\x12\x1f\n" +

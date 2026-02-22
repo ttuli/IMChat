@@ -30,20 +30,6 @@ message Message {
   int64 create_time = 11;
 }
 
-// Conversation
-message Conversation {
-  // @gotags: json:"conversation_id"
-  string conversation_id = 1;
-  // @gotags: json:"type"
-  int32 type = 2;
-  // @gotags: json:"max_seq"
-  uint64 max_seq = 3;
-  // @gotags: json:"create_time"
-  int64 create_time = 4;
-  // @gotags: json:"update_time"
-  int64 update_time = 5;
-}
-
 // UserConversation
 message UserConversation {
   // @gotags: json:"user_id"
@@ -66,14 +52,14 @@ message UserConversation {
 
 // GetHistoryReq
 message GetHistoryReq {
-  // @gotags: form:"conversation_id"
+  // @gotags: form:"conversation_id,optional" json:"conversation_id,optional"
   string conversation_id = 1;
-  // @gotags: form:"cursor_seq,optional"
-  uint64 cursor_seq = 2;
-  // @gotags: form:"limit,optional,default=20"
-  int32 limit = 3;
-  // @gotags: form:"forward,optional"
-  bool forward = 4;
+  // @gotags: form:"start_seq,optional" json:"start_seq,optional"
+  int64 start_seq = 2;
+  // @gotags: form:"end_seq,optional" json:"end_seq,optional"
+  int64 end_seq = 3;
+  // @gotags: form:"limit,optional,default=20" json:"limit,optional"
+  int32 limit = 4;
 }
 
 // GetHistoryResp
@@ -100,18 +86,6 @@ message UpdateConversationReq {
   int32 is_disturb = 3;
   // @gotags: json:"is_mute,optional"
   int32 is_mute = 4;
-}
-
-// GetConversationReq
-message GetConversationReq {
-  // @gotags: form:"conversation_ids" json:"conversation_ids"
-  repeated string conversation_ids = 1;
-}
-
-// GetConversationResp
-message GetConversationResp {
-  // @gotags: json:"conversations"
-  repeated Conversation conversations = 1;
 }
 
 // GetUserConversationsResp

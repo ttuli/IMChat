@@ -10,8 +10,9 @@ import (
 type MessageService interface {
 	// ========== 消息操作 ==========
 
-	// GetHistory 获取历史消息（基于Seq游标分页）
-	GetHistory(ctx context.Context, conversationID string, cursorSeq uint64, limit int) ([]*model.Message, error)
+	// GetHistory 获取历史消息（基于 Seq 区间分页）
+	// startSeq/endSeq 负数表示无界；limit≤0 时服务内部兜底 100。
+	GetHistory(ctx context.Context, conversationID string, startSeq, endSeq int64, limit int) ([]*model.Message, error)
 
 	// ========== 会话操作 ==========
 

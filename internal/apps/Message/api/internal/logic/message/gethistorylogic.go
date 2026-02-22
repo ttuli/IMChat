@@ -28,9 +28,9 @@ func NewGetHistoryLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetHis
 func (l *GetHistoryLogic) GetHistory(req *types.GetHistoryReq) (resp *types.GetHistoryResp, err error) {
 	res, err := l.svcCtx.MessageRpc.GetHistory(l.ctx, &messagerpc.GetHistoryReq{
 		ConversationId: req.ConversationId,
-		CursorSeq:      req.CursorSeq,
+		StartSeq:       req.StartSeq,
+		EndSeq:         req.EndSeq,
 		Limit:          int32(req.Limit),
-		Forward:        req.Forward,
 	})
 	if err != nil {
 		return nil, err

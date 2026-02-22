@@ -43,9 +43,9 @@ message UserConversation {
 
 message GetHistoryReq {
   string conversation_id = 1;
-  uint64 cursor_seq = 2; // 上一次拉取的seq，首次传0(最新)
-  int32 limit = 3;
-  bool forward = 4;      // true: 向旧消息拉取(History), false: 向新消息拉取(Sync)
+  int64 start_seq = 2;
+  int64 end_seq = 3;  
+  int32 limit = 4;
 }
 
 message GetHistoryResp {
