@@ -82,19 +82,19 @@ message CreateGroupResp {
 
 // GetGroupReq
 message GetGroupReq {
-  // @gotags: form:"group_id,optional"
+  // @gotags: form:"group_id,optional" json:"group_id,optional"
   repeated uint64 group_ids = 1;
-  // @gotags: form:"name_keyword,optional"
+  // @gotags: form:"name_keyword,optional" json:"name_keyword,optional"
   string name_keyword = 2;
-  // @gotags: form:"limit,optional,default=30"
+  // @gotags: form:"limit,optional,default=30" json:"limit,optional,default=30"
   int32 limit = 3;
-  // @gotags: form:"offset,optional,default=0"
+  // @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
   int32 offset = 4;
 }
 
 // GetGroupMembersReq
 message GetGroupMembersReq {
-  // @gotags: form:"group_id"
+  // @gotags: form:"group_id" json:"group_id,optional"
   uint64 group_id = 1;
 }
 

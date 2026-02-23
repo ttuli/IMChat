@@ -378,16 +378,16 @@ func (x *FriendRequest) GetRejectReason() string {
 // GetUserInfoReq
 type GetUserInfoReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"ids,optional"
-	Ids []uint64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty" form:"ids,optional"`
-	// @gotags: form:"phone,optional"
-	Phone string `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,omitempty" form:"phone,optional"`
-	// @gotags: form:"name,optional"
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" form:"name,optional"`
-	// @gotags: form:"limit,optional,default=20"
-	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty" form:"limit,optional,default=20"`
-	// @gotags: form:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty" form:"offset,optional,default=0"`
+	// @gotags: form:"ids,optional" json:"ids,optional"
+	Ids []uint64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,optional" form:"ids,optional"`
+	// @gotags: form:"phone,optional" json:"phone,optional"
+	Phone string `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,optional" form:"phone,optional"`
+	// @gotags: form:"name,optional" json:"name,optional"
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,optional" form:"name,optional"`
+	// @gotags: form:"limit,optional,default=20" json:"limit,optional,default=20"
+	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,optional,default=20" form:"limit,optional,default=20"`
+	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
+	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1107,16 +1107,16 @@ func (x *GetPendingFriendAppliesResp) GetData() []*FriendRequest {
 // SearchFriendReq
 type SearchFriendReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"name,optional"
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" form:"name,optional"`
-	// @gotags: form:"id,optional"
-	Id uint64 `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty" form:"id,optional"`
-	// @gotags: form:"phone,optional"
-	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,omitempty" form:"phone,optional"`
-	// @gotags: form:"limit,optional,default=30"
-	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty" form:"limit,optional,default=30"`
-	// @gotags: form:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty" form:"offset,optional,default=0"`
+	// @gotags: form:"name,optional" json:"name,optional"
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,optional" form:"name,optional"`
+	// @gotags: form:"id,optional" json:"id,optional"
+	Id uint64 `protobuf:"varint,2,opt,name=id,proto3" json:"id,optional" form:"id,optional"`
+	// @gotags: form:"phone,optional" json:"phone,optional"
+	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,optional" form:"phone,optional"`
+	// @gotags: form:"limit,optional,default=30" json:"limit,optional,default=30"
+	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,optional,default=30" form:"limit,optional,default=30"`
+	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
+	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
