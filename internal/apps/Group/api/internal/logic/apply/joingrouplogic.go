@@ -2,7 +2,6 @@ package apply
 
 import (
 	"context"
-	"strconv"
 
 	"IM2/internal/apps/Group/api/svc"
 	"IM2/internal/apps/Group/api/types"
@@ -42,7 +41,7 @@ func (l *JoinGroupLogic) JoinGroup(req *types.JoinGroupReq) (resp *types.JoinGro
 	data := rpcResp.Data
 	return &types.JoinGroupResp{
 		Data: &types.GroupRequest{
-			Id:          strconv.FormatUint(data.Id, 10),
+			Id:          int64(data.Id),
 			SenderId:    data.FromUserId,
 			GroupId:     data.GroupId,
 			ApplyMsg:    data.ApplyMsg,

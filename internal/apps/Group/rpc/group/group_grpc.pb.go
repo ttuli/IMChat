@@ -8,7 +8,6 @@ package group
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -57,7 +56,7 @@ type GroupRpcClient interface {
 	GetGroupMemberIDs(ctx context.Context, in *GetGroupMemberIDsReq, opts ...grpc.CallOption) (*GetGroupMemberIDsResp, error)
 	// 群申请管理
 	JoinGroup(ctx context.Context, in *JoinGroupReq, opts ...grpc.CallOption) (*JoinGroupResp, error)
-	HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*EmptyResp, error)
+	HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*HandleGroupApplyResp, error)
 	GetPendingApplies(ctx context.Context, in *GetPendingAppliesReq, opts ...grpc.CallOption) (*GetPendingAppliesResp, error)
 }
 
@@ -199,9 +198,9 @@ func (c *groupRpcClient) JoinGroup(ctx context.Context, in *JoinGroupReq, opts .
 	return out, nil
 }
 
-func (c *groupRpcClient) HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*EmptyResp, error) {
+func (c *groupRpcClient) HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*HandleGroupApplyResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResp)
+	out := new(HandleGroupApplyResp)
 	err := c.cc.Invoke(ctx, GroupRpc_HandleGroupApply_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -239,7 +238,7 @@ type GroupRpcServer interface {
 	GetGroupMemberIDs(context.Context, *GetGroupMemberIDsReq) (*GetGroupMemberIDsResp, error)
 	// 群申请管理
 	JoinGroup(context.Context, *JoinGroupReq) (*JoinGroupResp, error)
-	HandleGroupApply(context.Context, *HandleGroupApplyReq) (*EmptyResp, error)
+	HandleGroupApply(context.Context, *HandleGroupApplyReq) (*HandleGroupApplyResp, error)
 	GetPendingApplies(context.Context, *GetPendingAppliesReq) (*GetPendingAppliesResp, error)
 	mustEmbedUnimplementedGroupRpcServer()
 }
@@ -290,7 +289,7 @@ func (UnimplementedGroupRpcServer) GetGroupMemberIDs(context.Context, *GetGroupM
 func (UnimplementedGroupRpcServer) JoinGroup(context.Context, *JoinGroupReq) (*JoinGroupResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method JoinGroup not implemented")
 }
-func (UnimplementedGroupRpcServer) HandleGroupApply(context.Context, *HandleGroupApplyReq) (*EmptyResp, error) {
+func (UnimplementedGroupRpcServer) HandleGroupApply(context.Context, *HandleGroupApplyReq) (*HandleGroupApplyResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleGroupApply not implemented")
 }
 func (UnimplementedGroupRpcServer) GetPendingApplies(context.Context, *GetPendingAppliesReq) (*GetPendingAppliesResp, error) {

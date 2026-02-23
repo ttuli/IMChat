@@ -180,6 +180,10 @@ message HandleGroupApplyReq {
   string reject_reason = 4;
 }
 
+message HandleGroupApplyResp {
+  GroupRequest data = 1;
+}
+
 message GetPendingAppliesReq {
   uint64 user_id = 1;
 }
@@ -209,6 +213,6 @@ service GroupRpc {
 
   // 群申请管理
   rpc JoinGroup(JoinGroupReq) returns (JoinGroupResp);
-  rpc HandleGroupApply(HandleGroupApplyReq) returns (EmptyResp);
+  rpc HandleGroupApply(HandleGroupApplyReq) returns (HandleGroupApplyResp);
   rpc GetPendingApplies(GetPendingAppliesReq) returns (GetPendingAppliesResp);
 }

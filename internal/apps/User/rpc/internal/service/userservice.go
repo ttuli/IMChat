@@ -32,8 +32,8 @@ type UserService interface {
 	// ========== 好友申请 ==========
 	// NewFriendApply 发起好友申请
 	NewFriendApply(ctx context.Context, fromUserID, toUserID uint64, applyMsg string) (*model.FriendApply, error)
-	// HandleFriendApply 处理好友申请（同意/拒绝）
-	HandleFriendApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) error
+	// HandleFriendApply 处理好友申请（同意/拒绝），返回更新后的申请记录
+	HandleFriendApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) (*model.FriendApply, error)
 	// GetPendingFriendApplies 获取待处理的好友申请（返回全部）
 	GetPendingFriendApplies(ctx context.Context, userID uint64) ([]*model.FriendApply, error)
 }

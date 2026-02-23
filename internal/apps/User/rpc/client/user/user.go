@@ -28,6 +28,7 @@ type (
 	GetUserInfoReq              = user.GetUserInfoReq
 	GetUserInfoResp             = user.GetUserInfoResp
 	HandleFriendApplyReq        = user.HandleFriendApplyReq
+	HandleFriendApplyResp       = user.HandleFriendApplyResp
 	NewFriendApplyReq           = user.NewFriendApplyReq
 	NewFriendApplyResp          = user.NewFriendApplyResp
 	UpdateFriendReq             = user.UpdateFriendReq
@@ -49,7 +50,7 @@ type (
 		DeleteFriend(ctx context.Context, in *DeleteFriendReq, opts ...grpc.CallOption) (*EmptyResp, error)
 		// 好友申请
 		NewFriendApply(ctx context.Context, in *NewFriendApplyReq, opts ...grpc.CallOption) (*NewFriendApplyResp, error)
-		HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*EmptyResp, error)
+		HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*HandleFriendApplyResp, error)
 		GetPendingFriendApplies(ctx context.Context, in *GetPendingFriendAppliesReq, opts ...grpc.CallOption) (*GetPendingFriendAppliesResp, error)
 	}
 
@@ -112,7 +113,7 @@ func (m *defaultUser) NewFriendApply(ctx context.Context, in *NewFriendApplyReq,
 	return client.NewFriendApply(ctx, in, opts...)
 }
 
-func (m *defaultUser) HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*EmptyResp, error) {
+func (m *defaultUser) HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*HandleFriendApplyResp, error) {
 	client := user.NewUserClient(m.cli.Conn())
 	return client.HandleFriendApply(ctx, in, opts...)
 }

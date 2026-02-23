@@ -23,12 +23,23 @@ func NewHandleGroupApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 	}
 }
 
-func (l *HandleGroupApplyLogic) HandleGroupApply(in *group.HandleGroupApplyReq) (*group.EmptyResp, error) {
-	// proto ApplyStatus: 1-pending, 2-accepted, 3-rejected, 4-ignored
-	// model status: 0-pending, 1-accepted, 2-rejected, 3-ignored
+func (l *HandleGroupApplyLogic) HandleGroupApply(in *group.HandleGroupApplyReq) (*group.HandleGroupApplyResp, error) {
 	status := uint8(in.Status - 1)
-	if err := l.svcCtx.GroupService.HandleGroupApply(l.ctx, in.Id, in.OperatorId, status, in.RejectReason); err != nil {
+	apply, err := l.svcCtx.GroupService.HandleGroupApply(l.ctx, in.Id, in.OperatorId, status, in.RejectReason)
+	if err != nil {
 		return nil, err
 	}
-	return &group.EmptyResp{}, nil
+
+	return &group.HandleGroupApplyResp{
+		Data: &group.GroupRequest{
+			Id:          apply.ID,
+			FromUserId:  apply.FromUserID,
+			GroupId:     apply.GroupID,
+			ApplyMsg:    apply.ApplyMsg,
+			Status:      group.ApplyStatus(apply.Status),
+			HandlerId:   apply.HandlerID,
+			RequestTime: apply.CreateTime.UnixMilli(),
+			HandleTime:  apply.UpdateTime.UnixMilli(),
+		},
+	}, nil
 }

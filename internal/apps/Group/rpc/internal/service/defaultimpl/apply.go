@@ -54,36 +54,36 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 	return apply, nil
 }
 
-func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) error {
+func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) (*model.GroupApply, error) {
 	// 1. 查询申请记录
 	apply, err := s.applyDAO.FindApplyByID(ctx, applyID)
 	if err == gorm.ErrRecordNotFound {
-		return xerr.New(xerr.ErrNotFound, "申请记录不存在")
+		return nil, xerr.New(xerr.ErrNotFound, "申请记录不存在")
 	}
 	if err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询申请记录失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询申请记录失败")
 	}
 
 	// 2. 校验权限：操作者必须是该群的管理员或群主
 	member, err := s.groupDAO.FindMember(ctx, apply.GroupID, operatorID)
 	if err == gorm.ErrRecordNotFound {
-		return xerr.New(xerr.ErrForbidden, "非群成员无权操作")
+		return nil, xerr.New(xerr.ErrForbidden, "非群成员无权操作")
 	}
 	if err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询成员失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询成员失败")
 	}
 	if member.Role != model.GroupRoleOwner && member.Role != model.GroupRoleAdmin {
-		return xerr.New(xerr.ErrForbidden, "只有群主或管理员可以处理申请")
+		return nil, xerr.New(xerr.ErrForbidden, "只有群主或管理员可以处理申请")
 	}
 
 	// 3. 校验状态：只能处理待处理的申请
 	if apply.Status != model.GroupApplyStatusPending {
-		return xerr.New(xerr.ErrInvalidParams, "申请已被处理")
+		return nil, xerr.New(xerr.ErrInvalidParams, "申请已被处理")
 	}
 
 	// 4. 更新申请状态和处理人
 	if err := s.applyDAO.UpdateApplyStatusWithHandler(ctx, applyID, status, operatorID, rejectReason); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "更新申请状态失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "更新申请状态失败")
 	}
 
 	// 5. 如果同意，添加成员
@@ -97,12 +97,15 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 				Role:     model.GroupRoleMember,
 				JoinedAt: time.Now(),
 			}); err != nil {
-				return xerr.Wrap(err, xerr.ErrDatabase, "添加群成员失败")
+				return nil, xerr.Wrap(err, xerr.ErrDatabase, "添加群成员失败")
 			}
 		}
 	}
 
-	return nil
+	// 6. 返回更新后的记录
+	apply.Status = status
+	apply.HandlerID = operatorID
+	return apply, nil
 }
 
 func (s *groupService) GetPendingApplies(ctx context.Context, userID uint64) ([]*model.GroupApply, error) {

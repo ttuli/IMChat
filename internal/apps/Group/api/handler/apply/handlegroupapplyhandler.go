@@ -21,11 +21,11 @@ func HandleGroupApplyHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := apply.NewHandleGroupApplyLogic(r.Context(), svcCtx)
-		err := l.HandleGroupApply(&req)
+		resp, err := l.HandleGroupApply(&req)
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
-			httpx.Ok(w)
+			resultx.OkProtoCtx(r.Context(), w, r, resp)
 		}
 	}
 }

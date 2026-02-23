@@ -8,7 +8,6 @@ package user
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -49,7 +48,7 @@ type UserClient interface {
 	DeleteFriend(ctx context.Context, in *DeleteFriendReq, opts ...grpc.CallOption) (*EmptyResp, error)
 	// 好友申请
 	NewFriendApply(ctx context.Context, in *NewFriendApplyReq, opts ...grpc.CallOption) (*NewFriendApplyResp, error)
-	HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*EmptyResp, error)
+	HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*HandleFriendApplyResp, error)
 	GetPendingFriendApplies(ctx context.Context, in *GetPendingFriendAppliesReq, opts ...grpc.CallOption) (*GetPendingFriendAppliesResp, error)
 }
 
@@ -151,9 +150,9 @@ func (c *userClient) NewFriendApply(ctx context.Context, in *NewFriendApplyReq, 
 	return out, nil
 }
 
-func (c *userClient) HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*EmptyResp, error) {
+func (c *userClient) HandleFriendApply(ctx context.Context, in *HandleFriendApplyReq, opts ...grpc.CallOption) (*HandleFriendApplyResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResp)
+	out := new(HandleFriendApplyResp)
 	err := c.cc.Invoke(ctx, User_HandleFriendApply_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -187,7 +186,7 @@ type UserServer interface {
 	DeleteFriend(context.Context, *DeleteFriendReq) (*EmptyResp, error)
 	// 好友申请
 	NewFriendApply(context.Context, *NewFriendApplyReq) (*NewFriendApplyResp, error)
-	HandleFriendApply(context.Context, *HandleFriendApplyReq) (*EmptyResp, error)
+	HandleFriendApply(context.Context, *HandleFriendApplyReq) (*HandleFriendApplyResp, error)
 	GetPendingFriendApplies(context.Context, *GetPendingFriendAppliesReq) (*GetPendingFriendAppliesResp, error)
 	mustEmbedUnimplementedUserServer()
 }
@@ -226,7 +225,7 @@ func (UnimplementedUserServer) DeleteFriend(context.Context, *DeleteFriendReq) (
 func (UnimplementedUserServer) NewFriendApply(context.Context, *NewFriendApplyReq) (*NewFriendApplyResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewFriendApply not implemented")
 }
-func (UnimplementedUserServer) HandleFriendApply(context.Context, *HandleFriendApplyReq) (*EmptyResp, error) {
+func (UnimplementedUserServer) HandleFriendApply(context.Context, *HandleFriendApplyReq) (*HandleFriendApplyResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleFriendApply not implemented")
 }
 func (UnimplementedUserServer) GetPendingFriendApplies(context.Context, *GetPendingFriendAppliesReq) (*GetPendingFriendAppliesResp, error) {

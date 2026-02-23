@@ -26,5 +26,5 @@ func IsGroupMessage(t MessageType) bool {
 }
 
 func IsNotifyMessage(t MessageType) bool {
-	return t >= MessageType_NOTIFICATION && t <= MessageType_NOTIFICATION
+	return t >= MessageType_NOTIFICATION && t <= MessageType_APPLY_REJECT
 }

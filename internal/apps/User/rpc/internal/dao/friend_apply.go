@@ -45,7 +45,7 @@ func (d *FriendApplyDAO) FindPendingAppliesByToUserID(ctx context.Context, toUse
 	var total int64
 
 	db := d.db.WithContext(ctx).Model(&model.FriendApply{}).
-		Where("(to_user_id = ? OR from_user_id = ?) AND status = ?", toUserID, toUserID, model.ApplyStatusPending)
+		Where("to_user_id = ? OR from_user_id = ?", toUserID, toUserID)
 
 	// 查询总数
 	if err := db.Count(&total).Error; err != nil {

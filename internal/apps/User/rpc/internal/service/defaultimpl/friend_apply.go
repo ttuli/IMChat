@@ -45,40 +45,43 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 	return apply, nil
 }
 
-// HandleFriendApply 处理好友申请（同意/拒绝）
-func (s *userService) HandleFriendApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) error {
+// HandleFriendApply 处理好友申请（同意/拒绝），返回更新后的申请记录
+func (s *userService) HandleFriendApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) (*model.FriendApply, error) {
 	// 1. 查询申请记录
 	apply, err := s.friendApplyDAO.FindFriendApplyByID(ctx, applyID)
 	if err == gorm.ErrRecordNotFound {
-		return xerr.New(xerr.ErrNotFound, "申请记录不存在")
+		return nil, xerr.New(xerr.ErrNotFound, "申请记录不存在")
 	}
 	if err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询申请记录失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询申请记录失败")
 	}
 
 	// 2. 校验权限：只有接收人才能处理
 	if apply.ToUserID != operatorID {
-		return xerr.New(xerr.ErrForbidden, "无权处理此申请")
+		return nil, xerr.New(xerr.ErrForbidden, "无权处理此申请")
 	}
 
 	// 3. 校验状态：只能处理待处理的申请
 	if apply.Status != model.ApplyStatusPending {
-		return xerr.New(xerr.ErrInvalidParams, "申请已被处理")
+		return nil, xerr.New(xerr.ErrInvalidParams, "申请已被处理")
 	}
 
 	// 4. 更新申请状态
 	if err := s.friendApplyDAO.UpdateFriendApplyStatus(ctx, applyID, status, rejectReason); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "更新申请状态失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "更新申请状态失败")
 	}
 
 	// 5. 如果同意，创建好友关系
 	if status == model.ApplyStatusAccepted {
 		if err := s.friendDAO.InsertFriend(ctx, apply.FromUserID, apply.ToUserID, model.FriendSourceSearch); err != nil {
-			return xerr.Wrap(err, xerr.ErrDatabase, "创建好友关系失败")
+			return nil, xerr.Wrap(err, xerr.ErrDatabase, "创建好友关系失败")
 		}
 	}
 
-	return nil
+	// 6. 返回更新后的记录
+	apply.Status = status
+	apply.RejectReason = rejectReason
+	return apply, nil
 }
 
 // GetPendingFriendApplies 获取待处理的好友申请（返回全部）

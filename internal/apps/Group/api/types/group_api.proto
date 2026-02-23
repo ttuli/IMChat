@@ -45,7 +45,7 @@ message Group {
 // GroupRequest
 message GroupRequest {
   // @gotags: json:"id"
-  string id = 1;
+  int64 id = 1;
   // @gotags: json:"sender_id"
   uint64 sender_id = 2;
   // @gotags: json:"group_id"
@@ -141,13 +141,16 @@ message JoinGroupResp {
 // HandleGroupApplyReq
 message HandleGroupApplyReq {
   // @gotags: json:"apply_id"
-  string apply_id = 1;
+  int64 apply_id = 1;
   // @gotags: json:"result"
   int32 result = 2;
-  // @gotags: json:"operator_id"
-  uint64 operator_id = 3;
   // @gotags: json:"reject_reason,optional"
-  string reject_reason = 4;
+  string reject_reason = 3;
+}
+
+message HandleGroupApplyResp {
+  // @gotags: json:"data"
+  GroupRequest data = 1;
 }
 
 // InviteMembersReq

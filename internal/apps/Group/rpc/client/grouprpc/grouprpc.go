@@ -30,6 +30,7 @@ type (
 	GroupMember           = group.GroupMember
 	GroupRequest          = group.GroupRequest
 	HandleGroupApplyReq   = group.HandleGroupApplyReq
+	HandleGroupApplyResp  = group.HandleGroupApplyResp
 	InviteMembersReq      = group.InviteMembersReq
 	InviteMembersResp     = group.InviteMembersResp
 	JoinGroupReq          = group.JoinGroupReq
@@ -58,7 +59,7 @@ type (
 		GetGroupMemberIDs(ctx context.Context, in *GetGroupMemberIDsReq, opts ...grpc.CallOption) (*GetGroupMemberIDsResp, error)
 		// 群申请管理
 		JoinGroup(ctx context.Context, in *JoinGroupReq, opts ...grpc.CallOption) (*JoinGroupResp, error)
-		HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*EmptyResp, error)
+		HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*HandleGroupApplyResp, error)
 		GetPendingApplies(ctx context.Context, in *GetPendingAppliesReq, opts ...grpc.CallOption) (*GetPendingAppliesResp, error)
 	}
 
@@ -141,7 +142,7 @@ func (m *defaultGroupRpc) JoinGroup(ctx context.Context, in *JoinGroupReq, opts 
 	return client.JoinGroup(ctx, in, opts...)
 }
 
-func (m *defaultGroupRpc) HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*EmptyResp, error) {
+func (m *defaultGroupRpc) HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*HandleGroupApplyResp, error) {
 	client := group.NewGroupRpcClient(m.cli.Conn())
 	return client.HandleGroupApply(ctx, in, opts...)
 }

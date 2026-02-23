@@ -2,7 +2,6 @@ package apply
 
 import (
 	"context"
-	"strconv"
 
 	"IM2/internal/apps/Group/api/svc"
 	"IM2/internal/apps/Group/api/types"
@@ -40,10 +39,10 @@ func (l *GetPendingAppliesLogic) GetPendingApplies(req *types.GetPendingAppliesR
 	data := make([]*types.GroupRequest, 0, len(rpcResp.Data))
 	for _, d := range rpcResp.Data {
 		data = append(data, &types.GroupRequest{
-			Id:   strconv.FormatUint(d.Id, 10),
+			Id:          int64(d.Id),
 			SenderId:    d.FromUserId,
 			GroupId:     d.GroupId,
-			ApplyMsg:     d.ApplyMsg,
+			ApplyMsg:    d.ApplyMsg,
 			Status:      int32(d.Status),
 			HandlerId:   d.HandlerId,
 			RequestTime: d.RequestTime,

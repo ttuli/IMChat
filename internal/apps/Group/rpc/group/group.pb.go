@@ -7,12 +7,11 @@
 package group
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -1595,6 +1594,50 @@ func (x *HandleGroupApplyReq) GetRejectReason() string {
 	return ""
 }
 
+type HandleGroupApplyResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          *GroupRequest          `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HandleGroupApplyResp) Reset() {
+	*x = HandleGroupApplyResp{}
+	mi := &file_rpc_group_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HandleGroupApplyResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HandleGroupApplyResp) ProtoMessage() {}
+
+func (x *HandleGroupApplyResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_group_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HandleGroupApplyResp.ProtoReflect.Descriptor instead.
+func (*HandleGroupApplyResp) Descriptor() ([]byte, []int) {
+	return file_rpc_group_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *HandleGroupApplyResp) GetData() *GroupRequest {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type GetPendingAppliesReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -1604,7 +1647,7 @@ type GetPendingAppliesReq struct {
 
 func (x *GetPendingAppliesReq) Reset() {
 	*x = GetPendingAppliesReq{}
-	mi := &file_rpc_group_proto_msgTypes[24]
+	mi := &file_rpc_group_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1616,7 +1659,7 @@ func (x *GetPendingAppliesReq) String() string {
 func (*GetPendingAppliesReq) ProtoMessage() {}
 
 func (x *GetPendingAppliesReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_group_proto_msgTypes[24]
+	mi := &file_rpc_group_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1629,7 +1672,7 @@ func (x *GetPendingAppliesReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingAppliesReq.ProtoReflect.Descriptor instead.
 func (*GetPendingAppliesReq) Descriptor() ([]byte, []int) {
-	return file_rpc_group_proto_rawDescGZIP(), []int{24}
+	return file_rpc_group_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetPendingAppliesReq) GetUserId() uint64 {
@@ -1648,7 +1691,7 @@ type GetPendingAppliesResp struct {
 
 func (x *GetPendingAppliesResp) Reset() {
 	*x = GetPendingAppliesResp{}
-	mi := &file_rpc_group_proto_msgTypes[25]
+	mi := &file_rpc_group_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1660,7 +1703,7 @@ func (x *GetPendingAppliesResp) String() string {
 func (*GetPendingAppliesResp) ProtoMessage() {}
 
 func (x *GetPendingAppliesResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_group_proto_msgTypes[25]
+	mi := &file_rpc_group_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1673,7 +1716,7 @@ func (x *GetPendingAppliesResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingAppliesResp.ProtoReflect.Descriptor instead.
 func (*GetPendingAppliesResp) Descriptor() ([]byte, []int) {
-	return file_rpc_group_proto_rawDescGZIP(), []int{25}
+	return file_rpc_group_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetPendingAppliesResp) GetData() []*GroupRequest {
@@ -1804,7 +1847,9 @@ const file_rpc_group_proto_rawDesc = "" +
 	"\voperator_id\x18\x02 \x01(\x04R\n" +
 	"operatorId\x12*\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x12.group.ApplyStatusR\x06status\x12#\n" +
-	"\rreject_reason\x18\x04 \x01(\tR\frejectReason\"/\n" +
+	"\rreject_reason\x18\x04 \x01(\tR\frejectReason\"?\n" +
+	"\x14HandleGroupApplyResp\x12'\n" +
+	"\x04data\x18\x01 \x01(\v2\x13.group.GroupRequestR\x04data\"/\n" +
 	"\x14GetPendingAppliesReq\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\"@\n" +
 	"\x15GetPendingAppliesResp\x12'\n" +
@@ -1819,7 +1864,7 @@ const file_rpc_group_proto_rawDesc = "" +
 	"\x16GROUP_ROLE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10GROUP_ROLE_OWNER\x10\x01\x12\x14\n" +
 	"\x10GROUP_ROLE_ADMIN\x10\x02\x12\x15\n" +
-	"\x11GROUP_ROLE_MEMBER\x10\x032\xb7\a\n" +
+	"\x11GROUP_ROLE_MEMBER\x10\x032\xc2\a\n" +
 	"\bGroupRpc\x12<\n" +
 	"\vCreateGroup\x12\x15.group.CreateGroupReq\x1a\x16.group.CreateGroupResp\x123\n" +
 	"\bGetGroup\x12\x12.group.GetGroupReq\x1a\x13.group.GetGroupResp\x126\n" +
@@ -1835,8 +1880,8 @@ const file_rpc_group_proto_rawDesc = "" +
 	"\n" +
 	"MuteMember\x12\x14.group.MuteMemberReq\x1a\x10.group.EmptyResp\x12N\n" +
 	"\x11GetGroupMemberIDs\x12\x1b.group.GetGroupMemberIDsReq\x1a\x1c.group.GetGroupMemberIDsResp\x126\n" +
-	"\tJoinGroup\x12\x13.group.JoinGroupReq\x1a\x14.group.JoinGroupResp\x12@\n" +
-	"\x10HandleGroupApply\x12\x1a.group.HandleGroupApplyReq\x1a\x10.group.EmptyResp\x12N\n" +
+	"\tJoinGroup\x12\x13.group.JoinGroupReq\x1a\x14.group.JoinGroupResp\x12K\n" +
+	"\x10HandleGroupApply\x12\x1a.group.HandleGroupApplyReq\x1a\x1b.group.HandleGroupApplyResp\x12N\n" +
 	"\x11GetPendingApplies\x12\x1b.group.GetPendingAppliesReq\x1a\x1c.group.GetPendingAppliesRespB\tZ\a./groupb\x06proto3"
 
 var (
@@ -1852,7 +1897,7 @@ func file_rpc_group_proto_rawDescGZIP() []byte {
 }
 
 var file_rpc_group_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_rpc_group_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_rpc_group_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_rpc_group_proto_goTypes = []any{
 	(ApplyStatus)(0),              // 0: group.ApplyStatus
 	(GroupRole)(0),                // 1: group.GroupRole
@@ -1880,8 +1925,9 @@ var file_rpc_group_proto_goTypes = []any{
 	(*JoinGroupReq)(nil),          // 23: group.JoinGroupReq
 	(*JoinGroupResp)(nil),         // 24: group.JoinGroupResp
 	(*HandleGroupApplyReq)(nil),   // 25: group.HandleGroupApplyReq
-	(*GetPendingAppliesReq)(nil),  // 26: group.GetPendingAppliesReq
-	(*GetPendingAppliesResp)(nil), // 27: group.GetPendingAppliesResp
+	(*HandleGroupApplyResp)(nil),  // 26: group.HandleGroupApplyResp
+	(*GetPendingAppliesReq)(nil),  // 27: group.GetPendingAppliesReq
+	(*GetPendingAppliesResp)(nil), // 28: group.GetPendingAppliesResp
 }
 var file_rpc_group_proto_depIdxs = []int32{
 	1,  // 0: group.GroupMember.role:type_name -> group.GroupRole
@@ -1892,42 +1938,43 @@ var file_rpc_group_proto_depIdxs = []int32{
 	4,  // 5: group.GetGroupMemberIDsResp.members:type_name -> group.GroupMember
 	5,  // 6: group.JoinGroupResp.data:type_name -> group.GroupRequest
 	0,  // 7: group.HandleGroupApplyReq.status:type_name -> group.ApplyStatus
-	5,  // 8: group.GetPendingAppliesResp.data:type_name -> group.GroupRequest
-	6,  // 9: group.GroupRpc.CreateGroup:input_type -> group.CreateGroupReq
-	8,  // 10: group.GroupRpc.GetGroup:input_type -> group.GetGroupReq
-	10, // 11: group.GroupRpc.UpdateGroup:input_type -> group.UpdateGroupReq
-	11, // 12: group.GroupRpc.DismissGroup:input_type -> group.DismissGroupReq
-	12, // 13: group.GroupRpc.GetUserGroups:input_type -> group.GetUserGroupsReq
-	14, // 14: group.GroupRpc.InviteMembers:input_type -> group.InviteMembersReq
-	16, // 15: group.GroupRpc.RemoveMember:input_type -> group.RemoveMemberReq
-	17, // 16: group.GroupRpc.LeaveGroup:input_type -> group.LeaveGroupReq
-	18, // 17: group.GroupRpc.SetMemberRole:input_type -> group.SetMemberRoleReq
-	19, // 18: group.GroupRpc.SetMemberNickname:input_type -> group.SetMemberNicknameReq
-	20, // 19: group.GroupRpc.MuteMember:input_type -> group.MuteMemberReq
-	21, // 20: group.GroupRpc.GetGroupMemberIDs:input_type -> group.GetGroupMemberIDsReq
-	23, // 21: group.GroupRpc.JoinGroup:input_type -> group.JoinGroupReq
-	25, // 22: group.GroupRpc.HandleGroupApply:input_type -> group.HandleGroupApplyReq
-	26, // 23: group.GroupRpc.GetPendingApplies:input_type -> group.GetPendingAppliesReq
-	7,  // 24: group.GroupRpc.CreateGroup:output_type -> group.CreateGroupResp
-	9,  // 25: group.GroupRpc.GetGroup:output_type -> group.GetGroupResp
-	2,  // 26: group.GroupRpc.UpdateGroup:output_type -> group.EmptyResp
-	2,  // 27: group.GroupRpc.DismissGroup:output_type -> group.EmptyResp
-	13, // 28: group.GroupRpc.GetUserGroups:output_type -> group.GetUserGroupsResp
-	15, // 29: group.GroupRpc.InviteMembers:output_type -> group.InviteMembersResp
-	2,  // 30: group.GroupRpc.RemoveMember:output_type -> group.EmptyResp
-	2,  // 31: group.GroupRpc.LeaveGroup:output_type -> group.EmptyResp
-	2,  // 32: group.GroupRpc.SetMemberRole:output_type -> group.EmptyResp
-	2,  // 33: group.GroupRpc.SetMemberNickname:output_type -> group.EmptyResp
-	2,  // 34: group.GroupRpc.MuteMember:output_type -> group.EmptyResp
-	22, // 35: group.GroupRpc.GetGroupMemberIDs:output_type -> group.GetGroupMemberIDsResp
-	24, // 36: group.GroupRpc.JoinGroup:output_type -> group.JoinGroupResp
-	2,  // 37: group.GroupRpc.HandleGroupApply:output_type -> group.EmptyResp
-	27, // 38: group.GroupRpc.GetPendingApplies:output_type -> group.GetPendingAppliesResp
-	24, // [24:39] is the sub-list for method output_type
-	9,  // [9:24] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	5,  // 8: group.HandleGroupApplyResp.data:type_name -> group.GroupRequest
+	5,  // 9: group.GetPendingAppliesResp.data:type_name -> group.GroupRequest
+	6,  // 10: group.GroupRpc.CreateGroup:input_type -> group.CreateGroupReq
+	8,  // 11: group.GroupRpc.GetGroup:input_type -> group.GetGroupReq
+	10, // 12: group.GroupRpc.UpdateGroup:input_type -> group.UpdateGroupReq
+	11, // 13: group.GroupRpc.DismissGroup:input_type -> group.DismissGroupReq
+	12, // 14: group.GroupRpc.GetUserGroups:input_type -> group.GetUserGroupsReq
+	14, // 15: group.GroupRpc.InviteMembers:input_type -> group.InviteMembersReq
+	16, // 16: group.GroupRpc.RemoveMember:input_type -> group.RemoveMemberReq
+	17, // 17: group.GroupRpc.LeaveGroup:input_type -> group.LeaveGroupReq
+	18, // 18: group.GroupRpc.SetMemberRole:input_type -> group.SetMemberRoleReq
+	19, // 19: group.GroupRpc.SetMemberNickname:input_type -> group.SetMemberNicknameReq
+	20, // 20: group.GroupRpc.MuteMember:input_type -> group.MuteMemberReq
+	21, // 21: group.GroupRpc.GetGroupMemberIDs:input_type -> group.GetGroupMemberIDsReq
+	23, // 22: group.GroupRpc.JoinGroup:input_type -> group.JoinGroupReq
+	25, // 23: group.GroupRpc.HandleGroupApply:input_type -> group.HandleGroupApplyReq
+	27, // 24: group.GroupRpc.GetPendingApplies:input_type -> group.GetPendingAppliesReq
+	7,  // 25: group.GroupRpc.CreateGroup:output_type -> group.CreateGroupResp
+	9,  // 26: group.GroupRpc.GetGroup:output_type -> group.GetGroupResp
+	2,  // 27: group.GroupRpc.UpdateGroup:output_type -> group.EmptyResp
+	2,  // 28: group.GroupRpc.DismissGroup:output_type -> group.EmptyResp
+	13, // 29: group.GroupRpc.GetUserGroups:output_type -> group.GetUserGroupsResp
+	15, // 30: group.GroupRpc.InviteMembers:output_type -> group.InviteMembersResp
+	2,  // 31: group.GroupRpc.RemoveMember:output_type -> group.EmptyResp
+	2,  // 32: group.GroupRpc.LeaveGroup:output_type -> group.EmptyResp
+	2,  // 33: group.GroupRpc.SetMemberRole:output_type -> group.EmptyResp
+	2,  // 34: group.GroupRpc.SetMemberNickname:output_type -> group.EmptyResp
+	2,  // 35: group.GroupRpc.MuteMember:output_type -> group.EmptyResp
+	22, // 36: group.GroupRpc.GetGroupMemberIDs:output_type -> group.GetGroupMemberIDsResp
+	24, // 37: group.GroupRpc.JoinGroup:output_type -> group.JoinGroupResp
+	26, // 38: group.GroupRpc.HandleGroupApply:output_type -> group.HandleGroupApplyResp
+	28, // 39: group.GroupRpc.GetPendingApplies:output_type -> group.GetPendingAppliesResp
+	25, // [25:40] is the sub-list for method output_type
+	10, // [10:25] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_rpc_group_proto_init() }
@@ -1941,7 +1988,7 @@ func file_rpc_group_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rpc_group_proto_rawDesc), len(file_rpc_group_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

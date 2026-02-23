@@ -71,7 +71,7 @@ func (s *UserServer) NewFriendApply(ctx context.Context, in *user.NewFriendApply
 	return l.NewFriendApply(in)
 }
 
-func (s *UserServer) HandleFriendApply(ctx context.Context, in *user.HandleFriendApplyReq) (*user.EmptyResp, error) {
+func (s *UserServer) HandleFriendApply(ctx context.Context, in *user.HandleFriendApplyReq) (*user.HandleFriendApplyResp, error) {
 	l := userlogic.NewHandleFriendApplyLogic(ctx, s.svcCtx)
 	return l.HandleFriendApply(in)
 }

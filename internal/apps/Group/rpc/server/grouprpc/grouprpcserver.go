@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"IM2/internal/apps/Group/rpc/group"
-	grouprpclogic "IM2/internal/apps/Group/rpc/internal/logic/grouprpc"
+	"IM2/internal/apps/Group/rpc/internal/logic/grouprpc"
 	"IM2/internal/apps/Group/rpc/svc"
 )
 
@@ -91,7 +91,7 @@ func (s *GroupRpcServer) JoinGroup(ctx context.Context, in *group.JoinGroupReq) 
 	return l.JoinGroup(in)
 }
 
-func (s *GroupRpcServer) HandleGroupApply(ctx context.Context, in *group.HandleGroupApplyReq) (*group.EmptyResp, error) {
+func (s *GroupRpcServer) HandleGroupApply(ctx context.Context, in *group.HandleGroupApplyReq) (*group.HandleGroupApplyResp, error) {
 	l := grouprpclogic.NewHandleGroupApplyLogic(ctx, s.svcCtx)
 	return l.HandleGroupApply(in)
 }

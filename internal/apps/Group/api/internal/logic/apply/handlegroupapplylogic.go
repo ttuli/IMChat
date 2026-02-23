@@ -2,13 +2,12 @@ package apply
 
 import (
 	"context"
-	"strconv"
 
 	"IM2/internal/apps/Group/api/svc"
 	"IM2/internal/apps/Group/api/types"
 	"IM2/internal/apps/Group/rpc/client/grouprpc"
 	"IM2/internal/apps/Group/rpc/group"
-	"IM2/pkg/xerr"
+	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -28,17 +27,24 @@ func NewHandleGroupApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 	}
 }
 
-func (l *HandleGroupApplyLogic) HandleGroupApply(req *types.HandleGroupApplyReq) error {
-	applyID, err := strconv.ParseUint(req.ApplyId, 10, 64)
-	if err != nil {
-		return xerr.New(xerr.ErrInvalidParams, "申请ID格式错误")
-	}
-
-	_, err = l.svcCtx.GroupRpc.HandleGroupApply(l.ctx, &grouprpc.HandleGroupApplyReq{
-		Id:           applyID,
-		OperatorId:   req.OperatorId,
+func (l *HandleGroupApplyLogic) HandleGroupApply(req *types.HandleGroupApplyReq) (*types.HandleGroupApplyResp, error) {
+	resp, err := l.svcCtx.GroupRpc.HandleGroupApply(l.ctx, &grouprpc.HandleGroupApplyReq{
+		Id:           uint64(req.ApplyId),
+		OperatorId:   tokenmanager.ExtractIDFromCtx(l.ctx),
 		Status:       group.ApplyStatus(req.Result),
 		RejectReason: req.RejectReason,
 	})
-	return err
+	return &types.HandleGroupApplyResp{
+		Data: &types.GroupRequest{
+			Id:           int64(resp.Data.Id),
+			SenderId:     uint64(resp.Data.FromUserId),
+			GroupId:      uint64(resp.Data.GroupId),
+			ApplyMsg:     resp.Data.ApplyMsg,
+			Status:       int32(resp.Data.Status),
+			HandlerId:    uint64(resp.Data.HandlerId),
+			RequestTime:  resp.Data.RequestTime,
+			HandleTime:   resp.Data.HandleTime,
+			RejectReason: resp.Data.RejectReason,
+		},
+	}, err
 }

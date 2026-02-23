@@ -164,6 +164,12 @@ message HandleFriendApplyReq {
   string reject_reason = 3;
 }
 
+// HandleFriendApplyResp
+message HandleFriendApplyResp {
+  // @gotags: json:"data"
+  FriendRequest data = 1;
+}
+
 // GetPendingFriendAppliesReq
 message GetPendingFriendAppliesReq {}
 

@@ -21,11 +21,11 @@ func HandleFriendApplyHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := apply.NewHandleFriendApplyLogic(r.Context(), svcCtx)
-		err := l.HandleFriendApply(&req)
+		resp, err := l.HandleFriendApply(&req)
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
-			httpx.Ok(w)
+			resultx.OkProtoCtx(r.Context(), w, r, resp)
 		}
 	}
 }

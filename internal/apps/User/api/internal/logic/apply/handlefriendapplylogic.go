@@ -26,15 +26,27 @@ func NewHandleFriendApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 	}
 }
 
-func (l *HandleFriendApplyLogic) HandleFriendApply(req *types.HandleFriendApplyReq) error {
+func (l *HandleFriendApplyLogic) HandleFriendApply(req *types.HandleFriendApplyReq) (*types.HandleFriendApplyResp, error) {
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
-	_, err := l.svcCtx.HandleFriendApply(l.ctx, &user.HandleFriendApplyReq{
+	resp, err := l.svcCtx.HandleFriendApply(l.ctx, &user.HandleFriendApplyReq{
 		Id:           req.RequestId,
 		OperatorId:   userID,
 		Status:       int32(req.Result),
 		RejectReason: req.RejectReason,
 	})
 
-	return err
+	return &types.HandleFriendApplyResp{
+		Data: &types.FriendRequest{
+			Id:           resp.Data.Id,
+			FromUserId:   resp.Data.FromUserId,
+			ToUserId:     resp.Data.ToUserId,
+			ApplyMsg:     resp.Data.ApplyMsg,
+			Status:       resp.Data.Status,
+			Source:       resp.Data.Source,
+			RequestTime:  resp.Data.RequestTime,
+			HandleTime:   resp.Data.HandleTime,
+			RejectReason: resp.Data.RejectReason,
+		},
+	}, err
 }

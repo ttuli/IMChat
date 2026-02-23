@@ -23,11 +23,23 @@ func NewHandleFriendApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 	}
 }
 
-func (l *HandleFriendApplyLogic) HandleFriendApply(in *user.HandleFriendApplyReq) (*user.EmptyResp, error) {
-	err := l.svcCtx.UserService.HandleFriendApply(l.ctx, in.Id, in.OperatorId, uint8(in.Status), in.RejectReason)
+func (l *HandleFriendApplyLogic) HandleFriendApply(in *user.HandleFriendApplyReq) (*user.HandleFriendApplyResp, error) {
+	apply, err := l.svcCtx.UserService.HandleFriendApply(l.ctx, in.Id, in.OperatorId, uint8(in.Status), in.RejectReason)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user.EmptyResp{}, nil
+	return &user.HandleFriendApplyResp{
+		Data: &user.FriendRequest{
+			Id:           apply.ID,
+			FromUserId:   apply.FromUserID,
+			ToUserId:     apply.ToUserID,
+			ApplyMsg:     apply.ApplyMsg,
+			Status:       int32(apply.Status),
+			Source:       int32(apply.Source),
+			RequestTime:  apply.CreateTime.UnixMilli(),
+			HandleTime:   apply.HandleTime.UnixMilli(),
+			RejectReason: apply.RejectReason,
+		},
+	}, nil
 }

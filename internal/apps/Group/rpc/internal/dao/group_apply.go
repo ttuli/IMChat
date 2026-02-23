@@ -106,7 +106,7 @@ func (m *ApplyDAO) FindPendingAppliesByFromUserID(ctx context.Context, userID ui
 	var total int64
 
 	query := m.DB.WithContext(ctx).Model(&model.GroupApply{}).
-		Where("from_user_id = ? AND status = ?", userID, model.GroupApplyStatusPending)
+		Where("from_user_id = ?", userID)
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err

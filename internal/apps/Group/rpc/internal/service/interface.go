@@ -59,8 +59,8 @@ type GroupService interface {
 	// JoinGroup 申请加入群聊（群级别申请，任何管理员/群主都可处理）
 	JoinGroup(ctx context.Context, groupID, fromUserID uint64, applyMsg string) (*model.GroupApply, error)
 
-	// HandleGroupApply 处理群申请
-	HandleGroupApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) error
+	// HandleGroupApply 处理群申请，返回更新后的申请记录
+	HandleGroupApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) (*model.GroupApply, error)
 
 	// GetPendingApplies 获取待处理的群申请
 	GetPendingApplies(ctx context.Context, userID uint64) ([]*model.GroupApply, error)
