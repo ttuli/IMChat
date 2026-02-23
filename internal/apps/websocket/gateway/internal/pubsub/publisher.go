@@ -47,7 +47,24 @@ func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *commo
 		return err
 	}
 
-	logger.Infof("[Publisher] published message to node %s for user %d", nodeID, msg.TargetUserId)
+	logger.Infof("[Publisher] published message to node %s for user %d", nodeID, msg.TargetId)
+	return nil
+}
+
+// BroadcastToAllNodes 广播消息到所有节点
+func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.InternalMessage) error {
+	subject := p.getBroadcastSubject()
+
+	data, err := p.codec.EncodeInternal(msg)
+	if err != nil {
+		return err
+	}
+
+	if err := p.conn.Publish(subject, data); err != nil {
+		return err
+	}
+
+	logger.Infof("[Publisher] broadcasted message to all nodes for target %d", msg.TargetId)
 	return nil
 }
 
@@ -74,4 +91,9 @@ func (p *Publisher) getNodeSubject(nodeID string) string {
 
 func (p *Publisher) getDBSubject() string {
 	return p.subjectConfig.DBSubject
+}
+
+// getBroadcastSubject 获取广播消息 subject
+func (p *Publisher) getBroadcastSubject() string {
+	return fmt.Sprintf("%sbroadcast", p.subjectConfig.NodeSubjectPrefix)
 }

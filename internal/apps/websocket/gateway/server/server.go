@@ -90,15 +90,18 @@ func (s *GatewayServer) Stop() error {
 	return nil
 }
 
-// handleInternalMessage 处理跨节点消息
 func (s *GatewayServer) handleInternalMessage(ctx context.Context, msg *common.InternalMessage) error {
 	// 获取本地连接
-	conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.TargetUserId)
-	if !ok {
-		// 用户不在本节点，忽略
+	switch msg.TargetType {
+	case common.TargetType_USER:
+		conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.TargetId)
+		if ok {
+			return conn.Send(msg.Message)
+		}
+	case common.TargetType_GROUP:
+		return s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, msg.TargetId, msg.Message)
+	default:
 		return nil
 	}
-
-	// 发送消息
-	return conn.Send(msg.Message)
+	return nil
 }

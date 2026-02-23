@@ -42,10 +42,10 @@ func (l *JoinGroupLogic) JoinGroup(req *types.JoinGroupReq) (resp *types.JoinGro
 	data := rpcResp.Data
 	return &types.JoinGroupResp{
 		Data: &types.GroupRequest{
-			RequestId:   strconv.FormatUint(data.Id, 10),
+			Id:          strconv.FormatUint(data.Id, 10),
 			SenderId:    data.FromUserId,
 			GroupId:     data.GroupId,
-			Message:     data.ApplyMsg,
+			ApplyMsg:    data.ApplyMsg,
 			Status:      int32(data.Status),
 			HandlerId:   data.HandlerId,
 			RequestTime: data.RequestTime,

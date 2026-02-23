@@ -39,7 +39,7 @@ func (l *GetPendingFriendAppliesLogic) GetPendingFriendApplies(req *types.GetPen
 	data := make([]*types.FriendRequest, 0, len(res.Data))
 	for _, a := range res.Data {
 		data = append(data, &types.FriendRequest{
-			RequestId:    a.Id,
+			Id:    a.Id,
 			FromUserId:   a.FromUserId,
 			ToUserId:     a.ToUserId,
 			ApplyMsg:     a.ApplyMsg,

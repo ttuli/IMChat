@@ -2,11 +2,10 @@ package connection
 
 import (
 	"context"
+	"errors"
 	"sync"
 
-	"IM2/internal/apps/websocket/gateway/internal/telemetry"
 	"IM2/internal/common"
-	"IM2/pkg/xerr"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -21,6 +20,10 @@ type Manager interface {
 	GetLocalConnection(userID uint64) (*Connection, bool)
 	// SendToUser 发送消息给用户
 	SendToUser(ctx context.Context, userID uint64, msg *common.WSMessage) error
+	// SendToGroup 发送消息给群组 (并在集群内路由)
+	SendToGroup(ctx context.Context, groupID uint64, msg *common.WSMessage) error
+	// SendToGroupLocal 仅发送给本地群组成员
+	SendToGroupLocal(ctx context.Context, groupID uint64, msg *common.WSMessage) error
 	// Broadcast 广播消息给多个用户
 	Broadcast(ctx context.Context, userIDs []uint64, msg *common.WSMessage) error
 	// LocalUserCount 本地用户数量
@@ -42,23 +45,23 @@ type DefaultManager struct {
 	groupLock        sync.RWMutex
 	groupConnections map[uint64][]*Connection
 
-	nodeID       string
-	router       MessageRouter
-	telemetryBus *telemetry.Bus
+	nodeID string
+	router MessageRouter
 }
 
 // MessageRouter 消息路由接口(用于跨节点通信)
 type MessageRouter interface {
 	// RouteMessage 路由消息到目标用户
 	RouteMessage(ctx context.Context, targetUserID uint64, msg *common.WSMessage) error
+	// RouteGroupMessage 路由群组消息到所有节点
+	RouteGroupMessage(ctx context.Context, targetGroupID uint64, msg *common.WSMessage) error
 }
 
 // NewDefaultManager 创建默认连接管理器
-func NewDefaultManager(nodeID string, router MessageRouter, bus *telemetry.Bus) *DefaultManager {
+func NewDefaultManager(nodeID string, router MessageRouter) *DefaultManager {
 	return &DefaultManager{
 		nodeID:           nodeID,
 		router:           router,
-		telemetryBus:     bus,
 		groupConnections: make(map[uint64][]*Connection),
 	}
 }
@@ -137,7 +140,6 @@ func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *com
 	// 先尝试本地发送
 	if conn, ok := m.GetLocalConnection(userID); ok {
 		if err := conn.Send(msg); err != nil {
-			m.telemetryBus.Publish(err)
 			return err
 		}
 		return nil
@@ -146,13 +148,41 @@ func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *com
 	// 本地没有连接，通过路由器转发
 	if m.router != nil {
 		if err := m.router.RouteMessage(ctx, userID, msg); err != nil {
-			m.telemetryBus.Publish(err)
 			return err
 		}
 		return nil
 	}
 
-	return xerr.New(xerr.ErrInternalServer, "user not connected")
+	return errors.New("user not connected")
+}
+
+func (m *DefaultManager) SendToGroup(ctx context.Context, groupID uint64, msg *common.WSMessage) error {
+	// 先发送给本地群组成员
+	if err := m.SendToGroupLocal(ctx, groupID, msg); err != nil {
+		logx.Errorf("[ConnectionManager] SendToGroupLocal failed: %v", err)
+	}
+
+	// 总是广播群消息到其他节点
+	if m.router != nil {
+		return m.router.RouteGroupMessage(ctx, groupID, msg)
+	}
+	return errors.New("group message routing failed: router not configured")
+}
+
+// SendToGroupLocal 仅发送给本地群组成员(用于处理来自其他节点的广播消息，避免循环路由)
+func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, msg *common.WSMessage) error {
+	m.groupLock.RLock()
+	conns, ok := m.groupConnections[groupID]
+	m.groupLock.RUnlock()
+
+	if ok {
+		for _, c := range conns {
+			if err := c.Send(msg); err != nil {
+				logx.Errorf("[ConnectionManager] SendToGroupLocal to conn failed: %v", err)
+			}
+		}
+	}
+	return nil
 }
 
 // Broadcast 广播消息给多个用户

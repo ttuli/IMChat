@@ -21,6 +21,7 @@ type Subscriber struct {
 	codec        protocol.Codec
 	nodeID       string
 	subscription *nats.Subscription
+	broadcastSub *nats.Subscription
 	handler      MessageHandler
 	ctx          context.Context
 	telemetryBus *telemetry.Bus
@@ -50,6 +51,16 @@ func (s *Subscriber) Subscribe(ctx context.Context, handler MessageHandler) erro
 
 	s.subscription = sub
 	logx.Infof("[Subscriber] subscribed to subject %s", subject)
+
+	broadcastSubject := "ws.channel.broadcast"
+	bSub, err := s.conn.Subscribe(broadcastSubject, s.handleNatsMessage)
+	if err != nil {
+		s.telemetryBus.Publish(err)
+		return fmt.Errorf("subscribe to broadcast subject failed: %w", err)
+	}
+	s.broadcastSub = bSub
+	logx.Infof("[Subscriber] subscribed to broadcast subject %s", broadcastSubject)
+
 	return nil
 }
 
@@ -73,7 +84,14 @@ func (s *Subscriber) handleNatsMessage(msg *nats.Msg) {
 // Close 关闭订阅者
 func (s *Subscriber) Close() error {
 	if s.subscription != nil {
-		return s.subscription.Unsubscribe()
+		if err := s.subscription.Unsubscribe(); err != nil {
+			return err
+		}
+	}
+	if s.broadcastSub != nil {
+		if err := s.broadcastSub.Unsubscribe(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -40,7 +40,7 @@ func (l *NewFriendApplyLogic) NewFriendApply(req *types.NewFriendApplyReq) (resp
 
 	return &types.NewFriendApplyResp{
 		Data: &types.FriendRequest{
-			RequestId:   res.Data.Id,
+			Id:          res.Data.Id,
 			FromUserId:  res.Data.FromUserId,
 			ToUserId:    res.Data.ToUserId,
 			ApplyMsg:    res.Data.ApplyMsg,

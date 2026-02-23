@@ -7,12 +7,11 @@
 package types
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -234,14 +233,14 @@ func (x *Group) GetUpdatedAt() int64 {
 // GroupRequest
 type GroupRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: json:"request_id"
-	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id"`
+	// @gotags: json:"id"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
 	// @gotags: json:"sender_id"
 	SenderId uint64 `protobuf:"varint,2,opt,name=sender_id,json=senderId,proto3" json:"sender_id"`
 	// @gotags: json:"group_id"
 	GroupId uint64 `protobuf:"varint,3,opt,name=group_id,json=groupId,proto3" json:"group_id"`
-	// @gotags: json:"message"
-	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message"`
+	// @gotags: json:"apply_msg"
+	ApplyMsg string `protobuf:"bytes,4,opt,name=apply_msg,json=applyMsg,proto3" json:"apply_msg"`
 	// @gotags: json:"status"
 	Status int32 `protobuf:"varint,5,opt,name=status,proto3" json:"status"`
 	// @gotags: json:"handler_id,omitempty"
@@ -249,7 +248,9 @@ type GroupRequest struct {
 	// @gotags: json:"request_time"
 	RequestTime int64 `protobuf:"varint,7,opt,name=request_time,json=requestTime,proto3" json:"request_time"`
 	// @gotags: json:"handle_time"
-	HandleTime    int64 `protobuf:"varint,8,opt,name=handle_time,json=handleTime,proto3" json:"handle_time"`
+	HandleTime int64 `protobuf:"varint,8,opt,name=handle_time,json=handleTime,proto3" json:"handle_time"`
+	// @gotags: json:"reject_reason,omitempty"
+	RejectReason  string `protobuf:"bytes,9,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -284,9 +285,9 @@ func (*GroupRequest) Descriptor() ([]byte, []int) {
 	return file_group_api_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GroupRequest) GetRequestId() string {
+func (x *GroupRequest) GetId() string {
 	if x != nil {
-		return x.RequestId
+		return x.Id
 	}
 	return ""
 }
@@ -305,9 +306,9 @@ func (x *GroupRequest) GetGroupId() uint64 {
 	return 0
 }
 
-func (x *GroupRequest) GetMessage() string {
+func (x *GroupRequest) GetApplyMsg() string {
 	if x != nil {
-		return x.Message
+		return x.ApplyMsg
 	}
 	return ""
 }
@@ -338,6 +339,13 @@ func (x *GroupRequest) GetHandleTime() int64 {
 		return x.HandleTime
 	}
 	return 0
+}
+
+func (x *GroupRequest) GetRejectReason() string {
+	if x != nil {
+		return x.RejectReason
+	}
+	return ""
 }
 
 // CreateGroupReq
@@ -453,14 +461,14 @@ func (x *CreateGroupResp) GetData() *Group {
 // GetGroupReq
 type GetGroupReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"group_id,optional" json:"group_id,optional"
-	GroupIds []uint64 `protobuf:"varint,1,rep,packed,name=group_ids,json=groupIds,proto3" json:"group_id,optional" form:"group_id,optional"`
-	// @gotags: form:"name_keyword,optional" json:"name_keyword,optional"
-	NameKeyword string `protobuf:"bytes,2,opt,name=name_keyword,json=nameKeyword,proto3" json:"name_keyword,optional" form:"name_keyword,optional"`
-	// @gotags: form:"limit,optional,default=30" json:"limit,optional,default=30"
-	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,optional,default=30" form:"limit,optional,default=30"`
-	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
+	// @gotags: form:"group_id,optional"
+	GroupIds []uint64 `protobuf:"varint,1,rep,packed,name=group_ids,json=groupIds,proto3" json:"group_ids,omitempty" form:"group_id,optional"`
+	// @gotags: form:"name_keyword,optional"
+	NameKeyword string `protobuf:"bytes,2,opt,name=name_keyword,json=nameKeyword,proto3" json:"name_keyword,omitempty" form:"name_keyword,optional"`
+	// @gotags: form:"limit,optional,default=30"
+	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty" form:"limit,optional,default=30"`
+	// @gotags: form:"offset,optional,default=0"
+	Offset        int32 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -526,8 +534,8 @@ func (x *GetGroupReq) GetOffset() int32 {
 // GetGroupMembersReq
 type GetGroupMembersReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"group_id,optional" json:"group_id,optional"
-	GroupId       uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id,optional" form:"group_id,optional"`
+	// @gotags: form:"group_id"
+	GroupId       uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty" form:"group_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1554,7 +1562,7 @@ var File_group_api_proto protoreflect.FileDescriptor
 
 const file_group_api_proto_rawDesc = "" +
 	"\n" +
-	"\x0fgroup_api.proto\x12\x05types\"\xc3\x01\n" +
+	"\x0fgroup_api.proto\x12\vtypes.group\"\xc3\x01\n" +
 	"\vGroupMember\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x12\n" +
@@ -1574,37 +1582,37 @@ const file_group_api_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\a \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\x03R\tupdatedAt\"\xfa\x01\n" +
-	"\fGroupRequest\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x01 \x01(\tR\trequestId\x12\x1b\n" +
+	"updated_at\x18\b \x01(\x03R\tupdatedAt\"\x93\x02\n" +
+	"\fGroupRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\x04R\bsenderId\x12\x19\n" +
-	"\bgroup_id\x18\x03 \x01(\x04R\agroupId\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\x12\x16\n" +
+	"\bgroup_id\x18\x03 \x01(\x04R\agroupId\x12\x1b\n" +
+	"\tapply_msg\x18\x04 \x01(\tR\bapplyMsg\x12\x16\n" +
 	"\x06status\x18\x05 \x01(\x05R\x06status\x12\x1d\n" +
 	"\n" +
 	"handler_id\x18\x06 \x01(\x04R\thandlerId\x12!\n" +
 	"\frequest_time\x18\a \x01(\x03R\vrequestTime\x12\x1f\n" +
 	"\vhandle_time\x18\b \x01(\x03R\n" +
-	"handleTime\"[\n" +
+	"handleTime\x12#\n" +
+	"\rreject_reason\x18\t \x01(\tR\frejectReason\"[\n" +
 	"\x0eCreateGroupReq\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06avatar\x18\x02 \x01(\tR\x06avatar\x12\x1d\n" +
 	"\n" +
-	"member_ids\x18\x03 \x03(\x04R\tmemberIds\"3\n" +
-	"\x0fCreateGroupResp\x12 \n" +
-	"\x04data\x18\x01 \x01(\v2\f.types.GroupR\x04data\"{\n" +
+	"member_ids\x18\x03 \x03(\x04R\tmemberIds\"9\n" +
+	"\x0fCreateGroupResp\x12&\n" +
+	"\x04data\x18\x01 \x01(\v2\x12.types.group.GroupR\x04data\"{\n" +
 	"\vGetGroupReq\x12\x1b\n" +
 	"\tgroup_ids\x18\x01 \x03(\x04R\bgroupIds\x12!\n" +
 	"\fname_keyword\x18\x02 \x01(\tR\vnameKeyword\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x04 \x01(\x05R\x06offset\"/\n" +
 	"\x12GetGroupMembersReq\x12\x19\n" +
-	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\"=\n" +
-	"\x13GetGroupMembersResp\x12&\n" +
-	"\x04data\x18\x01 \x03(\v2\x12.types.GroupMemberR\x04data\"F\n" +
-	"\fGetGroupResp\x12 \n" +
-	"\x04data\x18\x01 \x03(\v2\f.types.GroupR\x04data\x12\x14\n" +
+	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\"C\n" +
+	"\x13GetGroupMembersResp\x12,\n" +
+	"\x04data\x18\x01 \x03(\v2\x18.types.group.GroupMemberR\x04data\"L\n" +
+	"\fGetGroupResp\x12&\n" +
+	"\x04data\x18\x01 \x03(\v2\x12.types.group.GroupR\x04data\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"o\n" +
 	"\x0eUpdateGroupReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x12\n" +
@@ -1613,9 +1621,9 @@ const file_group_api_proto_rawDesc = "" +
 	"\x06notice\x18\x04 \x01(\tR\x06notice\"C\n" +
 	"\fJoinGroupReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"8\n" +
-	"\rJoinGroupResp\x12'\n" +
-	"\x04data\x18\x01 \x01(\v2\x13.types.GroupRequestR\x04data\"\x8e\x01\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\">\n" +
+	"\rJoinGroupResp\x12-\n" +
+	"\x04data\x18\x01 \x01(\v2\x19.types.group.GroupRequestR\x04data\"\x8e\x01\n" +
 	"\x13HandleGroupApplyReq\x12\x19\n" +
 	"\bapply_id\x18\x01 \x01(\tR\aapplyId\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\x05R\x06result\x12\x1f\n" +
@@ -1658,9 +1666,9 @@ const file_group_api_proto_rawDesc = "" +
 	"\x10GetUserGroupsReq\"'\n" +
 	"\x11GetUserGroupsResp\x12\x12\n" +
 	"\x04data\x18\x01 \x03(\x04R\x04data\"\x16\n" +
-	"\x14GetPendingAppliesReq\"@\n" +
-	"\x15GetPendingAppliesResp\x12'\n" +
-	"\x04data\x18\x01 \x03(\v2\x13.types.GroupRequestR\x04dataB\n" +
+	"\x14GetPendingAppliesReq\"F\n" +
+	"\x15GetPendingAppliesResp\x12-\n" +
+	"\x04data\x18\x01 \x03(\v2\x19.types.group.GroupRequestR\x04dataB\n" +
 	"Z\b./;typesb\x06proto3"
 
 var (
@@ -1677,38 +1685,38 @@ func file_group_api_proto_rawDescGZIP() []byte {
 
 var file_group_api_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_group_api_proto_goTypes = []any{
-	(*GroupMember)(nil),           // 0: types.GroupMember
-	(*Group)(nil),                 // 1: types.Group
-	(*GroupRequest)(nil),          // 2: types.GroupRequest
-	(*CreateGroupReq)(nil),        // 3: types.CreateGroupReq
-	(*CreateGroupResp)(nil),       // 4: types.CreateGroupResp
-	(*GetGroupReq)(nil),           // 5: types.GetGroupReq
-	(*GetGroupMembersReq)(nil),    // 6: types.GetGroupMembersReq
-	(*GetGroupMembersResp)(nil),   // 7: types.GetGroupMembersResp
-	(*GetGroupResp)(nil),          // 8: types.GetGroupResp
-	(*UpdateGroupReq)(nil),        // 9: types.UpdateGroupReq
-	(*JoinGroupReq)(nil),          // 10: types.JoinGroupReq
-	(*JoinGroupResp)(nil),         // 11: types.JoinGroupResp
-	(*HandleGroupApplyReq)(nil),   // 12: types.HandleGroupApplyReq
-	(*InviteMembersReq)(nil),      // 13: types.InviteMembersReq
-	(*InviteMembersResp)(nil),     // 14: types.InviteMembersResp
-	(*RemoveMemberReq)(nil),       // 15: types.RemoveMemberReq
-	(*LeaveGroupReq)(nil),         // 16: types.LeaveGroupReq
-	(*DismissGroupReq)(nil),       // 17: types.DismissGroupReq
-	(*SetMemberRoleReq)(nil),      // 18: types.SetMemberRoleReq
-	(*SetMemberNicknameReq)(nil),  // 19: types.SetMemberNicknameReq
-	(*MuteMemberReq)(nil),         // 20: types.MuteMemberReq
-	(*GetUserGroupsReq)(nil),      // 21: types.GetUserGroupsReq
-	(*GetUserGroupsResp)(nil),     // 22: types.GetUserGroupsResp
-	(*GetPendingAppliesReq)(nil),  // 23: types.GetPendingAppliesReq
-	(*GetPendingAppliesResp)(nil), // 24: types.GetPendingAppliesResp
+	(*GroupMember)(nil),           // 0: types.group.GroupMember
+	(*Group)(nil),                 // 1: types.group.Group
+	(*GroupRequest)(nil),          // 2: types.group.GroupRequest
+	(*CreateGroupReq)(nil),        // 3: types.group.CreateGroupReq
+	(*CreateGroupResp)(nil),       // 4: types.group.CreateGroupResp
+	(*GetGroupReq)(nil),           // 5: types.group.GetGroupReq
+	(*GetGroupMembersReq)(nil),    // 6: types.group.GetGroupMembersReq
+	(*GetGroupMembersResp)(nil),   // 7: types.group.GetGroupMembersResp
+	(*GetGroupResp)(nil),          // 8: types.group.GetGroupResp
+	(*UpdateGroupReq)(nil),        // 9: types.group.UpdateGroupReq
+	(*JoinGroupReq)(nil),          // 10: types.group.JoinGroupReq
+	(*JoinGroupResp)(nil),         // 11: types.group.JoinGroupResp
+	(*HandleGroupApplyReq)(nil),   // 12: types.group.HandleGroupApplyReq
+	(*InviteMembersReq)(nil),      // 13: types.group.InviteMembersReq
+	(*InviteMembersResp)(nil),     // 14: types.group.InviteMembersResp
+	(*RemoveMemberReq)(nil),       // 15: types.group.RemoveMemberReq
+	(*LeaveGroupReq)(nil),         // 16: types.group.LeaveGroupReq
+	(*DismissGroupReq)(nil),       // 17: types.group.DismissGroupReq
+	(*SetMemberRoleReq)(nil),      // 18: types.group.SetMemberRoleReq
+	(*SetMemberNicknameReq)(nil),  // 19: types.group.SetMemberNicknameReq
+	(*MuteMemberReq)(nil),         // 20: types.group.MuteMemberReq
+	(*GetUserGroupsReq)(nil),      // 21: types.group.GetUserGroupsReq
+	(*GetUserGroupsResp)(nil),     // 22: types.group.GetUserGroupsResp
+	(*GetPendingAppliesReq)(nil),  // 23: types.group.GetPendingAppliesReq
+	(*GetPendingAppliesResp)(nil), // 24: types.group.GetPendingAppliesResp
 }
 var file_group_api_proto_depIdxs = []int32{
-	1, // 0: types.CreateGroupResp.data:type_name -> types.Group
-	0, // 1: types.GetGroupMembersResp.data:type_name -> types.GroupMember
-	1, // 2: types.GetGroupResp.data:type_name -> types.Group
-	2, // 3: types.JoinGroupResp.data:type_name -> types.GroupRequest
-	2, // 4: types.GetPendingAppliesResp.data:type_name -> types.GroupRequest
+	1, // 0: types.group.CreateGroupResp.data:type_name -> types.group.Group
+	0, // 1: types.group.GetGroupMembersResp.data:type_name -> types.group.GroupMember
+	1, // 2: types.group.GetGroupResp.data:type_name -> types.group.Group
+	2, // 3: types.group.JoinGroupResp.data:type_name -> types.group.GroupRequest
+	2, // 4: types.group.GetPendingAppliesResp.data:type_name -> types.group.GroupRequest
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

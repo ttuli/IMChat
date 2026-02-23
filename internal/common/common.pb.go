@@ -21,6 +21,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type TargetType int32
+
+const (
+	TargetType_USER  TargetType = 0
+	TargetType_GROUP TargetType = 1
+)
+
+// Enum value maps for TargetType.
+var (
+	TargetType_name = map[int32]string{
+		0: "USER",
+		1: "GROUP",
+	}
+	TargetType_value = map[string]int32{
+		"USER":  0,
+		"GROUP": 1,
+	}
+)
+
+func (x TargetType) Enum() *TargetType {
+	p := new(TargetType)
+	*p = x
+	return p
+}
+
+func (x TargetType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TargetType) Descriptor() protoreflect.EnumDescriptor {
+	return file_common_proto_enumTypes[0].Descriptor()
+}
+
+func (TargetType) Type() protoreflect.EnumType {
+	return &file_common_proto_enumTypes[0]
+}
+
+func (x TargetType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TargetType.Descriptor instead.
+func (TargetType) EnumDescriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{0}
+}
+
 // ws连接状态
 type ConnectionState int32
 
@@ -58,11 +104,11 @@ func (x ConnectionState) String() string {
 }
 
 func (ConnectionState) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[0].Descriptor()
+	return file_common_proto_enumTypes[1].Descriptor()
 }
 
 func (ConnectionState) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[0]
+	return &file_common_proto_enumTypes[1]
 }
 
 func (x ConnectionState) Number() protoreflect.EnumNumber {
@@ -71,7 +117,7 @@ func (x ConnectionState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConnectionState.Descriptor instead.
 func (ConnectionState) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{0}
+	return file_common_proto_rawDescGZIP(), []int{1}
 }
 
 // 消息类型枚举
@@ -116,8 +162,10 @@ const (
 	// 通知类 600-699
 	MessageType_NOTIFICATION   MessageType = 600 // 系统通知
 	MessageType_FRIEND_REQUEST MessageType = 601 // 好友请求
-	MessageType_FRIEND_ACCEPT  MessageType = 602 // 接受好友
-	MessageType_FRIEND_REJECT  MessageType = 603 // 拒绝好友
+	MessageType_FRIEND_ADD     MessageType = 602 // 添加好友
+	MessageType_GROUP_REQUEST  MessageType = 603 // 群请求
+	MessageType_APPLY_ACCEPT   MessageType = 604 // 接受申请
+	MessageType_APPLY_REJECT   MessageType = 605 // 拒绝申请
 	// 错误响应 900-999
 	MessageType_ERROR MessageType = 900 // 错误消息
 )
@@ -157,8 +205,10 @@ var (
 		506: "GROUP_INFO_UPDATE",
 		600: "NOTIFICATION",
 		601: "FRIEND_REQUEST",
-		602: "FRIEND_ACCEPT",
-		603: "FRIEND_REJECT",
+		602: "FRIEND_ADD",
+		603: "GROUP_REQUEST",
+		604: "APPLY_ACCEPT",
+		605: "APPLY_REJECT",
 		900: "ERROR",
 	}
 	MessageType_value = map[string]int32{
@@ -194,8 +244,10 @@ var (
 		"GROUP_INFO_UPDATE":  506,
 		"NOTIFICATION":       600,
 		"FRIEND_REQUEST":     601,
-		"FRIEND_ACCEPT":      602,
-		"FRIEND_REJECT":      603,
+		"FRIEND_ADD":         602,
+		"GROUP_REQUEST":      603,
+		"APPLY_ACCEPT":       604,
+		"APPLY_REJECT":       605,
 		"ERROR":              900,
 	}
 )
@@ -211,11 +263,11 @@ func (x MessageType) String() string {
 }
 
 func (MessageType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[1].Descriptor()
+	return file_common_proto_enumTypes[2].Descriptor()
 }
 
 func (MessageType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[1]
+	return &file_common_proto_enumTypes[2]
 }
 
 func (x MessageType) Number() protoreflect.EnumNumber {
@@ -224,7 +276,7 @@ func (x MessageType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MessageType.Descriptor instead.
 func (MessageType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{1}
+	return file_common_proto_rawDescGZIP(), []int{2}
 }
 
 // 消息状态 (Matched with MessageStatus in message.proto)
@@ -273,11 +325,11 @@ func (x MessageStatus) String() string {
 }
 
 func (MessageStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[2].Descriptor()
+	return file_common_proto_enumTypes[3].Descriptor()
 }
 
 func (MessageStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[2]
+	return &file_common_proto_enumTypes[3]
 }
 
 func (x MessageStatus) Number() protoreflect.EnumNumber {
@@ -286,7 +338,7 @@ func (x MessageStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MessageStatus.Descriptor instead.
 func (MessageStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{2}
+	return file_common_proto_rawDescGZIP(), []int{3}
 }
 
 type FileType int32
@@ -325,11 +377,11 @@ func (x FileType) String() string {
 }
 
 func (FileType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[3].Descriptor()
+	return file_common_proto_enumTypes[4].Descriptor()
 }
 
 func (FileType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[3]
+	return &file_common_proto_enumTypes[4]
 }
 
 func (x FileType) Number() protoreflect.EnumNumber {
@@ -338,7 +390,7 @@ func (x FileType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FileType.Descriptor instead.
 func (FileType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{3}
+	return file_common_proto_rawDescGZIP(), []int{4}
 }
 
 type AckStatus int32
@@ -374,11 +426,11 @@ func (x AckStatus) String() string {
 }
 
 func (AckStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[4].Descriptor()
+	return file_common_proto_enumTypes[5].Descriptor()
 }
 
 func (AckStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[4]
+	return &file_common_proto_enumTypes[5]
 }
 
 func (x AckStatus) Number() protoreflect.EnumNumber {
@@ -387,7 +439,7 @@ func (x AckStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AckStatus.Descriptor instead.
 func (AckStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{4}
+	return file_common_proto_rawDescGZIP(), []int{5}
 }
 
 type OnlineStatus int32
@@ -429,11 +481,11 @@ func (x OnlineStatus) String() string {
 }
 
 func (OnlineStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[5].Descriptor()
+	return file_common_proto_enumTypes[6].Descriptor()
 }
 
 func (OnlineStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[5]
+	return &file_common_proto_enumTypes[6]
 }
 
 func (x OnlineStatus) Number() protoreflect.EnumNumber {
@@ -442,7 +494,7 @@ func (x OnlineStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use OnlineStatus.Descriptor instead.
 func (OnlineStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{5}
+	return file_common_proto_rawDescGZIP(), []int{6}
 }
 
 type GroupRole int32
@@ -481,11 +533,11 @@ func (x GroupRole) String() string {
 }
 
 func (GroupRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[6].Descriptor()
+	return file_common_proto_enumTypes[7].Descriptor()
 }
 
 func (GroupRole) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[6]
+	return &file_common_proto_enumTypes[7]
 }
 
 func (x GroupRole) Number() protoreflect.EnumNumber {
@@ -494,7 +546,7 @@ func (x GroupRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GroupRole.Descriptor instead.
 func (GroupRole) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{6}
+	return file_common_proto_rawDescGZIP(), []int{7}
 }
 
 type GroupApplyStatus int32
@@ -536,11 +588,11 @@ func (x GroupApplyStatus) String() string {
 }
 
 func (GroupApplyStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[7].Descriptor()
+	return file_common_proto_enumTypes[8].Descriptor()
 }
 
 func (GroupApplyStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[7]
+	return &file_common_proto_enumTypes[8]
 }
 
 func (x GroupApplyStatus) Number() protoreflect.EnumNumber {
@@ -549,7 +601,7 @@ func (x GroupApplyStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GroupApplyStatus.Descriptor instead.
 func (GroupApplyStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{7}
+	return file_common_proto_rawDescGZIP(), []int{8}
 }
 
 type GroupOperationType int32
@@ -603,11 +655,11 @@ func (x GroupOperationType) String() string {
 }
 
 func (GroupOperationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[8].Descriptor()
+	return file_common_proto_enumTypes[9].Descriptor()
 }
 
 func (GroupOperationType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[8]
+	return &file_common_proto_enumTypes[9]
 }
 
 func (x GroupOperationType) Number() protoreflect.EnumNumber {
@@ -616,7 +668,7 @@ func (x GroupOperationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GroupOperationType.Descriptor instead.
 func (GroupOperationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{8}
+	return file_common_proto_rawDescGZIP(), []int{9}
 }
 
 type ConversationType int32
@@ -649,11 +701,11 @@ func (x ConversationType) String() string {
 }
 
 func (ConversationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[9].Descriptor()
+	return file_common_proto_enumTypes[10].Descriptor()
 }
 
 func (ConversationType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[9]
+	return &file_common_proto_enumTypes[10]
 }
 
 func (x ConversationType) Number() protoreflect.EnumNumber {
@@ -662,7 +714,7 @@ func (x ConversationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConversationType.Descriptor instead.
 func (ConversationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{9}
+	return file_common_proto_rawDescGZIP(), []int{10}
 }
 
 type NotificationType int32
@@ -701,11 +753,11 @@ func (x NotificationType) String() string {
 }
 
 func (NotificationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[10].Descriptor()
+	return file_common_proto_enumTypes[11].Descriptor()
 }
 
 func (NotificationType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[10]
+	return &file_common_proto_enumTypes[11]
 }
 
 func (x NotificationType) Number() protoreflect.EnumNumber {
@@ -714,7 +766,7 @@ func (x NotificationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NotificationType.Descriptor instead.
 func (NotificationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{10}
+	return file_common_proto_rawDescGZIP(), []int{11}
 }
 
 // 好友关系来源
@@ -754,11 +806,11 @@ func (x FriendSource) String() string {
 }
 
 func (FriendSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[11].Descriptor()
+	return file_common_proto_enumTypes[12].Descriptor()
 }
 
 func (FriendSource) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[11]
+	return &file_common_proto_enumTypes[12]
 }
 
 func (x FriendSource) Number() protoreflect.EnumNumber {
@@ -767,7 +819,7 @@ func (x FriendSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FriendSource.Descriptor instead.
 func (FriendSource) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{11}
+	return file_common_proto_rawDescGZIP(), []int{12}
 }
 
 type ApplyStatus int32
@@ -809,11 +861,11 @@ func (x ApplyStatus) String() string {
 }
 
 func (ApplyStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[12].Descriptor()
+	return file_common_proto_enumTypes[13].Descriptor()
 }
 
 func (ApplyStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[12]
+	return &file_common_proto_enumTypes[13]
 }
 
 func (x ApplyStatus) Number() protoreflect.EnumNumber {
@@ -822,7 +874,7 @@ func (x ApplyStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ApplyStatus.Descriptor instead.
 func (ApplyStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{12}
+	return file_common_proto_rawDescGZIP(), []int{13}
 }
 
 type ApplySource int32
@@ -867,11 +919,11 @@ func (x ApplySource) String() string {
 }
 
 func (ApplySource) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[13].Descriptor()
+	return file_common_proto_enumTypes[14].Descriptor()
 }
 
 func (ApplySource) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[13]
+	return &file_common_proto_enumTypes[14]
 }
 
 func (x ApplySource) Number() protoreflect.EnumNumber {
@@ -880,7 +932,7 @@ func (x ApplySource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ApplySource.Descriptor instead.
 func (ApplySource) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{13}
+	return file_common_proto_rawDescGZIP(), []int{14}
 }
 
 type Gender int32
@@ -919,11 +971,11 @@ func (x Gender) String() string {
 }
 
 func (Gender) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[14].Descriptor()
+	return file_common_proto_enumTypes[15].Descriptor()
 }
 
 func (Gender) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[14]
+	return &file_common_proto_enumTypes[15]
 }
 
 func (x Gender) Number() protoreflect.EnumNumber {
@@ -932,7 +984,7 @@ func (x Gender) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Gender.Descriptor instead.
 func (Gender) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{14}
+	return file_common_proto_rawDescGZIP(), []int{15}
 }
 
 type JoinType int32
@@ -968,11 +1020,11 @@ func (x JoinType) String() string {
 }
 
 func (JoinType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[15].Descriptor()
+	return file_common_proto_enumTypes[16].Descriptor()
 }
 
 func (JoinType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[15]
+	return &file_common_proto_enumTypes[16]
 }
 
 func (x JoinType) Number() protoreflect.EnumNumber {
@@ -981,7 +1033,7 @@ func (x JoinType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use JoinType.Descriptor instead.
 func (JoinType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{15}
+	return file_common_proto_rawDescGZIP(), []int{16}
 }
 
 type UserStatus int32
@@ -1014,11 +1066,11 @@ func (x UserStatus) String() string {
 }
 
 func (UserStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[16].Descriptor()
+	return file_common_proto_enumTypes[17].Descriptor()
 }
 
 func (UserStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[16]
+	return &file_common_proto_enumTypes[17]
 }
 
 func (x UserStatus) Number() protoreflect.EnumNumber {
@@ -1027,7 +1079,7 @@ func (x UserStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UserStatus.Descriptor instead.
 func (UserStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{16}
+	return file_common_proto_rawDescGZIP(), []int{17}
 }
 
 // 常见错误码定义
@@ -1082,11 +1134,11 @@ func (x ErrorCode) String() string {
 }
 
 func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[17].Descriptor()
+	return file_common_proto_enumTypes[18].Descriptor()
 }
 
 func (ErrorCode) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[17]
+	return &file_common_proto_enumTypes[18]
 }
 
 func (x ErrorCode) Number() protoreflect.EnumNumber {
@@ -1095,7 +1147,7 @@ func (x ErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErrorCode.Descriptor instead.
 func (ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{17}
+	return file_common_proto_rawDescGZIP(), []int{18}
 }
 
 type ErrorResp struct {
@@ -1291,9 +1343,10 @@ func (x *WSMessage) GetVersion() int32 {
 // 跨节点内部通信消息
 type InternalMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TargetUserId  uint64                 `protobuf:"varint,1,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"`                                                                     // 路由目标
-	Message       *WSMessage             `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`                                                                                                      // 实际消息
-	InternalExt   map[string]string      `protobuf:"bytes,3,rep,name=internal_ext,json=internalExt,proto3" json:"internal_ext,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 内部扩展字段
+	TargetId      uint64                 `protobuf:"varint,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`                                                                                   // 路由目标
+	TargetType    TargetType             `protobuf:"varint,2,opt,name=target_type,json=targetType,proto3,enum=common.TargetType" json:"target_type,omitempty"`                                                      // 路由目标类型
+	Message       *WSMessage             `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`                                                                                                      // 实际消息
+	InternalExt   map[string]string      `protobuf:"bytes,4,rep,name=internal_ext,json=internalExt,proto3" json:"internal_ext,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 内部扩展字段
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1328,11 +1381,18 @@ func (*InternalMessage) Descriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *InternalMessage) GetTargetUserId() uint64 {
+func (x *InternalMessage) GetTargetId() uint64 {
 	if x != nil {
-		return x.TargetUserId
+		return x.TargetId
 	}
 	return 0
+}
+
+func (x *InternalMessage) GetTargetType() TargetType {
+	if x != nil {
+		return x.TargetType
+	}
+	return TargetType_USER
 }
 
 func (x *InternalMessage) GetMessage() *WSMessage {
@@ -3476,11 +3536,13 @@ const file_common_proto_rawDesc = "" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12'\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x13.common.MessageTypeR\x04type\x12\x18\n" +
 	"\apayload\x18\x03 \x01(\fR\apayload\x12\x18\n" +
-	"\aversion\x18\x04 \x01(\x05R\aversion\"\xf1\x01\n" +
-	"\x0fInternalMessage\x12$\n" +
-	"\x0etarget_user_id\x18\x01 \x01(\x04R\ftargetUserId\x12+\n" +
-	"\amessage\x18\x02 \x01(\v2\x11.common.WSMessageR\amessage\x12K\n" +
-	"\finternal_ext\x18\x03 \x03(\v2(.common.InternalMessage.InternalExtEntryR\vinternalExt\x1a>\n" +
+	"\aversion\x18\x04 \x01(\x05R\aversion\"\x9d\x02\n" +
+	"\x0fInternalMessage\x12\x1b\n" +
+	"\ttarget_id\x18\x01 \x01(\x04R\btargetId\x123\n" +
+	"\vtarget_type\x18\x02 \x01(\x0e2\x12.common.TargetTypeR\n" +
+	"targetType\x12+\n" +
+	"\amessage\x18\x03 \x01(\v2\x11.common.WSMessageR\amessage\x12K\n" +
+	"\finternal_ext\x18\x04 \x03(\v2(.common.InternalMessage.InternalExtEntryR\vinternalExt\x1a>\n" +
 	"\x10InternalExtEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xed\x02\n" +
@@ -3701,13 +3763,17 @@ const file_common_proto_rawDesc = "" +
 	"\adetails\x18\x05 \x03(\v2!.common.ErrorMessage.DetailsEntryR\adetails\x1a:\n" +
 	"\fDetailsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*T\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*!\n" +
+	"\n" +
+	"TargetType\x12\b\n" +
+	"\x04USER\x10\x00\x12\t\n" +
+	"\x05GROUP\x10\x01*T\n" +
 	"\x0fConnectionState\x12\x10\n" +
 	"\fDISCONNECTED\x10\x00\x12\x0e\n" +
 	"\n" +
 	"CONNECTING\x10\x01\x12\r\n" +
 	"\tCONNECTED\x10\x02\x12\x10\n" +
-	"\fRECONNECTING\x10\x03*\xfc\x04\n" +
+	"\fRECONNECTING\x10\x03*\x9f\x05\n" +
 	"\vMessageType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tCHAT_TEXT\x10d\x12\x0e\n" +
@@ -3749,9 +3815,12 @@ const file_common_proto_rawDesc = "" +
 	"\fGROUP_INVITE\x10\xf9\x03\x12\x16\n" +
 	"\x11GROUP_INFO_UPDATE\x10\xfa\x03\x12\x11\n" +
 	"\fNOTIFICATION\x10\xd8\x04\x12\x13\n" +
-	"\x0eFRIEND_REQUEST\x10\xd9\x04\x12\x12\n" +
-	"\rFRIEND_ACCEPT\x10\xda\x04\x12\x12\n" +
-	"\rFRIEND_REJECT\x10\xdb\x04\x12\n" +
+	"\x0eFRIEND_REQUEST\x10\xd9\x04\x12\x0f\n" +
+	"\n" +
+	"FRIEND_ADD\x10\xda\x04\x12\x12\n" +
+	"\rGROUP_REQUEST\x10\xdb\x04\x12\x11\n" +
+	"\fAPPLY_ACCEPT\x10\xdc\x04\x12\x11\n" +
+	"\fAPPLY_REJECT\x10\xdd\x04\x12\n" +
 	"\n" +
 	"\x05ERROR\x10\x84\a*\xd3\x01\n" +
 	"\rMessageStatus\x12\x1e\n" +
@@ -3862,97 +3931,99 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
-var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 18)
+var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
 var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_common_proto_goTypes = []any{
-	(ConnectionState)(0),       // 0: common.ConnectionState
-	(MessageType)(0),           // 1: common.MessageType
-	(MessageStatus)(0),         // 2: common.MessageStatus
-	(FileType)(0),              // 3: common.FileType
-	(AckStatus)(0),             // 4: common.AckStatus
-	(OnlineStatus)(0),          // 5: common.OnlineStatus
-	(GroupRole)(0),             // 6: common.GroupRole
-	(GroupApplyStatus)(0),      // 7: common.GroupApplyStatus
-	(GroupOperationType)(0),    // 8: common.GroupOperationType
-	(ConversationType)(0),      // 9: common.ConversationType
-	(NotificationType)(0),      // 10: common.NotificationType
-	(FriendSource)(0),          // 11: common.FriendSource
-	(ApplyStatus)(0),           // 12: common.ApplyStatus
-	(ApplySource)(0),           // 13: common.ApplySource
-	(Gender)(0),                // 14: common.Gender
-	(JoinType)(0),              // 15: common.JoinType
-	(UserStatus)(0),            // 16: common.UserStatus
-	(ErrorCode)(0),             // 17: common.ErrorCode
-	(*ErrorResp)(nil),          // 18: common.ErrorResp
-	(*ApiResponse)(nil),        // 19: common.ApiResponse
-	(*WSMessage)(nil),          // 20: common.WSMessage
-	(*InternalMessage)(nil),    // 21: common.InternalMessage
-	(*BaseMessage)(nil),        // 22: common.BaseMessage
-	(*TextMessage)(nil),        // 23: common.TextMessage
-	(*AtInfo)(nil),             // 24: common.AtInfo
-	(*ImageMessage)(nil),       // 25: common.ImageMessage
-	(*VideoMessage)(nil),       // 26: common.VideoMessage
-	(*AudioMessage)(nil),       // 27: common.AudioMessage
-	(*FileMessage)(nil),        // 28: common.FileMessage
-	(*LocationMessage)(nil),    // 29: common.LocationMessage
-	(*CustomMessage)(nil),      // 30: common.CustomMessage
-	(*MessageAck)(nil),         // 31: common.MessageAck
-	(*MessageRead)(nil),        // 32: common.MessageRead
-	(*MessageRecall)(nil),      // 33: common.MessageRecall
-	(*UserOnlineStatus)(nil),   // 34: common.UserOnlineStatus
-	(*TypingStatus)(nil),       // 35: common.TypingStatus
-	(*GroupInfo)(nil),          // 36: common.GroupInfo
-	(*GroupMember)(nil),        // 37: common.GroupMember
-	(*GroupApply)(nil),         // 38: common.GroupApply
-	(*GroupNotification)(nil),  // 39: common.GroupNotification
-	(*Conversation)(nil),       // 40: common.Conversation
-	(*SystemNotification)(nil), // 41: common.SystemNotification
-	(*Friend)(nil),             // 42: common.Friend
-	(*FriendRequest)(nil),      // 43: common.FriendRequest
-	(*UserInfo)(nil),           // 44: common.UserInfo
-	(*ErrorMessage)(nil),       // 45: common.ErrorMessage
-	nil,                        // 46: common.InternalMessage.InternalExtEntry
-	nil,                        // 47: common.BaseMessage.ExtEntry
-	nil,                        // 48: common.SystemNotification.DataEntry
-	nil,                        // 49: common.ErrorMessage.DetailsEntry
+	(TargetType)(0),            // 0: common.TargetType
+	(ConnectionState)(0),       // 1: common.ConnectionState
+	(MessageType)(0),           // 2: common.MessageType
+	(MessageStatus)(0),         // 3: common.MessageStatus
+	(FileType)(0),              // 4: common.FileType
+	(AckStatus)(0),             // 5: common.AckStatus
+	(OnlineStatus)(0),          // 6: common.OnlineStatus
+	(GroupRole)(0),             // 7: common.GroupRole
+	(GroupApplyStatus)(0),      // 8: common.GroupApplyStatus
+	(GroupOperationType)(0),    // 9: common.GroupOperationType
+	(ConversationType)(0),      // 10: common.ConversationType
+	(NotificationType)(0),      // 11: common.NotificationType
+	(FriendSource)(0),          // 12: common.FriendSource
+	(ApplyStatus)(0),           // 13: common.ApplyStatus
+	(ApplySource)(0),           // 14: common.ApplySource
+	(Gender)(0),                // 15: common.Gender
+	(JoinType)(0),              // 16: common.JoinType
+	(UserStatus)(0),            // 17: common.UserStatus
+	(ErrorCode)(0),             // 18: common.ErrorCode
+	(*ErrorResp)(nil),          // 19: common.ErrorResp
+	(*ApiResponse)(nil),        // 20: common.ApiResponse
+	(*WSMessage)(nil),          // 21: common.WSMessage
+	(*InternalMessage)(nil),    // 22: common.InternalMessage
+	(*BaseMessage)(nil),        // 23: common.BaseMessage
+	(*TextMessage)(nil),        // 24: common.TextMessage
+	(*AtInfo)(nil),             // 25: common.AtInfo
+	(*ImageMessage)(nil),       // 26: common.ImageMessage
+	(*VideoMessage)(nil),       // 27: common.VideoMessage
+	(*AudioMessage)(nil),       // 28: common.AudioMessage
+	(*FileMessage)(nil),        // 29: common.FileMessage
+	(*LocationMessage)(nil),    // 30: common.LocationMessage
+	(*CustomMessage)(nil),      // 31: common.CustomMessage
+	(*MessageAck)(nil),         // 32: common.MessageAck
+	(*MessageRead)(nil),        // 33: common.MessageRead
+	(*MessageRecall)(nil),      // 34: common.MessageRecall
+	(*UserOnlineStatus)(nil),   // 35: common.UserOnlineStatus
+	(*TypingStatus)(nil),       // 36: common.TypingStatus
+	(*GroupInfo)(nil),          // 37: common.GroupInfo
+	(*GroupMember)(nil),        // 38: common.GroupMember
+	(*GroupApply)(nil),         // 39: common.GroupApply
+	(*GroupNotification)(nil),  // 40: common.GroupNotification
+	(*Conversation)(nil),       // 41: common.Conversation
+	(*SystemNotification)(nil), // 42: common.SystemNotification
+	(*Friend)(nil),             // 43: common.Friend
+	(*FriendRequest)(nil),      // 44: common.FriendRequest
+	(*UserInfo)(nil),           // 45: common.UserInfo
+	(*ErrorMessage)(nil),       // 46: common.ErrorMessage
+	nil,                        // 47: common.InternalMessage.InternalExtEntry
+	nil,                        // 48: common.BaseMessage.ExtEntry
+	nil,                        // 49: common.SystemNotification.DataEntry
+	nil,                        // 50: common.ErrorMessage.DetailsEntry
 }
 var file_common_proto_depIdxs = []int32{
-	1,  // 0: common.WSMessage.type:type_name -> common.MessageType
-	20, // 1: common.InternalMessage.message:type_name -> common.WSMessage
-	46, // 2: common.InternalMessage.internal_ext:type_name -> common.InternalMessage.InternalExtEntry
-	2,  // 3: common.BaseMessage.status:type_name -> common.MessageStatus
-	47, // 4: common.BaseMessage.ext:type_name -> common.BaseMessage.ExtEntry
-	22, // 5: common.TextMessage.base:type_name -> common.BaseMessage
-	24, // 6: common.TextMessage.at_list:type_name -> common.AtInfo
-	22, // 7: common.ImageMessage.base:type_name -> common.BaseMessage
-	22, // 8: common.VideoMessage.base:type_name -> common.BaseMessage
-	22, // 9: common.AudioMessage.base:type_name -> common.BaseMessage
-	22, // 10: common.FileMessage.base:type_name -> common.BaseMessage
-	3,  // 11: common.FileMessage.file_type:type_name -> common.FileType
-	22, // 12: common.LocationMessage.base:type_name -> common.BaseMessage
-	22, // 13: common.CustomMessage.base:type_name -> common.BaseMessage
-	4,  // 14: common.MessageAck.status:type_name -> common.AckStatus
-	5,  // 15: common.UserOnlineStatus.status:type_name -> common.OnlineStatus
-	6,  // 16: common.GroupMember.role:type_name -> common.GroupRole
-	7,  // 17: common.GroupApply.status:type_name -> common.GroupApplyStatus
-	8,  // 18: common.GroupNotification.op_type:type_name -> common.GroupOperationType
-	36, // 19: common.GroupNotification.group_info:type_name -> common.GroupInfo
-	9,  // 20: common.Conversation.type:type_name -> common.ConversationType
-	1,  // 21: common.Conversation.last_msg_type:type_name -> common.MessageType
-	10, // 22: common.SystemNotification.type:type_name -> common.NotificationType
-	48, // 23: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
-	11, // 24: common.Friend.source:type_name -> common.FriendSource
-	12, // 25: common.FriendRequest.status:type_name -> common.ApplyStatus
-	13, // 26: common.FriendRequest.source:type_name -> common.ApplySource
-	14, // 27: common.UserInfo.gender:type_name -> common.Gender
-	15, // 28: common.UserInfo.join_type:type_name -> common.JoinType
-	16, // 29: common.UserInfo.status:type_name -> common.UserStatus
-	49, // 30: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	2,  // 0: common.WSMessage.type:type_name -> common.MessageType
+	0,  // 1: common.InternalMessage.target_type:type_name -> common.TargetType
+	21, // 2: common.InternalMessage.message:type_name -> common.WSMessage
+	47, // 3: common.InternalMessage.internal_ext:type_name -> common.InternalMessage.InternalExtEntry
+	3,  // 4: common.BaseMessage.status:type_name -> common.MessageStatus
+	48, // 5: common.BaseMessage.ext:type_name -> common.BaseMessage.ExtEntry
+	23, // 6: common.TextMessage.base:type_name -> common.BaseMessage
+	25, // 7: common.TextMessage.at_list:type_name -> common.AtInfo
+	23, // 8: common.ImageMessage.base:type_name -> common.BaseMessage
+	23, // 9: common.VideoMessage.base:type_name -> common.BaseMessage
+	23, // 10: common.AudioMessage.base:type_name -> common.BaseMessage
+	23, // 11: common.FileMessage.base:type_name -> common.BaseMessage
+	4,  // 12: common.FileMessage.file_type:type_name -> common.FileType
+	23, // 13: common.LocationMessage.base:type_name -> common.BaseMessage
+	23, // 14: common.CustomMessage.base:type_name -> common.BaseMessage
+	5,  // 15: common.MessageAck.status:type_name -> common.AckStatus
+	6,  // 16: common.UserOnlineStatus.status:type_name -> common.OnlineStatus
+	7,  // 17: common.GroupMember.role:type_name -> common.GroupRole
+	8,  // 18: common.GroupApply.status:type_name -> common.GroupApplyStatus
+	9,  // 19: common.GroupNotification.op_type:type_name -> common.GroupOperationType
+	37, // 20: common.GroupNotification.group_info:type_name -> common.GroupInfo
+	10, // 21: common.Conversation.type:type_name -> common.ConversationType
+	2,  // 22: common.Conversation.last_msg_type:type_name -> common.MessageType
+	11, // 23: common.SystemNotification.type:type_name -> common.NotificationType
+	49, // 24: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
+	12, // 25: common.Friend.source:type_name -> common.FriendSource
+	13, // 26: common.FriendRequest.status:type_name -> common.ApplyStatus
+	14, // 27: common.FriendRequest.source:type_name -> common.ApplySource
+	15, // 28: common.UserInfo.gender:type_name -> common.Gender
+	16, // 29: common.UserInfo.join_type:type_name -> common.JoinType
+	17, // 30: common.UserInfo.status:type_name -> common.UserStatus
+	50, // 31: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }
@@ -3965,7 +4036,7 @@ func file_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
-			NumEnums:      18,
+			NumEnums:      19,
 			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   0,

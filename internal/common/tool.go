@@ -24,3 +24,7 @@ func IsChatMessage(t MessageType) bool {
 func IsGroupMessage(t MessageType) bool {
 	return t >= MessageType_GROUP_TEXT && t <= MessageType_GROUP_NOTICE
 }
+
+func IsNotifyMessage(t MessageType) bool {
+	return t >= MessageType_NOTIFICATION && t <= MessageType_NOTIFICATION
+}

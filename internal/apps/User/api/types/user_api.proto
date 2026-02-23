@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package types;
+package types.user;
 
 option go_package = "./;types";
 
@@ -50,8 +50,8 @@ message Friend {
 
 // FriendRequest
 message FriendRequest {
-  // @gotags: json:"request_id"
-  uint64 request_id = 1;
+  // @gotags: json:"id"
+  uint64 id = 1;
   // @gotags: json:"from_user_id"
   uint64 from_user_id = 2;
   // @gotags: json:"to_user_id"
@@ -72,15 +72,15 @@ message FriendRequest {
 
 // GetUserInfoReq
 message GetUserInfoReq {
-  // @gotags: form:"ids,optional" json:"ids,optional"
+  // @gotags: form:"ids,optional"
   repeated uint64 ids = 1;
-  // @gotags: form:"phone,optional" json:"phone,optional"
+  // @gotags: form:"phone,optional"
   string phone = 2;
-  // @gotags: form:"name,optional" json:"name,optional"
+  // @gotags: form:"name,optional"
   string name = 3;
-  // @gotags: form:"limit,optional,default=20" json:"limit,optional,default=20"
+  // @gotags: form:"limit,optional,default=20"
   int32 limit = 4;
-  // @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
+  // @gotags: form:"offset,optional,default=0"
   int32 offset = 5;
 }
 
@@ -174,15 +174,15 @@ message GetPendingFriendAppliesResp {
 
 // SearchFriendReq
 message SearchFriendReq {
-  // @gotags: form:"name,optional" json:"name,optional"
+  // @gotags: form:"name,optional"
   string name = 1;
-  // @gotags: form:"id,optional" json:"id,optional"
+  // @gotags: form:"id,optional"
   uint64 id = 2;
-  // @gotags: form:"phone,optional" json:"phone,optional"
+  // @gotags: form:"phone,optional"
   string phone = 3;
-  // @gotags: form:"limit,optional,default=30" json:"limit,optional,default=30"
+  // @gotags: form:"limit,optional,default=30"
   int32 limit = 4;
-  // @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
+  // @gotags: form:"offset,optional,default=0"
   int32 offset = 5;
 }
 

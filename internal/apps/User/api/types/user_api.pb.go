@@ -7,12 +7,11 @@
 package types
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -261,8 +260,8 @@ func (x *Friend) GetExtra() string {
 // FriendRequest
 type FriendRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: json:"request_id"
-	RequestId uint64 `protobuf:"varint,1,opt,name=request_id,json=requestId,proto3" json:"request_id"`
+	// @gotags: json:"id"
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id"`
 	// @gotags: json:"from_user_id"
 	FromUserId uint64 `protobuf:"varint,2,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id"`
 	// @gotags: json:"to_user_id"
@@ -313,9 +312,9 @@ func (*FriendRequest) Descriptor() ([]byte, []int) {
 	return file_user_api_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *FriendRequest) GetRequestId() uint64 {
+func (x *FriendRequest) GetId() uint64 {
 	if x != nil {
-		return x.RequestId
+		return x.Id
 	}
 	return 0
 }
@@ -379,16 +378,16 @@ func (x *FriendRequest) GetRejectReason() string {
 // GetUserInfoReq
 type GetUserInfoReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"ids,optional" json:"ids,optional"
-	Ids []uint64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,optional" form:"ids,optional"`
-	// @gotags: form:"phone,optional" json:"phone,optional"
-	Phone string `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,optional" form:"phone,optional"`
-	// @gotags: form:"name,optional" json:"name,optional"
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,optional" form:"name,optional"`
-	// @gotags: form:"limit,optional,default=20" json:"limit,optional,default=20"
-	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,optional,default=20" form:"limit,optional,default=20"`
-	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
+	// @gotags: form:"ids,optional"
+	Ids []uint64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty" form:"ids,optional"`
+	// @gotags: form:"phone,optional"
+	Phone string `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,omitempty" form:"phone,optional"`
+	// @gotags: form:"name,optional"
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" form:"name,optional"`
+	// @gotags: form:"limit,optional,default=20"
+	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty" form:"limit,optional,default=20"`
+	// @gotags: form:"offset,optional,default=0"
+	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1108,16 +1107,16 @@ func (x *GetPendingFriendAppliesResp) GetData() []*FriendRequest {
 // SearchFriendReq
 type SearchFriendReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"name,optional" json:"name,optional"
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,optional" form:"name,optional"`
-	// @gotags: form:"id,optional" json:"id,optional"
-	Id uint64 `protobuf:"varint,2,opt,name=id,proto3" json:"id,optional" form:"id,optional"`
-	// @gotags: form:"phone,optional" json:"phone,optional"
-	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,optional" form:"phone,optional"`
-	// @gotags: form:"limit,optional,default=30" json:"limit,optional,default=30"
-	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,optional,default=30" form:"limit,optional,default=30"`
-	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
+	// @gotags: form:"name,optional"
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" form:"name,optional"`
+	// @gotags: form:"id,optional"
+	Id uint64 `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty" form:"id,optional"`
+	// @gotags: form:"phone,optional"
+	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,omitempty" form:"phone,optional"`
+	// @gotags: form:"limit,optional,default=30"
+	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty" form:"limit,optional,default=30"`
+	// @gotags: form:"offset,optional,default=0"
+	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1244,7 +1243,8 @@ var File_user_api_proto protoreflect.FileDescriptor
 
 const file_user_api_proto_rawDesc = "" +
 	"\n" +
-	"\x0euser_api.proto\x12\x05types\"\xac\x02\n" +
+	"\x0euser_api.proto\x12\n" +
+	"types.user\"\xac\x02\n" +
 	"\bUserInfo\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1b\n" +
 	"\tuser_name\x18\x02 \x01(\tR\buserName\x12\x16\n" +
@@ -1268,10 +1268,9 @@ const file_user_api_proto_rawDesc = "" +
 	"\astarred\x18\x06 \x01(\bR\astarred\x12\x1f\n" +
 	"\vcreate_time\x18\a \x01(\x03R\n" +
 	"createTime\x12\x14\n" +
-	"\x05extra\x18\b \x01(\tR\x05extra\"\xa4\x02\n" +
-	"\rFriendRequest\x12\x1d\n" +
-	"\n" +
-	"request_id\x18\x01 \x01(\x04R\trequestId\x12 \n" +
+	"\x05extra\x18\b \x01(\tR\x05extra\"\x95\x02\n" +
+	"\rFriendRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12 \n" +
 	"\ffrom_user_id\x18\x02 \x01(\x04R\n" +
 	"fromUserId\x12\x1c\n" +
 	"\n" +
@@ -1288,18 +1287,18 @@ const file_user_api_proto_rawDesc = "" +
 	"\x05phone\x18\x02 \x01(\tR\x05phone\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x05 \x01(\x05R\x06offset\"6\n" +
-	"\x0fGetUserInfoResp\x12#\n" +
-	"\x04data\x18\x01 \x03(\v2\x0f.types.UserInfoR\x04data\"\xa8\x01\n" +
+	"\x06offset\x18\x05 \x01(\x05R\x06offset\";\n" +
+	"\x0fGetUserInfoResp\x12(\n" +
+	"\x04data\x18\x01 \x03(\v2\x14.types.user.UserInfoR\x04data\"\xa8\x01\n" +
 	"\rUpdateInfoReq\x12\x1b\n" +
 	"\tuser_name\x18\x01 \x01(\tR\buserName\x12\x16\n" +
 	"\x06gender\x18\x02 \x01(\x05R\x06gender\x12\x16\n" +
 	"\x06avatar\x18\x03 \x01(\tR\x06avatar\x12\x1b\n" +
 	"\tjoin_type\x18\x04 \x01(\x05R\bjoinType\x12-\n" +
 	"\x12personal_signature\x18\x05 \x01(\tR\x11personalSignature\"\x0f\n" +
-	"\rGetFriendsReq\"3\n" +
-	"\x0eGetFriendsResp\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.types.FriendR\x04data\"^\n" +
+	"\rGetFriendsReq\"8\n" +
+	"\x0eGetFriendsResp\x12&\n" +
+	"\x04data\x18\x01 \x03(\v2\x12.types.user.FriendR\x04data\"^\n" +
 	"\x0fCreateFriendReq\x12\x1b\n" +
 	"\tfriend_id\x18\x01 \x01(\x04R\bfriendId\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\x05R\x06source\x12\x16\n" +
@@ -1315,25 +1314,25 @@ const file_user_api_proto_rawDesc = "" +
 	"\n" +
 	"to_user_id\x18\x01 \x01(\x04R\btoUserId\x12\x1b\n" +
 	"\tapply_msg\x18\x02 \x01(\tR\bapplyMsg\x12\x16\n" +
-	"\x06source\x18\x03 \x01(\x05R\x06source\">\n" +
-	"\x12NewFriendApplyResp\x12(\n" +
-	"\x04data\x18\x01 \x01(\v2\x14.types.FriendRequestR\x04data\"r\n" +
+	"\x06source\x18\x03 \x01(\x05R\x06source\"C\n" +
+	"\x12NewFriendApplyResp\x12-\n" +
+	"\x04data\x18\x01 \x01(\v2\x19.types.user.FriendRequestR\x04data\"r\n" +
 	"\x14HandleFriendApplyReq\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\x04R\trequestId\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\x05R\x06result\x12#\n" +
 	"\rreject_reason\x18\x03 \x01(\tR\frejectReason\"\x1c\n" +
-	"\x1aGetPendingFriendAppliesReq\"G\n" +
-	"\x1bGetPendingFriendAppliesResp\x12(\n" +
-	"\x04data\x18\x01 \x03(\v2\x14.types.FriendRequestR\x04data\"y\n" +
+	"\x1aGetPendingFriendAppliesReq\"L\n" +
+	"\x1bGetPendingFriendAppliesResp\x12-\n" +
+	"\x04data\x18\x01 \x03(\v2\x19.types.user.FriendRequestR\x04data\"y\n" +
 	"\x0fSearchFriendReq\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\x04R\x02id\x12\x14\n" +
 	"\x05phone\x18\x03 \x01(\tR\x05phone\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x05 \x01(\x05R\x06offset\"M\n" +
-	"\x10SearchFriendResp\x12#\n" +
-	"\x04data\x18\x01 \x03(\v2\x0f.types.UserInfoR\x04data\x12\x14\n" +
+	"\x06offset\x18\x05 \x01(\x05R\x06offset\"R\n" +
+	"\x10SearchFriendResp\x12(\n" +
+	"\x04data\x18\x01 \x03(\v2\x14.types.user.UserInfoR\x04data\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05totalB\n" +
 	"Z\b./;typesb\x06proto3"
 
@@ -1351,31 +1350,31 @@ func file_user_api_proto_rawDescGZIP() []byte {
 
 var file_user_api_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_user_api_proto_goTypes = []any{
-	(*UserInfo)(nil),                    // 0: types.UserInfo
-	(*Friend)(nil),                      // 1: types.Friend
-	(*FriendRequest)(nil),               // 2: types.FriendRequest
-	(*GetUserInfoReq)(nil),              // 3: types.GetUserInfoReq
-	(*GetUserInfoResp)(nil),             // 4: types.GetUserInfoResp
-	(*UpdateInfoReq)(nil),               // 5: types.UpdateInfoReq
-	(*GetFriendsReq)(nil),               // 6: types.GetFriendsReq
-	(*GetFriendsResp)(nil),              // 7: types.GetFriendsResp
-	(*CreateFriendReq)(nil),             // 8: types.CreateFriendReq
-	(*UpdateFriendReq)(nil),             // 9: types.UpdateFriendReq
-	(*DeleteFriendReq)(nil),             // 10: types.DeleteFriendReq
-	(*NewFriendApplyReq)(nil),           // 11: types.NewFriendApplyReq
-	(*NewFriendApplyResp)(nil),          // 12: types.NewFriendApplyResp
-	(*HandleFriendApplyReq)(nil),        // 13: types.HandleFriendApplyReq
-	(*GetPendingFriendAppliesReq)(nil),  // 14: types.GetPendingFriendAppliesReq
-	(*GetPendingFriendAppliesResp)(nil), // 15: types.GetPendingFriendAppliesResp
-	(*SearchFriendReq)(nil),             // 16: types.SearchFriendReq
-	(*SearchFriendResp)(nil),            // 17: types.SearchFriendResp
+	(*UserInfo)(nil),                    // 0: types.user.UserInfo
+	(*Friend)(nil),                      // 1: types.user.Friend
+	(*FriendRequest)(nil),               // 2: types.user.FriendRequest
+	(*GetUserInfoReq)(nil),              // 3: types.user.GetUserInfoReq
+	(*GetUserInfoResp)(nil),             // 4: types.user.GetUserInfoResp
+	(*UpdateInfoReq)(nil),               // 5: types.user.UpdateInfoReq
+	(*GetFriendsReq)(nil),               // 6: types.user.GetFriendsReq
+	(*GetFriendsResp)(nil),              // 7: types.user.GetFriendsResp
+	(*CreateFriendReq)(nil),             // 8: types.user.CreateFriendReq
+	(*UpdateFriendReq)(nil),             // 9: types.user.UpdateFriendReq
+	(*DeleteFriendReq)(nil),             // 10: types.user.DeleteFriendReq
+	(*NewFriendApplyReq)(nil),           // 11: types.user.NewFriendApplyReq
+	(*NewFriendApplyResp)(nil),          // 12: types.user.NewFriendApplyResp
+	(*HandleFriendApplyReq)(nil),        // 13: types.user.HandleFriendApplyReq
+	(*GetPendingFriendAppliesReq)(nil),  // 14: types.user.GetPendingFriendAppliesReq
+	(*GetPendingFriendAppliesResp)(nil), // 15: types.user.GetPendingFriendAppliesResp
+	(*SearchFriendReq)(nil),             // 16: types.user.SearchFriendReq
+	(*SearchFriendResp)(nil),            // 17: types.user.SearchFriendResp
 }
 var file_user_api_proto_depIdxs = []int32{
-	0, // 0: types.GetUserInfoResp.data:type_name -> types.UserInfo
-	1, // 1: types.GetFriendsResp.data:type_name -> types.Friend
-	2, // 2: types.NewFriendApplyResp.data:type_name -> types.FriendRequest
-	2, // 3: types.GetPendingFriendAppliesResp.data:type_name -> types.FriendRequest
-	0, // 4: types.SearchFriendResp.data:type_name -> types.UserInfo
+	0, // 0: types.user.GetUserInfoResp.data:type_name -> types.user.UserInfo
+	1, // 1: types.user.GetFriendsResp.data:type_name -> types.user.Friend
+	2, // 2: types.user.NewFriendApplyResp.data:type_name -> types.user.FriendRequest
+	2, // 3: types.user.GetPendingFriendAppliesResp.data:type_name -> types.user.FriendRequest
+	0, // 4: types.user.SearchFriendResp.data:type_name -> types.user.UserInfo
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

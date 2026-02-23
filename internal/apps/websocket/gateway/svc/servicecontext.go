@@ -76,7 +76,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	})
 
 	// 创建连接管理器
-	connMgr := connection.NewDefaultManager(nodeID, r, bus)
+	connMgr := connection.NewDefaultManager(nodeID, r)
 
 	// 创建订阅者
 	sub := pubsub.NewSubscriber(natsConn, codec, nodeID, bus)
