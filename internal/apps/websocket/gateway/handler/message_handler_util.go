@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/common"
@@ -15,6 +16,8 @@ import (
 // processMessage 通用消息处理流程：提取 base、填充服务端字段、重新打包、路由到 DB
 // 返回 base 供调用方使用（如发送 ACK、转发等），error 非 nil 时已发送失败 ACK
 func (h *MessageHandler) processMessage(ctx context.Context, msg *common.WSMessage) (*common.BaseMessage, error) {
+	timeStamp := time.Now().UnixMilli()
+	msg.Timestamp = timeStamp
 	base, repack, err := h.prepareMessage(msg)
 	if err != nil {
 		logger.Errorf("[MessageHandler] prepare message failed: %v", err)
@@ -23,6 +26,7 @@ func (h *MessageHandler) processMessage(ctx context.Context, msg *common.WSMessa
 
 	// 填充服务端字段
 	base.MsgId = uuid.New().String()
+	base.SendTime = timeStamp
 	base.FromUserId = h.conn.UserID
 	seq, err := h.svcCtx.MessageDao.IncrConversationSeq(ctx, base.SessionId)
 	if err != nil {

@@ -24,6 +24,11 @@ func NewFriendApplyDAO(DataSource string) *FriendApplyDAO {
 	return &FriendApplyDAO{db: db}
 }
 
+// DB 暴露底层的 gorm.DB 用于事务操作
+func (d *FriendApplyDAO) DB() *gorm.DB {
+	return d.db
+}
+
 // InsertFriendApply 创建好友申请
 func (d *FriendApplyDAO) InsertFriendApply(ctx context.Context, apply *model.FriendApply) error {
 	return d.db.WithContext(ctx).Create(apply).Error
@@ -76,8 +81,8 @@ func (d *FriendApplyDAO) FindExistingPendingApply(ctx context.Context, fromUserI
 	return &apply, nil
 }
 
-// UpdateFriendApplyStatus 更新申请状态
-func (d *FriendApplyDAO) UpdateFriendApplyStatus(ctx context.Context, id uint64, status uint8, rejectReason string) error {
+// UpdateFriendApplyStatusTx 在事务中更新申请状态
+func (d *FriendApplyDAO) UpdateFriendApplyStatusTx(ctx context.Context, tx *gorm.DB, id uint64, status uint8, rejectReason string) error {
 	updates := map[string]any{
 		"status":      status,
 		"handle_time": time.Now(),
@@ -86,8 +91,13 @@ func (d *FriendApplyDAO) UpdateFriendApplyStatus(ctx context.Context, id uint64,
 		updates["reject_reason"] = rejectReason
 	}
 
-	return d.db.WithContext(ctx).
+	return tx.WithContext(ctx).
 		Model(&model.FriendApply{}).
 		Where("id = ?", id).
 		Updates(updates).Error
+}
+
+// UpdateFriendApplyStatus 更新申请状态
+func (d *FriendApplyDAO) UpdateFriendApplyStatus(ctx context.Context, id uint64, status uint8, rejectReason string) error {
+	return d.UpdateFriendApplyStatusTx(ctx, d.db, id, status, rejectReason)
 }

@@ -12,7 +12,7 @@ type UserFriend struct {
 	Blocked    bool      `gorm:"column:blocked;type:tinyint(1);not null;default:0;comment:是否拉黑好友" json:"blocked"`
 	Source     uint8     `gorm:"column:source;type:tinyint unsigned;not null;default:1;comment:来源" json:"source"`
 	CreateTime time.Time `gorm:"column:create_time;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);comment:成为好友时间" json:"create_time"`
-	Extra      string    `gorm:"column:extra;type:json;comment:扩展字段(背景图、备注等)" json:"extra"`
+	Extra      string    `gorm:"column:extra;type:varchar(1000);comment:扩展字段(背景图、备注等)" json:"extra"`
 }
 
 func (UserFriend) TableName() string {

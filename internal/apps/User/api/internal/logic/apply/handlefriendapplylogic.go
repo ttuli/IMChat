@@ -35,6 +35,9 @@ func (l *HandleFriendApplyLogic) HandleFriendApply(req *types.HandleFriendApplyR
 		Status:       int32(req.Result),
 		RejectReason: req.RejectReason,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &types.HandleFriendApplyResp{
 		Data: &types.FriendRequest{
@@ -48,5 +51,5 @@ func (l *HandleFriendApplyLogic) HandleFriendApply(req *types.HandleFriendApplyR
 			HandleTime:   resp.Data.HandleTime,
 			RejectReason: resp.Data.RejectReason,
 		},
-	}, err
+	}, nil
 }

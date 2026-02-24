@@ -23,31 +23,41 @@ func NewFriendDAO(DataSource string) *FriendDAO {
 	return &FriendDAO{db: db}
 }
 
+// DB 暴露底层的 gorm.DB 用于事务操作
+func (d *FriendDAO) DB() *gorm.DB {
+	return d.db
+}
+
+// InsertFriendTx 在事务中创建双向好友关系
+func (d *FriendDAO) InsertFriendTx(ctx context.Context, tx *gorm.DB, userID, friendID uint64, source uint8) error {
+	// 插入 userID -> friendID
+	f1 := &model.UserFriend{
+		UserID:   userID,
+		FriendID: friendID,
+		Source:   source,
+	}
+	if err := tx.WithContext(ctx).Create(f1).Error; err != nil {
+		return err
+	}
+
+	// 插入 friendID -> userID (反向关系)
+	f2 := &model.UserFriend{
+		UserID:   friendID,
+		FriendID: userID,
+		Source:   source,
+		Remark:   "", // 反向关系备注为空，由对方自己设置
+	}
+	if err := tx.WithContext(ctx).Create(f2).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // InsertFriend 创建双向好友关系
 func (d *FriendDAO) InsertFriend(ctx context.Context, userID, friendID uint64, source uint8) error {
 	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 插入 userID -> friendID
-		f1 := &model.UserFriend{
-			UserID:   userID,
-			FriendID: friendID,
-			Source:   source,
-		}
-		if err := tx.Create(f1).Error; err != nil {
-			return err
-		}
-
-		// 插入 friendID -> userID (反向关系)
-		f2 := &model.UserFriend{
-			UserID:   friendID,
-			FriendID: userID,
-			Source:   source,
-			Remark:   "", // 反向关系备注为空，由对方自己设置
-		}
-		if err := tx.Create(f2).Error; err != nil {
-			return err
-		}
-
-		return nil
+		return d.InsertFriendTx(ctx, tx, userID, friendID, source)
 	})
 }
 

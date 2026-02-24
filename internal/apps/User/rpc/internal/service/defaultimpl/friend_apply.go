@@ -63,22 +63,31 @@ func (s *userService) HandleFriendApply(ctx context.Context, applyID, operatorID
 
 	// 3. 校验状态：只能处理待处理的申请
 	if apply.Status != model.ApplyStatusPending {
-		return nil, xerr.New(xerr.ErrInvalidParams, "申请已被处理")
+		return apply, nil
 	}
 
-	// 4. 更新申请状态
-	if err := s.friendApplyDAO.UpdateFriendApplyStatus(ctx, applyID, status, rejectReason); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "更新申请状态失败")
-	}
-
-	// 5. 如果同意，创建好友关系
-	if status == model.ApplyStatusAccepted {
-		if err := s.friendDAO.InsertFriend(ctx, apply.FromUserID, apply.ToUserID, model.FriendSourceSearch); err != nil {
-			return nil, xerr.Wrap(err, xerr.ErrDatabase, "创建好友关系失败")
+	// 4. 在事务中更新状态并可能创建好友
+	err = s.friendApplyDAO.DB().Transaction(func(tx *gorm.DB) error {
+		// 4.1 更新申请状态
+		if err := s.friendApplyDAO.UpdateFriendApplyStatusTx(ctx, tx, applyID, status, rejectReason); err != nil {
+			return xerr.Wrap(err, xerr.ErrDatabase, "更新申请状态失败")
 		}
+
+		// 4.2 如果同意，创建好友关系
+		if status == model.ApplyStatusAccepted {
+			if err := s.friendDAO.InsertFriendTx(ctx, tx, apply.FromUserID, apply.ToUserID, model.FriendSourceSearch); err != nil {
+				return xerr.Wrap(err, xerr.ErrDatabase, "更新申请状态失败")
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	// 6. 返回更新后的记录
+	// 5. 返回更新后的记录
 	apply.Status = status
 	apply.RejectReason = rejectReason
 	return apply, nil

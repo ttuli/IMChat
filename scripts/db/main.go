@@ -17,7 +17,7 @@ func initDB() *gorm.DB {
 		panic(fmt.Sprintf("加载 .env 文件失败: %v", err))
 	}
 
-	dsn := env.GetString("DB_ADDRESS_MESSAGE", "")
+	dsn := env.GetString("DB_ADDRESS_Friend", "")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -31,11 +31,11 @@ func main() {
 
 	// 所有需要迁移的模型
 	models := []interface{}{
-		// &model.UserFriend{},
+		&model.UserFriend{},
 		// &model.FriendApply{},
 		// &model.Group{},
-		&model.Conversation{},
-		&model.UserConversation{},
+		// &model.Conversation{},
+		// &model.UserConversation{},
 		// &model.GroupMember{},
 	}
 
