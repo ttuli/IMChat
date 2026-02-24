@@ -1273,13 +1273,15 @@ func (x *ApiResponse) GetData() []byte {
 
 // WebSocket传输的顶层消息
 type WSMessage struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timestamp     int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`               // 时间戳(毫秒)
-	Type          MessageType            `protobuf:"varint,2,opt,name=type,proto3,enum=common.MessageType" json:"type,omitempty"` // 消息类型
-	Payload       []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`                    // 具体消息内容(根据type解析)
-	Version       int32                  `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`                   // 协议版本号
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	RouteTarget     uint64                 `protobuf:"varint,1,opt,name=route_target,json=routeTarget,proto3" json:"route_target,omitempty"`                                      // 路由目标
+	RouteTargetType TargetType             `protobuf:"varint,2,opt,name=route_target_type,json=routeTargetType,proto3,enum=common.TargetType" json:"route_target_type,omitempty"` // 路由目标类型
+	Timestamp       int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                                             // 时间戳(毫秒)
+	Type            MessageType            `protobuf:"varint,4,opt,name=type,proto3,enum=common.MessageType" json:"type,omitempty"`                                               // 消息类型
+	Payload         []byte                 `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                                                  // 具体消息内容(根据type解析)
+	Version         int32                  `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`                                                                 // 协议版本号
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *WSMessage) Reset() {
@@ -1312,6 +1314,20 @@ func (*WSMessage) Descriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{2}
 }
 
+func (x *WSMessage) GetRouteTarget() uint64 {
+	if x != nil {
+		return x.RouteTarget
+	}
+	return 0
+}
+
+func (x *WSMessage) GetRouteTargetType() TargetType {
+	if x != nil {
+		return x.RouteTargetType
+	}
+	return TargetType_USER
+}
+
 func (x *WSMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -1340,75 +1356,6 @@ func (x *WSMessage) GetVersion() int32 {
 	return 0
 }
 
-// 跨节点内部通信消息
-type InternalMessage struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TargetId      uint64                 `protobuf:"varint,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`                                                                                   // 路由目标
-	TargetType    TargetType             `protobuf:"varint,2,opt,name=target_type,json=targetType,proto3,enum=common.TargetType" json:"target_type,omitempty"`                                                      // 路由目标类型
-	Message       *WSMessage             `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`                                                                                                      // 实际消息
-	InternalExt   map[string]string      `protobuf:"bytes,4,rep,name=internal_ext,json=internalExt,proto3" json:"internal_ext,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 内部扩展字段
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *InternalMessage) Reset() {
-	*x = InternalMessage{}
-	mi := &file_common_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *InternalMessage) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*InternalMessage) ProtoMessage() {}
-
-func (x *InternalMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use InternalMessage.ProtoReflect.Descriptor instead.
-func (*InternalMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *InternalMessage) GetTargetId() uint64 {
-	if x != nil {
-		return x.TargetId
-	}
-	return 0
-}
-
-func (x *InternalMessage) GetTargetType() TargetType {
-	if x != nil {
-		return x.TargetType
-	}
-	return TargetType_USER
-}
-
-func (x *InternalMessage) GetMessage() *WSMessage {
-	if x != nil {
-		return x.Message
-	}
-	return nil
-}
-
-func (x *InternalMessage) GetInternalExt() map[string]string {
-	if x != nil {
-		return x.InternalExt
-	}
-	return nil
-}
-
 // 基础消息信息
 type BaseMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1427,7 +1374,7 @@ type BaseMessage struct {
 
 func (x *BaseMessage) Reset() {
 	*x = BaseMessage{}
-	mi := &file_common_proto_msgTypes[4]
+	mi := &file_common_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1439,7 +1386,7 @@ func (x *BaseMessage) String() string {
 func (*BaseMessage) ProtoMessage() {}
 
 func (x *BaseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[4]
+	mi := &file_common_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1452,7 +1399,7 @@ func (x *BaseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseMessage.ProtoReflect.Descriptor instead.
 func (*BaseMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{4}
+	return file_common_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BaseMessage) GetMsgId() string {
@@ -1530,7 +1477,7 @@ type TextMessage struct {
 
 func (x *TextMessage) Reset() {
 	*x = TextMessage{}
-	mi := &file_common_proto_msgTypes[5]
+	mi := &file_common_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1542,7 +1489,7 @@ func (x *TextMessage) String() string {
 func (*TextMessage) ProtoMessage() {}
 
 func (x *TextMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[5]
+	mi := &file_common_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1555,7 +1502,7 @@ func (x *TextMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextMessage.ProtoReflect.Descriptor instead.
 func (*TextMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{5}
+	return file_common_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TextMessage) GetBase() *BaseMessage {
@@ -1592,7 +1539,7 @@ type AtInfo struct {
 
 func (x *AtInfo) Reset() {
 	*x = AtInfo{}
-	mi := &file_common_proto_msgTypes[6]
+	mi := &file_common_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1604,7 +1551,7 @@ func (x *AtInfo) String() string {
 func (*AtInfo) ProtoMessage() {}
 
 func (x *AtInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[6]
+	mi := &file_common_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1617,7 +1564,7 @@ func (x *AtInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AtInfo.ProtoReflect.Descriptor instead.
 func (*AtInfo) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{6}
+	return file_common_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AtInfo) GetUserId() uint64 {
@@ -1664,7 +1611,7 @@ type ImageMessage struct {
 
 func (x *ImageMessage) Reset() {
 	*x = ImageMessage{}
-	mi := &file_common_proto_msgTypes[7]
+	mi := &file_common_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1676,7 +1623,7 @@ func (x *ImageMessage) String() string {
 func (*ImageMessage) ProtoMessage() {}
 
 func (x *ImageMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[7]
+	mi := &file_common_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1689,7 +1636,7 @@ func (x *ImageMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageMessage.ProtoReflect.Descriptor instead.
 func (*ImageMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{7}
+	return file_common_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ImageMessage) GetBase() *BaseMessage {
@@ -1758,7 +1705,7 @@ type VideoMessage struct {
 
 func (x *VideoMessage) Reset() {
 	*x = VideoMessage{}
-	mi := &file_common_proto_msgTypes[8]
+	mi := &file_common_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1770,7 +1717,7 @@ func (x *VideoMessage) String() string {
 func (*VideoMessage) ProtoMessage() {}
 
 func (x *VideoMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[8]
+	mi := &file_common_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1783,7 +1730,7 @@ func (x *VideoMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VideoMessage.ProtoReflect.Descriptor instead.
 func (*VideoMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{8}
+	return file_common_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *VideoMessage) GetBase() *BaseMessage {
@@ -1857,7 +1804,7 @@ type AudioMessage struct {
 
 func (x *AudioMessage) Reset() {
 	*x = AudioMessage{}
-	mi := &file_common_proto_msgTypes[9]
+	mi := &file_common_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1869,7 +1816,7 @@ func (x *AudioMessage) String() string {
 func (*AudioMessage) ProtoMessage() {}
 
 func (x *AudioMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[9]
+	mi := &file_common_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1882,7 +1829,7 @@ func (x *AudioMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AudioMessage.ProtoReflect.Descriptor instead.
 func (*AudioMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{9}
+	return file_common_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AudioMessage) GetBase() *BaseMessage {
@@ -1942,7 +1889,7 @@ type FileMessage struct {
 
 func (x *FileMessage) Reset() {
 	*x = FileMessage{}
-	mi := &file_common_proto_msgTypes[10]
+	mi := &file_common_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1954,7 +1901,7 @@ func (x *FileMessage) String() string {
 func (*FileMessage) ProtoMessage() {}
 
 func (x *FileMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[10]
+	mi := &file_common_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1967,7 +1914,7 @@ func (x *FileMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileMessage.ProtoReflect.Descriptor instead.
 func (*FileMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{10}
+	return file_common_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FileMessage) GetBase() *BaseMessage {
@@ -2026,7 +1973,7 @@ type LocationMessage struct {
 
 func (x *LocationMessage) Reset() {
 	*x = LocationMessage{}
-	mi := &file_common_proto_msgTypes[11]
+	mi := &file_common_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2038,7 +1985,7 @@ func (x *LocationMessage) String() string {
 func (*LocationMessage) ProtoMessage() {}
 
 func (x *LocationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[11]
+	mi := &file_common_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2051,7 +1998,7 @@ func (x *LocationMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LocationMessage.ProtoReflect.Descriptor instead.
 func (*LocationMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{11}
+	return file_common_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *LocationMessage) GetBase() *BaseMessage {
@@ -2101,7 +2048,7 @@ type CustomMessage struct {
 
 func (x *CustomMessage) Reset() {
 	*x = CustomMessage{}
-	mi := &file_common_proto_msgTypes[12]
+	mi := &file_common_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2113,7 +2060,7 @@ func (x *CustomMessage) String() string {
 func (*CustomMessage) ProtoMessage() {}
 
 func (x *CustomMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[12]
+	mi := &file_common_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2126,7 +2073,7 @@ func (x *CustomMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CustomMessage.ProtoReflect.Descriptor instead.
 func (*CustomMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{12}
+	return file_common_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CustomMessage) GetBase() *BaseMessage {
@@ -2165,7 +2112,7 @@ type MessageAck struct {
 
 func (x *MessageAck) Reset() {
 	*x = MessageAck{}
-	mi := &file_common_proto_msgTypes[13]
+	mi := &file_common_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2177,7 +2124,7 @@ func (x *MessageAck) String() string {
 func (*MessageAck) ProtoMessage() {}
 
 func (x *MessageAck) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[13]
+	mi := &file_common_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2190,7 +2137,7 @@ func (x *MessageAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageAck.ProtoReflect.Descriptor instead.
 func (*MessageAck) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{13}
+	return file_common_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MessageAck) GetMsgId() string {
@@ -2248,7 +2195,7 @@ type MessageRead struct {
 
 func (x *MessageRead) Reset() {
 	*x = MessageRead{}
-	mi := &file_common_proto_msgTypes[14]
+	mi := &file_common_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2260,7 +2207,7 @@ func (x *MessageRead) String() string {
 func (*MessageRead) ProtoMessage() {}
 
 func (x *MessageRead) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[14]
+	mi := &file_common_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2273,7 +2220,7 @@ func (x *MessageRead) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageRead.ProtoReflect.Descriptor instead.
 func (*MessageRead) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{14}
+	return file_common_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MessageRead) GetUserId() uint64 {
@@ -2318,7 +2265,7 @@ type MessageRecall struct {
 
 func (x *MessageRecall) Reset() {
 	*x = MessageRecall{}
-	mi := &file_common_proto_msgTypes[15]
+	mi := &file_common_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2330,7 +2277,7 @@ func (x *MessageRecall) String() string {
 func (*MessageRecall) ProtoMessage() {}
 
 func (x *MessageRecall) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[15]
+	mi := &file_common_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2343,7 +2290,7 @@ func (x *MessageRecall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageRecall.ProtoReflect.Descriptor instead.
 func (*MessageRecall) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{15}
+	return file_common_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MessageRecall) GetMsgId() int64 {
@@ -2393,7 +2340,7 @@ type UserOnlineStatus struct {
 
 func (x *UserOnlineStatus) Reset() {
 	*x = UserOnlineStatus{}
-	mi := &file_common_proto_msgTypes[16]
+	mi := &file_common_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2405,7 +2352,7 @@ func (x *UserOnlineStatus) String() string {
 func (*UserOnlineStatus) ProtoMessage() {}
 
 func (x *UserOnlineStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[16]
+	mi := &file_common_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2418,7 +2365,7 @@ func (x *UserOnlineStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserOnlineStatus.ProtoReflect.Descriptor instead.
 func (*UserOnlineStatus) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{16}
+	return file_common_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *UserOnlineStatus) GetUserId() uint64 {
@@ -2455,7 +2402,7 @@ type TypingStatus struct {
 
 func (x *TypingStatus) Reset() {
 	*x = TypingStatus{}
-	mi := &file_common_proto_msgTypes[17]
+	mi := &file_common_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2467,7 +2414,7 @@ func (x *TypingStatus) String() string {
 func (*TypingStatus) ProtoMessage() {}
 
 func (x *TypingStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[17]
+	mi := &file_common_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2480,7 +2427,7 @@ func (x *TypingStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TypingStatus.ProtoReflect.Descriptor instead.
 func (*TypingStatus) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{17}
+	return file_common_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *TypingStatus) GetUserId() uint64 {
@@ -2528,7 +2475,7 @@ type GroupInfo struct {
 
 func (x *GroupInfo) Reset() {
 	*x = GroupInfo{}
-	mi := &file_common_proto_msgTypes[18]
+	mi := &file_common_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2540,7 +2487,7 @@ func (x *GroupInfo) String() string {
 func (*GroupInfo) ProtoMessage() {}
 
 func (x *GroupInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[18]
+	mi := &file_common_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2553,7 +2500,7 @@ func (x *GroupInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupInfo.ProtoReflect.Descriptor instead.
 func (*GroupInfo) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{18}
+	return file_common_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GroupInfo) GetId() uint64 {
@@ -2628,7 +2575,7 @@ type GroupMember struct {
 
 func (x *GroupMember) Reset() {
 	*x = GroupMember{}
-	mi := &file_common_proto_msgTypes[19]
+	mi := &file_common_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2640,7 +2587,7 @@ func (x *GroupMember) String() string {
 func (*GroupMember) ProtoMessage() {}
 
 func (x *GroupMember) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[19]
+	mi := &file_common_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2653,7 +2600,7 @@ func (x *GroupMember) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupMember.ProtoReflect.Descriptor instead.
 func (*GroupMember) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{19}
+	return file_common_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GroupMember) GetGroupId() uint64 {
@@ -2723,7 +2670,7 @@ type GroupApply struct {
 
 func (x *GroupApply) Reset() {
 	*x = GroupApply{}
-	mi := &file_common_proto_msgTypes[20]
+	mi := &file_common_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2735,7 +2682,7 @@ func (x *GroupApply) String() string {
 func (*GroupApply) ProtoMessage() {}
 
 func (x *GroupApply) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[20]
+	mi := &file_common_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2748,7 +2695,7 @@ func (x *GroupApply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupApply.ProtoReflect.Descriptor instead.
 func (*GroupApply) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{20}
+	return file_common_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GroupApply) GetId() uint64 {
@@ -2830,7 +2777,7 @@ type GroupNotification struct {
 
 func (x *GroupNotification) Reset() {
 	*x = GroupNotification{}
-	mi := &file_common_proto_msgTypes[21]
+	mi := &file_common_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2842,7 +2789,7 @@ func (x *GroupNotification) String() string {
 func (*GroupNotification) ProtoMessage() {}
 
 func (x *GroupNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[21]
+	mi := &file_common_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2855,7 +2802,7 @@ func (x *GroupNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupNotification.ProtoReflect.Descriptor instead.
 func (*GroupNotification) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{21}
+	return file_common_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GroupNotification) GetGroupId() uint64 {
@@ -2926,7 +2873,7 @@ type Conversation struct {
 
 func (x *Conversation) Reset() {
 	*x = Conversation{}
-	mi := &file_common_proto_msgTypes[22]
+	mi := &file_common_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2938,7 +2885,7 @@ func (x *Conversation) String() string {
 func (*Conversation) ProtoMessage() {}
 
 func (x *Conversation) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[22]
+	mi := &file_common_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2951,7 +2898,7 @@ func (x *Conversation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
 func (*Conversation) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{22}
+	return file_common_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Conversation) GetConversationId() string {
@@ -3046,7 +2993,7 @@ type SystemNotification struct {
 
 func (x *SystemNotification) Reset() {
 	*x = SystemNotification{}
-	mi := &file_common_proto_msgTypes[23]
+	mi := &file_common_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3058,7 +3005,7 @@ func (x *SystemNotification) String() string {
 func (*SystemNotification) ProtoMessage() {}
 
 func (x *SystemNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[23]
+	mi := &file_common_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3071,7 +3018,7 @@ func (x *SystemNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemNotification.ProtoReflect.Descriptor instead.
 func (*SystemNotification) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{23}
+	return file_common_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SystemNotification) GetNotificationId() string {
@@ -3133,7 +3080,7 @@ type Friend struct {
 
 func (x *Friend) Reset() {
 	*x = Friend{}
-	mi := &file_common_proto_msgTypes[24]
+	mi := &file_common_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3145,7 +3092,7 @@ func (x *Friend) String() string {
 func (*Friend) ProtoMessage() {}
 
 func (x *Friend) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[24]
+	mi := &file_common_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3158,7 +3105,7 @@ func (x *Friend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Friend.ProtoReflect.Descriptor instead.
 func (*Friend) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{24}
+	return file_common_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *Friend) GetUserId() uint64 {
@@ -3235,7 +3182,7 @@ type FriendRequest struct {
 
 func (x *FriendRequest) Reset() {
 	*x = FriendRequest{}
-	mi := &file_common_proto_msgTypes[25]
+	mi := &file_common_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3247,7 +3194,7 @@ func (x *FriendRequest) String() string {
 func (*FriendRequest) ProtoMessage() {}
 
 func (x *FriendRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[25]
+	mi := &file_common_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3260,7 +3207,7 @@ func (x *FriendRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FriendRequest.ProtoReflect.Descriptor instead.
 func (*FriendRequest) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{25}
+	return file_common_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *FriendRequest) GetId() uint64 {
@@ -3344,7 +3291,7 @@ type UserInfo struct {
 
 func (x *UserInfo) Reset() {
 	*x = UserInfo{}
-	mi := &file_common_proto_msgTypes[26]
+	mi := &file_common_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3356,7 +3303,7 @@ func (x *UserInfo) String() string {
 func (*UserInfo) ProtoMessage() {}
 
 func (x *UserInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[26]
+	mi := &file_common_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3369,7 +3316,7 @@ func (x *UserInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserInfo.ProtoReflect.Descriptor instead.
 func (*UserInfo) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{26}
+	return file_common_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *UserInfo) GetUserId() uint64 {
@@ -3456,7 +3403,7 @@ type ErrorMessage struct {
 
 func (x *ErrorMessage) Reset() {
 	*x = ErrorMessage{}
-	mi := &file_common_proto_msgTypes[27]
+	mi := &file_common_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3468,7 +3415,7 @@ func (x *ErrorMessage) String() string {
 func (*ErrorMessage) ProtoMessage() {}
 
 func (x *ErrorMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[27]
+	mi := &file_common_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3481,7 +3428,7 @@ func (x *ErrorMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorMessage.ProtoReflect.Descriptor instead.
 func (*ErrorMessage) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{27}
+	return file_common_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ErrorMessage) GetErrorCode() int32 {
@@ -3531,21 +3478,14 @@ const file_common_proto_rawDesc = "" +
 	"\vApiResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\fR\x04data\"\x86\x01\n" +
-	"\tWSMessage\x12\x1c\n" +
-	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12'\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x13.common.MessageTypeR\x04type\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\fR\apayload\x12\x18\n" +
-	"\aversion\x18\x04 \x01(\x05R\aversion\"\x9d\x02\n" +
-	"\x0fInternalMessage\x12\x1b\n" +
-	"\ttarget_id\x18\x01 \x01(\x04R\btargetId\x123\n" +
-	"\vtarget_type\x18\x02 \x01(\x0e2\x12.common.TargetTypeR\n" +
-	"targetType\x12+\n" +
-	"\amessage\x18\x03 \x01(\v2\x11.common.WSMessageR\amessage\x12K\n" +
-	"\finternal_ext\x18\x04 \x03(\v2(.common.InternalMessage.InternalExtEntryR\vinternalExt\x1a>\n" +
-	"\x10InternalExtEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xed\x02\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\"\xe9\x01\n" +
+	"\tWSMessage\x12!\n" +
+	"\froute_target\x18\x01 \x01(\x04R\vrouteTarget\x12>\n" +
+	"\x11route_target_type\x18\x02 \x01(\x0e2\x12.common.TargetTypeR\x0frouteTargetType\x12\x1c\n" +
+	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\x12'\n" +
+	"\x04type\x18\x04 \x01(\x0e2\x13.common.MessageTypeR\x04type\x12\x18\n" +
+	"\apayload\x18\x05 \x01(\fR\apayload\x12\x18\n" +
+	"\aversion\x18\x06 \x01(\x05R\aversion\"\xed\x02\n" +
 	"\vBaseMessage\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
@@ -3932,7 +3872,7 @@ func file_common_proto_rawDescGZIP() []byte {
 }
 
 var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
-var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_common_proto_goTypes = []any{
 	(TargetType)(0),            // 0: common.TargetType
 	(ConnectionState)(0),       // 1: common.ConnectionState
@@ -3956,74 +3896,70 @@ var file_common_proto_goTypes = []any{
 	(*ErrorResp)(nil),          // 19: common.ErrorResp
 	(*ApiResponse)(nil),        // 20: common.ApiResponse
 	(*WSMessage)(nil),          // 21: common.WSMessage
-	(*InternalMessage)(nil),    // 22: common.InternalMessage
-	(*BaseMessage)(nil),        // 23: common.BaseMessage
-	(*TextMessage)(nil),        // 24: common.TextMessage
-	(*AtInfo)(nil),             // 25: common.AtInfo
-	(*ImageMessage)(nil),       // 26: common.ImageMessage
-	(*VideoMessage)(nil),       // 27: common.VideoMessage
-	(*AudioMessage)(nil),       // 28: common.AudioMessage
-	(*FileMessage)(nil),        // 29: common.FileMessage
-	(*LocationMessage)(nil),    // 30: common.LocationMessage
-	(*CustomMessage)(nil),      // 31: common.CustomMessage
-	(*MessageAck)(nil),         // 32: common.MessageAck
-	(*MessageRead)(nil),        // 33: common.MessageRead
-	(*MessageRecall)(nil),      // 34: common.MessageRecall
-	(*UserOnlineStatus)(nil),   // 35: common.UserOnlineStatus
-	(*TypingStatus)(nil),       // 36: common.TypingStatus
-	(*GroupInfo)(nil),          // 37: common.GroupInfo
-	(*GroupMember)(nil),        // 38: common.GroupMember
-	(*GroupApply)(nil),         // 39: common.GroupApply
-	(*GroupNotification)(nil),  // 40: common.GroupNotification
-	(*Conversation)(nil),       // 41: common.Conversation
-	(*SystemNotification)(nil), // 42: common.SystemNotification
-	(*Friend)(nil),             // 43: common.Friend
-	(*FriendRequest)(nil),      // 44: common.FriendRequest
-	(*UserInfo)(nil),           // 45: common.UserInfo
-	(*ErrorMessage)(nil),       // 46: common.ErrorMessage
-	nil,                        // 47: common.InternalMessage.InternalExtEntry
-	nil,                        // 48: common.BaseMessage.ExtEntry
-	nil,                        // 49: common.SystemNotification.DataEntry
-	nil,                        // 50: common.ErrorMessage.DetailsEntry
+	(*BaseMessage)(nil),        // 22: common.BaseMessage
+	(*TextMessage)(nil),        // 23: common.TextMessage
+	(*AtInfo)(nil),             // 24: common.AtInfo
+	(*ImageMessage)(nil),       // 25: common.ImageMessage
+	(*VideoMessage)(nil),       // 26: common.VideoMessage
+	(*AudioMessage)(nil),       // 27: common.AudioMessage
+	(*FileMessage)(nil),        // 28: common.FileMessage
+	(*LocationMessage)(nil),    // 29: common.LocationMessage
+	(*CustomMessage)(nil),      // 30: common.CustomMessage
+	(*MessageAck)(nil),         // 31: common.MessageAck
+	(*MessageRead)(nil),        // 32: common.MessageRead
+	(*MessageRecall)(nil),      // 33: common.MessageRecall
+	(*UserOnlineStatus)(nil),   // 34: common.UserOnlineStatus
+	(*TypingStatus)(nil),       // 35: common.TypingStatus
+	(*GroupInfo)(nil),          // 36: common.GroupInfo
+	(*GroupMember)(nil),        // 37: common.GroupMember
+	(*GroupApply)(nil),         // 38: common.GroupApply
+	(*GroupNotification)(nil),  // 39: common.GroupNotification
+	(*Conversation)(nil),       // 40: common.Conversation
+	(*SystemNotification)(nil), // 41: common.SystemNotification
+	(*Friend)(nil),             // 42: common.Friend
+	(*FriendRequest)(nil),      // 43: common.FriendRequest
+	(*UserInfo)(nil),           // 44: common.UserInfo
+	(*ErrorMessage)(nil),       // 45: common.ErrorMessage
+	nil,                        // 46: common.BaseMessage.ExtEntry
+	nil,                        // 47: common.SystemNotification.DataEntry
+	nil,                        // 48: common.ErrorMessage.DetailsEntry
 }
 var file_common_proto_depIdxs = []int32{
-	2,  // 0: common.WSMessage.type:type_name -> common.MessageType
-	0,  // 1: common.InternalMessage.target_type:type_name -> common.TargetType
-	21, // 2: common.InternalMessage.message:type_name -> common.WSMessage
-	47, // 3: common.InternalMessage.internal_ext:type_name -> common.InternalMessage.InternalExtEntry
-	3,  // 4: common.BaseMessage.status:type_name -> common.MessageStatus
-	48, // 5: common.BaseMessage.ext:type_name -> common.BaseMessage.ExtEntry
-	23, // 6: common.TextMessage.base:type_name -> common.BaseMessage
-	25, // 7: common.TextMessage.at_list:type_name -> common.AtInfo
-	23, // 8: common.ImageMessage.base:type_name -> common.BaseMessage
-	23, // 9: common.VideoMessage.base:type_name -> common.BaseMessage
-	23, // 10: common.AudioMessage.base:type_name -> common.BaseMessage
-	23, // 11: common.FileMessage.base:type_name -> common.BaseMessage
-	4,  // 12: common.FileMessage.file_type:type_name -> common.FileType
-	23, // 13: common.LocationMessage.base:type_name -> common.BaseMessage
-	23, // 14: common.CustomMessage.base:type_name -> common.BaseMessage
-	5,  // 15: common.MessageAck.status:type_name -> common.AckStatus
-	6,  // 16: common.UserOnlineStatus.status:type_name -> common.OnlineStatus
-	7,  // 17: common.GroupMember.role:type_name -> common.GroupRole
-	8,  // 18: common.GroupApply.status:type_name -> common.GroupApplyStatus
-	9,  // 19: common.GroupNotification.op_type:type_name -> common.GroupOperationType
-	37, // 20: common.GroupNotification.group_info:type_name -> common.GroupInfo
-	10, // 21: common.Conversation.type:type_name -> common.ConversationType
-	2,  // 22: common.Conversation.last_msg_type:type_name -> common.MessageType
-	11, // 23: common.SystemNotification.type:type_name -> common.NotificationType
-	49, // 24: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
-	12, // 25: common.Friend.source:type_name -> common.FriendSource
-	13, // 26: common.FriendRequest.status:type_name -> common.ApplyStatus
-	14, // 27: common.FriendRequest.source:type_name -> common.ApplySource
-	15, // 28: common.UserInfo.gender:type_name -> common.Gender
-	16, // 29: common.UserInfo.join_type:type_name -> common.JoinType
-	17, // 30: common.UserInfo.status:type_name -> common.UserStatus
-	50, // 31: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
-	32, // [32:32] is the sub-list for method output_type
-	32, // [32:32] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	0,  // 0: common.WSMessage.route_target_type:type_name -> common.TargetType
+	2,  // 1: common.WSMessage.type:type_name -> common.MessageType
+	3,  // 2: common.BaseMessage.status:type_name -> common.MessageStatus
+	46, // 3: common.BaseMessage.ext:type_name -> common.BaseMessage.ExtEntry
+	22, // 4: common.TextMessage.base:type_name -> common.BaseMessage
+	24, // 5: common.TextMessage.at_list:type_name -> common.AtInfo
+	22, // 6: common.ImageMessage.base:type_name -> common.BaseMessage
+	22, // 7: common.VideoMessage.base:type_name -> common.BaseMessage
+	22, // 8: common.AudioMessage.base:type_name -> common.BaseMessage
+	22, // 9: common.FileMessage.base:type_name -> common.BaseMessage
+	4,  // 10: common.FileMessage.file_type:type_name -> common.FileType
+	22, // 11: common.LocationMessage.base:type_name -> common.BaseMessage
+	22, // 12: common.CustomMessage.base:type_name -> common.BaseMessage
+	5,  // 13: common.MessageAck.status:type_name -> common.AckStatus
+	6,  // 14: common.UserOnlineStatus.status:type_name -> common.OnlineStatus
+	7,  // 15: common.GroupMember.role:type_name -> common.GroupRole
+	8,  // 16: common.GroupApply.status:type_name -> common.GroupApplyStatus
+	9,  // 17: common.GroupNotification.op_type:type_name -> common.GroupOperationType
+	36, // 18: common.GroupNotification.group_info:type_name -> common.GroupInfo
+	10, // 19: common.Conversation.type:type_name -> common.ConversationType
+	2,  // 20: common.Conversation.last_msg_type:type_name -> common.MessageType
+	11, // 21: common.SystemNotification.type:type_name -> common.NotificationType
+	47, // 22: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
+	12, // 23: common.Friend.source:type_name -> common.FriendSource
+	13, // 24: common.FriendRequest.status:type_name -> common.ApplyStatus
+	14, // 25: common.FriendRequest.source:type_name -> common.ApplySource
+	15, // 26: common.UserInfo.gender:type_name -> common.Gender
+	16, // 27: common.UserInfo.join_type:type_name -> common.JoinType
+	17, // 28: common.UserInfo.status:type_name -> common.UserStatus
+	48, // 29: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }
@@ -4037,7 +3973,7 @@ func file_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
 			NumEnums:      19,
-			NumMessages:   32,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

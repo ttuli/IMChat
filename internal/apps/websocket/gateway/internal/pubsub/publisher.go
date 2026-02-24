@@ -35,10 +35,10 @@ func NewPublisher(conn *nats.Conn, codec protocol.Codec, nodeID string, subjectC
 }
 
 // PublishToNode 发布消息到指定节点
-func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *common.InternalMessage) error {
+func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *common.WSMessage) error {
 	subject := p.getNodeSubject(nodeID)
 
-	data, err := p.codec.EncodeInternal(msg)
+	data, err := p.codec.Encode(msg)
 	if err != nil {
 		return err
 	}
@@ -47,15 +47,15 @@ func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *commo
 		return err
 	}
 
-	logger.Infof("[Publisher] published message to node %s for user %d", nodeID, msg.TargetId)
+	logger.Infof("[Publisher] published message to node %s for user %d", nodeID, msg.RouteTarget)
 	return nil
 }
 
 // BroadcastToAllNodes 广播消息到所有节点
-func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.InternalMessage) error {
+func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessage) error {
 	subject := p.getBroadcastSubject()
 
-	data, err := p.codec.EncodeInternal(msg)
+	data, err := p.codec.Encode(msg)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.Interna
 		return err
 	}
 
-	logger.Infof("[Publisher] broadcasted message to all nodes for target %d", msg.TargetId)
+	logger.Infof("[Publisher] broadcasted message to all nodes for target %d", msg.RouteTarget)
 	return nil
 }
 

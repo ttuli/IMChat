@@ -31,6 +31,7 @@ const (
 	GroupRpc_SetMemberNickname_FullMethodName = "/group.GroupRpc/SetMemberNickname"
 	GroupRpc_MuteMember_FullMethodName        = "/group.GroupRpc/MuteMember"
 	GroupRpc_GetGroupMemberIDs_FullMethodName = "/group.GroupRpc/GetGroupMemberIDs"
+	GroupRpc_GetGroupManagers_FullMethodName  = "/group.GroupRpc/GetGroupManagers"
 	GroupRpc_JoinGroup_FullMethodName         = "/group.GroupRpc/JoinGroup"
 	GroupRpc_HandleGroupApply_FullMethodName  = "/group.GroupRpc/HandleGroupApply"
 	GroupRpc_GetPendingApplies_FullMethodName = "/group.GroupRpc/GetPendingApplies"
@@ -54,6 +55,7 @@ type GroupRpcClient interface {
 	SetMemberNickname(ctx context.Context, in *SetMemberNicknameReq, opts ...grpc.CallOption) (*EmptyResp, error)
 	MuteMember(ctx context.Context, in *MuteMemberReq, opts ...grpc.CallOption) (*EmptyResp, error)
 	GetGroupMemberIDs(ctx context.Context, in *GetGroupMemberIDsReq, opts ...grpc.CallOption) (*GetGroupMemberIDsResp, error)
+	GetGroupManagers(ctx context.Context, in *GetGroupManagersReq, opts ...grpc.CallOption) (*GetGroupManagersResp, error)
 	// 群申请管理
 	JoinGroup(ctx context.Context, in *JoinGroupReq, opts ...grpc.CallOption) (*JoinGroupResp, error)
 	HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*HandleGroupApplyResp, error)
@@ -188,6 +190,16 @@ func (c *groupRpcClient) GetGroupMemberIDs(ctx context.Context, in *GetGroupMemb
 	return out, nil
 }
 
+func (c *groupRpcClient) GetGroupManagers(ctx context.Context, in *GetGroupManagersReq, opts ...grpc.CallOption) (*GetGroupManagersResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGroupManagersResp)
+	err := c.cc.Invoke(ctx, GroupRpc_GetGroupManagers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *groupRpcClient) JoinGroup(ctx context.Context, in *JoinGroupReq, opts ...grpc.CallOption) (*JoinGroupResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(JoinGroupResp)
@@ -236,6 +248,7 @@ type GroupRpcServer interface {
 	SetMemberNickname(context.Context, *SetMemberNicknameReq) (*EmptyResp, error)
 	MuteMember(context.Context, *MuteMemberReq) (*EmptyResp, error)
 	GetGroupMemberIDs(context.Context, *GetGroupMemberIDsReq) (*GetGroupMemberIDsResp, error)
+	GetGroupManagers(context.Context, *GetGroupManagersReq) (*GetGroupManagersResp, error)
 	// 群申请管理
 	JoinGroup(context.Context, *JoinGroupReq) (*JoinGroupResp, error)
 	HandleGroupApply(context.Context, *HandleGroupApplyReq) (*HandleGroupApplyResp, error)
@@ -285,6 +298,9 @@ func (UnimplementedGroupRpcServer) MuteMember(context.Context, *MuteMemberReq) (
 }
 func (UnimplementedGroupRpcServer) GetGroupMemberIDs(context.Context, *GetGroupMemberIDsReq) (*GetGroupMemberIDsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGroupMemberIDs not implemented")
+}
+func (UnimplementedGroupRpcServer) GetGroupManagers(context.Context, *GetGroupManagersReq) (*GetGroupManagersResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGroupManagers not implemented")
 }
 func (UnimplementedGroupRpcServer) JoinGroup(context.Context, *JoinGroupReq) (*JoinGroupResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method JoinGroup not implemented")
@@ -532,6 +548,24 @@ func _GroupRpc_GetGroupMemberIDs_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GroupRpc_GetGroupManagers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGroupManagersReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GroupRpcServer).GetGroupManagers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GroupRpc_GetGroupManagers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GroupRpcServer).GetGroupManagers(ctx, req.(*GetGroupManagersReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GroupRpc_JoinGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JoinGroupReq)
 	if err := dec(in); err != nil {
@@ -640,6 +674,10 @@ var GroupRpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGroupMemberIDs",
 			Handler:    _GroupRpc_GetGroupMemberIDs_Handler,
+		},
+		{
+			MethodName: "GetGroupManagers",
+			Handler:    _GroupRpc_GetGroupManagers_Handler,
 		},
 		{
 			MethodName: "JoinGroup",

@@ -7,6 +7,7 @@ import (
 	"IM2/internal/apps/Group/rpc/internal/service"
 	"IM2/internal/apps/Idgen/rpc/idgenclient"
 
+	"github.com/nats-io/nats.go"
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
@@ -16,15 +17,21 @@ type groupService struct {
 	groupDAO    *dao.GroupDAO
 	applyDAO    *dao.ApplyDAO
 	idGenerator idgenclient.Idgen
+	nats        *nats.Conn
 }
 
 // NewGroupService 创建群组服务
 func NewGroupService(c config.Config) service.GroupService {
+	nc, err := nats.Connect(c.NATS.Url)
+	if err != nil {
+		panic(err)
+	}
 	return &groupService{
 		config:   c,
 		groupDAO: dao.NewGroupDAO(c.DAO.GroupDAO.DataSource, c.DAO.GroupDAO.RedisSource),
 		applyDAO: dao.NewApplyDAO(c.DAO.ApplyDAO),
 		idGenerator: idgenclient.NewIdgen(zrpc.MustNewClient(c.IDRpc,
 			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
+		nats: nc,
 	}
 }

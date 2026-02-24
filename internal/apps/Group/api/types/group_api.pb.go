@@ -134,12 +134,14 @@ type Group struct {
 	OwnerId uint64 `protobuf:"varint,4,opt,name=owner_id,json=ownerId,proto3" json:"owner_id"`
 	// @gotags: json:"notice"
 	Notice string `protobuf:"bytes,5,opt,name=notice,proto3" json:"notice"`
+	// @gotags: json:"join_type"
+	JoinType int32 `protobuf:"varint,6,opt,name=join_type,json=joinType,proto3" json:"join_type"`
 	// @gotags: json:"member_count"
-	MemberCount int32 `protobuf:"varint,6,opt,name=member_count,json=memberCount,proto3" json:"member_count"`
+	MemberCount int32 `protobuf:"varint,7,opt,name=member_count,json=memberCount,proto3" json:"member_count"`
 	// @gotags: json:"created_at"
-	CreatedAt int64 `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at"`
+	CreatedAt int64 `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at"`
 	// @gotags: json:"updated_at"
-	UpdatedAt     int64 `protobuf:"varint,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at"`
+	UpdatedAt     int64 `protobuf:"varint,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,6 +209,13 @@ func (x *Group) GetNotice() string {
 		return x.Notice
 	}
 	return ""
+}
+
+func (x *Group) GetJoinType() int32 {
+	if x != nil {
+		return x.JoinType
+	}
+	return 0
 }
 
 func (x *Group) GetMemberCount() int32 {
@@ -809,8 +818,10 @@ func (x *JoinGroupReq) GetMessage() string {
 // JoinGroupResp
 type JoinGroupResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: json:"data"
-	Data          *GroupRequest `protobuf:"bytes,1,opt,name=data,proto3" json:"data"`
+	// @gotags: json:"data,omitempty"
+	Data *GroupRequest `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	// @gotags: json:"member,omitempty"
+	Member        *GroupMember `protobuf:"bytes,2,opt,name=member,proto3" json:"member,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -848,6 +859,13 @@ func (*JoinGroupResp) Descriptor() ([]byte, []int) {
 func (x *JoinGroupResp) GetData() *GroupRequest {
 	if x != nil {
 		return x.Data
+	}
+	return nil
+}
+
+func (x *JoinGroupResp) GetMember() *GroupMember {
+	if x != nil {
+		return x.Member
 	}
 	return nil
 }
@@ -1607,18 +1625,19 @@ const file_group_api_proto_rawDesc = "" +
 	"\n" +
 	"mute_until\x18\x05 \x01(\x03R\tmuteUntil\x12\x1b\n" +
 	"\tjoined_at\x18\x06 \x01(\x03R\bjoinedAt\x12\x14\n" +
-	"\x05extra\x18\a \x01(\tR\x05extra\"\xd7\x01\n" +
+	"\x05extra\x18\a \x01(\tR\x05extra\"\xf4\x01\n" +
 	"\x05Group\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06avatar\x18\x03 \x01(\tR\x06avatar\x12\x19\n" +
 	"\bowner_id\x18\x04 \x01(\x04R\aownerId\x12\x16\n" +
-	"\x06notice\x18\x05 \x01(\tR\x06notice\x12!\n" +
-	"\fmember_count\x18\x06 \x01(\x05R\vmemberCount\x12\x1d\n" +
+	"\x06notice\x18\x05 \x01(\tR\x06notice\x12\x1b\n" +
+	"\tjoin_type\x18\x06 \x01(\x05R\bjoinType\x12!\n" +
+	"\fmember_count\x18\a \x01(\x05R\vmemberCount\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\x03R\tcreatedAt\x12\x1d\n" +
+	"created_at\x18\b \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\x03R\tupdatedAt\"\x93\x02\n" +
+	"updated_at\x18\t \x01(\x03R\tupdatedAt\"\x93\x02\n" +
 	"\fGroupRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\x04R\bsenderId\x12\x19\n" +
@@ -1657,9 +1676,10 @@ const file_group_api_proto_rawDesc = "" +
 	"\x06notice\x18\x04 \x01(\tR\x06notice\"C\n" +
 	"\fJoinGroupReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\">\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"p\n" +
 	"\rJoinGroupResp\x12-\n" +
-	"\x04data\x18\x01 \x01(\v2\x19.types.group.GroupRequestR\x04data\"m\n" +
+	"\x04data\x18\x01 \x01(\v2\x19.types.group.GroupRequestR\x04data\x120\n" +
+	"\x06member\x18\x02 \x01(\v2\x18.types.group.GroupMemberR\x06member\"m\n" +
 	"\x13HandleGroupApplyReq\x12\x19\n" +
 	"\bapply_id\x18\x01 \x01(\x03R\aapplyId\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\x05R\x06result\x12#\n" +
@@ -1753,13 +1773,14 @@ var file_group_api_proto_depIdxs = []int32{
 	0, // 1: types.group.GetGroupMembersResp.data:type_name -> types.group.GroupMember
 	1, // 2: types.group.GetGroupResp.data:type_name -> types.group.Group
 	2, // 3: types.group.JoinGroupResp.data:type_name -> types.group.GroupRequest
-	2, // 4: types.group.HandleGroupApplyResp.data:type_name -> types.group.GroupRequest
-	2, // 5: types.group.GetPendingAppliesResp.data:type_name -> types.group.GroupRequest
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	0, // 4: types.group.JoinGroupResp.member:type_name -> types.group.GroupMember
+	2, // 5: types.group.HandleGroupApplyResp.data:type_name -> types.group.GroupRequest
+	2, // 6: types.group.GetPendingAppliesResp.data:type_name -> types.group.GroupRequest
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_group_api_proto_init() }

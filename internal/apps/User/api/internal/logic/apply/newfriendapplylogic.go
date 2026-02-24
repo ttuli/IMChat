@@ -38,14 +38,29 @@ func (l *NewFriendApplyLogic) NewFriendApply(req *types.NewFriendApplyReq) (resp
 		return nil, err
 	}
 
-	return &types.NewFriendApplyResp{
-		Data: &types.FriendRequest{
+	resp = &types.NewFriendApplyResp{}
+
+	if res.Data != nil {
+		resp.Data = &types.FriendRequest{
 			Id:          res.Data.Id,
 			FromUserId:  res.Data.FromUserId,
 			ToUserId:    res.Data.ToUserId,
 			ApplyMsg:    res.Data.ApplyMsg,
 			Status:      int32(res.Data.Status),
 			RequestTime: res.Data.RequestTime,
-		},
-	}, nil
+		}
+	} else if res.Friend != nil {
+		resp.Friend = &types.Friend{
+			UserId:     res.Friend.UserId,
+			FriendId:   res.Friend.FriendId,
+			Remark:     res.Friend.Remark,
+			Starred:    res.Friend.Starred,
+			Blocked:    res.Friend.Blocked,
+			Source:     int32(res.Friend.Source),
+			CreateTime: res.Friend.CreateTime,
+			Extra:      res.Friend.Extra,
+		}
+	}
+
+	return resp, nil
 }

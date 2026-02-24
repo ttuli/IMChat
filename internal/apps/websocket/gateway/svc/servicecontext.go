@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"IM2/interceptor"
 	"IM2/internal/apps/Group/rpc/client/grouprpc"
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/internal/connection"
@@ -43,6 +44,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if nodeID == "" {
 		hostname, _ := os.Hostname()
 		nodeID = fmt.Sprintf("%s-%s", hostname, uuid.New().String()[:8])
+		c.WebSocket.NodeID = nodeID
 	}
 
 	// 创建编解码器
@@ -91,7 +93,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
 		MessageDao:        dao.NewMessageDAO(c.DAO.MysqlSource, c.DAO.CacheSource),
-		GroupRpc:          grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc)),
+		GroupRpc: grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
+			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
 	}
 
 	return svc

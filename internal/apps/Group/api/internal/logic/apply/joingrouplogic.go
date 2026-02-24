@@ -38,9 +38,11 @@ func (l *JoinGroupLogic) JoinGroup(req *types.JoinGroupReq) (resp *types.JoinGro
 		return nil, err
 	}
 
-	data := rpcResp.Data
-	return &types.JoinGroupResp{
-		Data: &types.GroupRequest{
+	resp = &types.JoinGroupResp{}
+
+	if rpcResp.Data != nil {
+		data := rpcResp.Data
+		resp.Data = &types.GroupRequest{
 			Id:          int64(data.Id),
 			SenderId:    data.FromUserId,
 			GroupId:     data.GroupId,
@@ -49,6 +51,17 @@ func (l *JoinGroupLogic) JoinGroup(req *types.JoinGroupReq) (resp *types.JoinGro
 			HandlerId:   data.HandlerId,
 			RequestTime: data.RequestTime,
 			HandleTime:  data.HandleTime,
-		},
-	}, nil
+		}
+	} else if rpcResp.Member != nil {
+		member := rpcResp.Member
+		resp.Member = &types.GroupMember{
+			GroupId:  member.GroupId,
+			UserId:   member.UserId,
+			Role:     int32(member.Role),
+			Nickname: member.Nickname,
+			JoinedAt: member.JoinedAt,
+		}
+	}
+
+	return resp, nil
 }

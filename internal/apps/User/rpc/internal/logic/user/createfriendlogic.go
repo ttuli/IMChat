@@ -23,11 +23,22 @@ func NewCreateFriendLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Crea
 	}
 }
 
-func (l *CreateFriendLogic) CreateFriend(in *user.CreateFriendReq) (*user.EmptyResp, error) {
-	err := l.svcCtx.UserService.CreateFriend(l.ctx, in.UserId, in.FriendId, uint8(in.Source), in.Remark)
+func (l *CreateFriendLogic) CreateFriend(in *user.CreateFriendReq) (*user.CreateFriendResp, error) {
+	friend, err := l.svcCtx.UserService.CreateFriend(l.ctx, in.UserId, in.FriendId, uint8(in.Source), in.Remark)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user.EmptyResp{}, nil
+	return &user.CreateFriendResp{
+		Data: &user.Friend{
+			UserId:     friend.UserID,
+			FriendId:   friend.FriendID,
+			Remark:     friend.Remark,
+			Starred:    friend.Starred,
+			Blocked:    friend.Blocked,
+			Source:     int32(friend.Source),
+			CreateTime: friend.CreateTime.UnixMilli(),
+			Extra:      friend.Extra,
+		},
+	}, nil
 }

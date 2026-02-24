@@ -7,24 +7,21 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
 	"IM2/internal/common"
+	"IM2/pkg/logger"
 
 	"github.com/nats-io/nats.go"
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // MessageHandler 消息处理函数
-type MessageHandler func(ctx context.Context, msg *common.InternalMessage) error
+type MessageHandler func(ctx context.Context, msg *common.WSMessage) error
 
 // Subscriber NATS 消息订阅者
 type Subscriber struct {
-	conn         *nats.Conn
-	codec        protocol.Codec
-	nodeID       string
-	subscription *nats.Subscription
-	broadcastSub *nats.Subscription
-	handler      MessageHandler
-	ctx          context.Context
-	telemetryBus *telemetry.Bus
+	conn          *nats.Conn
+	codec         protocol.Codec
+	nodeID        string
+	subscriptions []*nats.Subscription
+	telemetryBus  *telemetry.Bus
 }
 
 // NewSubscriber 创建订阅者
@@ -37,60 +34,69 @@ func NewSubscriber(conn *nats.Conn, codec protocol.Codec, nodeID string, bus *te
 	}
 }
 
-// Subscribe 订阅本节点消息
-func (s *Subscriber) Subscribe(ctx context.Context, handler MessageHandler) error {
-	subject := fmt.Sprintf("ws.channel.%s", s.nodeID)
-	s.handler = handler
-	s.ctx = ctx
+// Subscribe 订阅指定的主题
+func (s *Subscriber) Subscribe(ctx context.Context, subject string, handler MessageHandler) error {
+	// 创建闭包处理函数，避免 handler 被覆盖
+	msgHandler := func(msg *nats.Msg) {
+		internalMsg, err := s.codec.Decode(msg.Data)
+		if err != nil {
+			s.telemetryBus.Publish(err)
+			return
+		}
 
-	sub, err := s.conn.Subscribe(subject, s.handleNatsMessage)
-	if err != nil {
-		s.telemetryBus.Publish(err)
-		return fmt.Errorf("subscribe to subject failed: %w", err)
+		if handler != nil {
+			if err := handler(ctx, internalMsg); err != nil {
+				s.telemetryBus.Publish(err)
+			}
+		}
 	}
 
-	s.subscription = sub
-	logx.Infof("[Subscriber] subscribed to subject %s", subject)
-
-	broadcastSubject := "ws.channel.broadcast"
-	bSub, err := s.conn.Subscribe(broadcastSubject, s.handleNatsMessage)
+	// 1. 订阅指定主题
+	sub, err := s.conn.Subscribe(subject, msgHandler)
 	if err != nil {
 		s.telemetryBus.Publish(err)
-		return fmt.Errorf("subscribe to broadcast subject failed: %w", err)
+		return fmt.Errorf("subscribe to subject %s failed: %w", subject, err)
 	}
-	s.broadcastSub = bSub
-	logx.Infof("[Subscriber] subscribed to broadcast subject %s", broadcastSubject)
+	s.subscriptions = append(s.subscriptions, sub)
+	logger.Infof("[Subscriber] subscribed to subject %s", subject)
 
 	return nil
 }
 
-// handleNatsMessage 处理 NATS 消息
-func (s *Subscriber) handleNatsMessage(msg *nats.Msg) {
-	internalMsg, err := s.codec.DecodeInternal(msg.Data)
-	if err != nil {
-		logx.Errorf("[Subscriber] unmarshal message failed: %v", err)
-		s.telemetryBus.Publish(err)
-		return
-	}
-
-	if s.handler != nil {
-		if err := s.handler(s.ctx, internalMsg); err != nil {
-			logx.Errorf("[Subscriber] handle message failed: %v", err)
+// QueueSubscribe 队列订阅（负载均衡模式），同一个 queue 组内的节点只有一个会消费消息
+func (s *Subscriber) QueueSubscribe(ctx context.Context, subject string, queue string, handler MessageHandler) error {
+	msgHandler := func(msg *nats.Msg) {
+		internalMsg, err := s.codec.Decode(msg.Data)
+		if err != nil {
 			s.telemetryBus.Publish(err)
+			return
+		}
+
+		if handler != nil {
+			if err := handler(ctx, internalMsg); err != nil {
+				s.telemetryBus.Publish(err)
+			}
 		}
 	}
+
+	sub, err := s.conn.QueueSubscribe(subject, queue, msgHandler)
+	if err != nil {
+		s.telemetryBus.Publish(err)
+		return fmt.Errorf("queue subscribe to subject %s failed: %w", subject, err)
+	}
+	s.subscriptions = append(s.subscriptions, sub)
+	logger.Infof("[Subscriber] queue subscribed to subject %s with queue %s", subject, queue)
+
+	return nil
 }
 
 // Close 关闭订阅者
 func (s *Subscriber) Close() error {
-	if s.subscription != nil {
-		if err := s.subscription.Unsubscribe(); err != nil {
-			return err
-		}
-	}
-	if s.broadcastSub != nil {
-		if err := s.broadcastSub.Unsubscribe(); err != nil {
-			return err
+	for _, sub := range s.subscriptions {
+		if sub != nil {
+			if err := sub.Unsubscribe(); err != nil {
+				s.telemetryBus.Publish(err)
+			}
 		}
 	}
 	return nil

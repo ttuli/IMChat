@@ -36,6 +36,7 @@ func (l *GetGroupLogic) GetGroup(in *group.GetGroupReq) (*group.GetGroupResp, er
 			Avatar:      r.Avatar,
 			OwnerId:     r.OwnerID,
 			MemberCount: int32(r.MemberCount),
+			JoinType:    int32(r.JoinType),
 			CreatedAt:   r.CreateTime.Unix(),
 			UpdatedAt:   r.UpdateTime.Unix(),
 		})

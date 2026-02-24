@@ -54,10 +54,13 @@ type GroupService interface {
 	// GetGroupMemberIDs 获取群成员列表
 	GetGroupMemberIDs(ctx context.Context, groupID uint64) ([]*model.GroupMember, error)
 
+	// GetGroupManagers 获取群管理列表
+	GetGroupManagers(ctx context.Context, groupID uint64) ([]*model.GroupMember, error)
+
 	// ========== 群申请管理 ==========
 
-	// JoinGroup 申请加入群聊（群级别申请，任何管理员/群主都可处理）
-	JoinGroup(ctx context.Context, groupID, fromUserID uint64, applyMsg string) (*model.GroupApply, error)
+	// JoinGroup 申请加入群组
+	JoinGroup(ctx context.Context, groupID, userID uint64, applyMsg string) (*model.GroupApply, *model.GroupMember, error)
 
 	// HandleGroupApply 处理群申请，返回更新后的申请记录
 	HandleGroupApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) (*model.GroupApply, error)

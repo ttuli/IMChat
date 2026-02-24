@@ -55,6 +55,7 @@ func convertGroup(data *grouprpc.Group) *types.Group {
 		Avatar:      data.Avatar,
 		OwnerId:     data.OwnerId,
 		CreatedAt:   data.CreatedAt,
+		JoinType:    data.JoinType,
 		UpdatedAt:   data.UpdatedAt,
 		MemberCount: int32(data.MemberCount),
 		Notice:      data.Notice,

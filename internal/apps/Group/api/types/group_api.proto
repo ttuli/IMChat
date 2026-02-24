@@ -34,12 +34,14 @@ message Group {
   uint64 owner_id = 4;
   // @gotags: json:"notice"
   string notice = 5;
+  // @gotags: json:"join_type"
+  int32 join_type = 6;
   // @gotags: json:"member_count"
-  int32 member_count = 6;
+  int32 member_count = 7;
   // @gotags: json:"created_at"
-  int64 created_at = 7;
+  int64 created_at = 8;
   // @gotags: json:"updated_at"
-  int64 updated_at = 8;
+  int64 updated_at = 9;
 }
 
 // GroupRequest
@@ -134,8 +136,10 @@ message JoinGroupReq {
 
 // JoinGroupResp
 message JoinGroupResp {
-  // @gotags: json:"data"
+  // @gotags: json:"data,omitempty"
   GroupRequest data = 1;
+  // @gotags: json:"member,omitempty"
+  GroupMember member = 2;
 }
 
 // HandleGroupApplyReq

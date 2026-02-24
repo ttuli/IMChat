@@ -42,21 +42,3 @@ func (c *JSONCodec) Decode(data []byte) (*common.WSMessage, error) {
 	}
 	return msg, nil
 }
-
-// EncodeInternal 编码内部消息
-func (c *JSONCodec) EncodeInternal(msg *common.InternalMessage) ([]byte, error) {
-	data, err := c.marshaler.Marshal(msg)
-	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode internal message failed")
-	}
-	return data, nil
-}
-
-// DecodeInternal 解码内部消息
-func (c *JSONCodec) DecodeInternal(data []byte) (*common.InternalMessage, error) {
-	msg := &common.InternalMessage{}
-	if err := c.unmarshaler.Unmarshal(data, msg); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode internal message failed")
-	}
-	return msg, nil
-}

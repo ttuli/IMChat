@@ -973,6 +973,50 @@ func (x *CreateFriendReq) GetSource() int32 {
 	return 0
 }
 
+type CreateFriendResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          *Friend                `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateFriendResp) Reset() {
+	*x = CreateFriendResp{}
+	mi := &file_rpc_user_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateFriendResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateFriendResp) ProtoMessage() {}
+
+func (x *CreateFriendResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_user_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateFriendResp.ProtoReflect.Descriptor instead.
+func (*CreateFriendResp) Descriptor() ([]byte, []int) {
+	return file_rpc_user_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *CreateFriendResp) GetData() *Friend {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type UpdateFriendReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -986,7 +1030,7 @@ type UpdateFriendReq struct {
 
 func (x *UpdateFriendReq) Reset() {
 	*x = UpdateFriendReq{}
-	mi := &file_rpc_user_proto_msgTypes[14]
+	mi := &file_rpc_user_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -998,7 +1042,7 @@ func (x *UpdateFriendReq) String() string {
 func (*UpdateFriendReq) ProtoMessage() {}
 
 func (x *UpdateFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[14]
+	mi := &file_rpc_user_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1011,7 +1055,7 @@ func (x *UpdateFriendReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateFriendReq.ProtoReflect.Descriptor instead.
 func (*UpdateFriendReq) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{14}
+	return file_rpc_user_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *UpdateFriendReq) GetUserId() uint64 {
@@ -1059,7 +1103,7 @@ type DeleteFriendReq struct {
 
 func (x *DeleteFriendReq) Reset() {
 	*x = DeleteFriendReq{}
-	mi := &file_rpc_user_proto_msgTypes[15]
+	mi := &file_rpc_user_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1071,7 +1115,7 @@ func (x *DeleteFriendReq) String() string {
 func (*DeleteFriendReq) ProtoMessage() {}
 
 func (x *DeleteFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[15]
+	mi := &file_rpc_user_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1084,7 +1128,7 @@ func (x *DeleteFriendReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteFriendReq.ProtoReflect.Descriptor instead.
 func (*DeleteFriendReq) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{15}
+	return file_rpc_user_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DeleteFriendReq) GetUserId() uint64 {
@@ -1113,7 +1157,7 @@ type NewFriendApplyReq struct {
 
 func (x *NewFriendApplyReq) Reset() {
 	*x = NewFriendApplyReq{}
-	mi := &file_rpc_user_proto_msgTypes[16]
+	mi := &file_rpc_user_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1125,7 +1169,7 @@ func (x *NewFriendApplyReq) String() string {
 func (*NewFriendApplyReq) ProtoMessage() {}
 
 func (x *NewFriendApplyReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[16]
+	mi := &file_rpc_user_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1182,7 @@ func (x *NewFriendApplyReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewFriendApplyReq.ProtoReflect.Descriptor instead.
 func (*NewFriendApplyReq) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{16}
+	return file_rpc_user_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *NewFriendApplyReq) GetFromUserId() uint64 {
@@ -1172,13 +1216,14 @@ func (x *NewFriendApplyReq) GetSource() int32 {
 type NewFriendApplyResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          *FriendRequest         `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Friend        *Friend                `protobuf:"bytes,2,opt,name=friend,proto3" json:"friend,omitempty"` // Returns Friend if join_type is Direct
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NewFriendApplyResp) Reset() {
 	*x = NewFriendApplyResp{}
-	mi := &file_rpc_user_proto_msgTypes[17]
+	mi := &file_rpc_user_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1190,7 +1235,7 @@ func (x *NewFriendApplyResp) String() string {
 func (*NewFriendApplyResp) ProtoMessage() {}
 
 func (x *NewFriendApplyResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[17]
+	mi := &file_rpc_user_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1203,12 +1248,19 @@ func (x *NewFriendApplyResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewFriendApplyResp.ProtoReflect.Descriptor instead.
 func (*NewFriendApplyResp) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{17}
+	return file_rpc_user_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *NewFriendApplyResp) GetData() *FriendRequest {
 	if x != nil {
 		return x.Data
+	}
+	return nil
+}
+
+func (x *NewFriendApplyResp) GetFriend() *Friend {
+	if x != nil {
+		return x.Friend
 	}
 	return nil
 }
@@ -1225,7 +1277,7 @@ type HandleFriendApplyReq struct {
 
 func (x *HandleFriendApplyReq) Reset() {
 	*x = HandleFriendApplyReq{}
-	mi := &file_rpc_user_proto_msgTypes[18]
+	mi := &file_rpc_user_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1237,7 +1289,7 @@ func (x *HandleFriendApplyReq) String() string {
 func (*HandleFriendApplyReq) ProtoMessage() {}
 
 func (x *HandleFriendApplyReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[18]
+	mi := &file_rpc_user_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1250,7 +1302,7 @@ func (x *HandleFriendApplyReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleFriendApplyReq.ProtoReflect.Descriptor instead.
 func (*HandleFriendApplyReq) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{18}
+	return file_rpc_user_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *HandleFriendApplyReq) GetId() uint64 {
@@ -1290,7 +1342,7 @@ type HandleFriendApplyResp struct {
 
 func (x *HandleFriendApplyResp) Reset() {
 	*x = HandleFriendApplyResp{}
-	mi := &file_rpc_user_proto_msgTypes[19]
+	mi := &file_rpc_user_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1302,7 +1354,7 @@ func (x *HandleFriendApplyResp) String() string {
 func (*HandleFriendApplyResp) ProtoMessage() {}
 
 func (x *HandleFriendApplyResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[19]
+	mi := &file_rpc_user_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1315,7 +1367,7 @@ func (x *HandleFriendApplyResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleFriendApplyResp.ProtoReflect.Descriptor instead.
 func (*HandleFriendApplyResp) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{19}
+	return file_rpc_user_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *HandleFriendApplyResp) GetData() *FriendRequest {
@@ -1334,7 +1386,7 @@ type GetPendingFriendAppliesReq struct {
 
 func (x *GetPendingFriendAppliesReq) Reset() {
 	*x = GetPendingFriendAppliesReq{}
-	mi := &file_rpc_user_proto_msgTypes[20]
+	mi := &file_rpc_user_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1346,7 +1398,7 @@ func (x *GetPendingFriendAppliesReq) String() string {
 func (*GetPendingFriendAppliesReq) ProtoMessage() {}
 
 func (x *GetPendingFriendAppliesReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[20]
+	mi := &file_rpc_user_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1359,7 +1411,7 @@ func (x *GetPendingFriendAppliesReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingFriendAppliesReq.ProtoReflect.Descriptor instead.
 func (*GetPendingFriendAppliesReq) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{20}
+	return file_rpc_user_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetPendingFriendAppliesReq) GetUserId() uint64 {
@@ -1378,7 +1430,7 @@ type GetPendingFriendAppliesResp struct {
 
 func (x *GetPendingFriendAppliesResp) Reset() {
 	*x = GetPendingFriendAppliesResp{}
-	mi := &file_rpc_user_proto_msgTypes[21]
+	mi := &file_rpc_user_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1390,7 +1442,7 @@ func (x *GetPendingFriendAppliesResp) String() string {
 func (*GetPendingFriendAppliesResp) ProtoMessage() {}
 
 func (x *GetPendingFriendAppliesResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_user_proto_msgTypes[21]
+	mi := &file_rpc_user_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1403,7 +1455,7 @@ func (x *GetPendingFriendAppliesResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingFriendAppliesResp.ProtoReflect.Descriptor instead.
 func (*GetPendingFriendAppliesResp) Descriptor() ([]byte, []int) {
-	return file_rpc_user_proto_rawDescGZIP(), []int{21}
+	return file_rpc_user_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetPendingFriendAppliesResp) GetData() []*FriendRequest {
@@ -1495,7 +1547,9 @@ const file_rpc_user_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1b\n" +
 	"\tfriend_id\x18\x02 \x01(\x04R\bfriendId\x12\x16\n" +
 	"\x06remark\x18\x03 \x01(\tR\x06remark\x12\x16\n" +
-	"\x06source\x18\x04 \x01(\x05R\x06source\"\x93\x01\n" +
+	"\x06source\x18\x04 \x01(\x05R\x06source\"4\n" +
+	"\x10CreateFriendResp\x12 \n" +
+	"\x04data\x18\x01 \x01(\v2\f.user.FriendR\x04data\"\x93\x01\n" +
 	"\x0fUpdateFriendReq\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1b\n" +
 	"\tfriend_id\x18\x02 \x01(\x04R\bfriendId\x12\x16\n" +
@@ -1511,9 +1565,10 @@ const file_rpc_user_proto_rawDesc = "" +
 	"\n" +
 	"to_user_id\x18\x02 \x01(\x04R\btoUserId\x12\x1b\n" +
 	"\tapply_msg\x18\x03 \x01(\tR\bapplyMsg\x12\x16\n" +
-	"\x06source\x18\x04 \x01(\x05R\x06source\"=\n" +
+	"\x06source\x18\x04 \x01(\x05R\x06source\"c\n" +
 	"\x12NewFriendApplyResp\x12'\n" +
-	"\x04data\x18\x01 \x01(\v2\x13.user.FriendRequestR\x04data\"\x84\x01\n" +
+	"\x04data\x18\x01 \x01(\v2\x13.user.FriendRequestR\x04data\x12$\n" +
+	"\x06friend\x18\x02 \x01(\v2\f.user.FriendR\x06friend\"\x84\x01\n" +
 	"\x14HandleFriendApplyReq\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1f\n" +
 	"\voperator_id\x18\x02 \x01(\x04R\n" +
@@ -1525,7 +1580,7 @@ const file_rpc_user_proto_rawDesc = "" +
 	"\x1aGetPendingFriendAppliesReq\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\"F\n" +
 	"\x1bGetPendingFriendAppliesResp\x12'\n" +
-	"\x04data\x18\x01 \x03(\v2\x13.user.FriendRequestR\x04data2\xc8\x05\n" +
+	"\x04data\x18\x01 \x03(\v2\x13.user.FriendRequestR\x04data2\xcf\x05\n" +
 	"\x04User\x127\n" +
 	"\n" +
 	"CreateUser\x12\x13.user.CreateUserReq\x1a\x14.user.CreateUserResp\x12:\n" +
@@ -1534,8 +1589,8 @@ const file_rpc_user_proto_rawDesc = "" +
 	"UpdateInfo\x12\x13.user.UpdateInfoReq\x1a\x0f.user.EmptyResp\x12C\n" +
 	"\x0eVerifyPassword\x12\x17.user.VerifyPasswordReq\x1a\x18.user.VerifyPasswordResp\x127\n" +
 	"\n" +
-	"GetFriends\x12\x13.user.GetFriendsReq\x1a\x14.user.GetFriendsResp\x126\n" +
-	"\fCreateFriend\x12\x15.user.CreateFriendReq\x1a\x0f.user.EmptyResp\x126\n" +
+	"GetFriends\x12\x13.user.GetFriendsReq\x1a\x14.user.GetFriendsResp\x12=\n" +
+	"\fCreateFriend\x12\x15.user.CreateFriendReq\x1a\x16.user.CreateFriendResp\x126\n" +
 	"\fUpdateFriend\x12\x15.user.UpdateFriendReq\x1a\x0f.user.EmptyResp\x126\n" +
 	"\fDeleteFriend\x12\x15.user.DeleteFriendReq\x1a\x0f.user.EmptyResp\x12C\n" +
 	"\x0eNewFriendApply\x12\x17.user.NewFriendApplyReq\x1a\x18.user.NewFriendApplyResp\x12L\n" +
@@ -1554,7 +1609,7 @@ func file_rpc_user_proto_rawDescGZIP() []byte {
 	return file_rpc_user_proto_rawDescData
 }
 
-var file_rpc_user_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_rpc_user_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_rpc_user_proto_goTypes = []any{
 	(*EmptyResp)(nil),                   // 0: user.EmptyResp
 	(*UserInfo)(nil),                    // 1: user.UserInfo
@@ -1570,48 +1625,51 @@ var file_rpc_user_proto_goTypes = []any{
 	(*GetFriendsReq)(nil),               // 11: user.GetFriendsReq
 	(*GetFriendsResp)(nil),              // 12: user.GetFriendsResp
 	(*CreateFriendReq)(nil),             // 13: user.CreateFriendReq
-	(*UpdateFriendReq)(nil),             // 14: user.UpdateFriendReq
-	(*DeleteFriendReq)(nil),             // 15: user.DeleteFriendReq
-	(*NewFriendApplyReq)(nil),           // 16: user.NewFriendApplyReq
-	(*NewFriendApplyResp)(nil),          // 17: user.NewFriendApplyResp
-	(*HandleFriendApplyReq)(nil),        // 18: user.HandleFriendApplyReq
-	(*HandleFriendApplyResp)(nil),       // 19: user.HandleFriendApplyResp
-	(*GetPendingFriendAppliesReq)(nil),  // 20: user.GetPendingFriendAppliesReq
-	(*GetPendingFriendAppliesResp)(nil), // 21: user.GetPendingFriendAppliesResp
+	(*CreateFriendResp)(nil),            // 14: user.CreateFriendResp
+	(*UpdateFriendReq)(nil),             // 15: user.UpdateFriendReq
+	(*DeleteFriendReq)(nil),             // 16: user.DeleteFriendReq
+	(*NewFriendApplyReq)(nil),           // 17: user.NewFriendApplyReq
+	(*NewFriendApplyResp)(nil),          // 18: user.NewFriendApplyResp
+	(*HandleFriendApplyReq)(nil),        // 19: user.HandleFriendApplyReq
+	(*HandleFriendApplyResp)(nil),       // 20: user.HandleFriendApplyResp
+	(*GetPendingFriendAppliesReq)(nil),  // 21: user.GetPendingFriendAppliesReq
+	(*GetPendingFriendAppliesResp)(nil), // 22: user.GetPendingFriendAppliesResp
 }
 var file_rpc_user_proto_depIdxs = []int32{
 	1,  // 0: user.GetUserInfoResp.data:type_name -> user.UserInfo
 	9,  // 1: user.GetFriendsResp.data:type_name -> user.Friend
-	10, // 2: user.NewFriendApplyResp.data:type_name -> user.FriendRequest
-	10, // 3: user.HandleFriendApplyResp.data:type_name -> user.FriendRequest
-	10, // 4: user.GetPendingFriendAppliesResp.data:type_name -> user.FriendRequest
-	2,  // 5: user.User.CreateUser:input_type -> user.CreateUserReq
-	4,  // 6: user.User.GetUserInfo:input_type -> user.GetUserInfoReq
-	6,  // 7: user.User.UpdateInfo:input_type -> user.UpdateInfoReq
-	7,  // 8: user.User.VerifyPassword:input_type -> user.VerifyPasswordReq
-	11, // 9: user.User.GetFriends:input_type -> user.GetFriendsReq
-	13, // 10: user.User.CreateFriend:input_type -> user.CreateFriendReq
-	14, // 11: user.User.UpdateFriend:input_type -> user.UpdateFriendReq
-	15, // 12: user.User.DeleteFriend:input_type -> user.DeleteFriendReq
-	16, // 13: user.User.NewFriendApply:input_type -> user.NewFriendApplyReq
-	18, // 14: user.User.HandleFriendApply:input_type -> user.HandleFriendApplyReq
-	20, // 15: user.User.GetPendingFriendApplies:input_type -> user.GetPendingFriendAppliesReq
-	3,  // 16: user.User.CreateUser:output_type -> user.CreateUserResp
-	5,  // 17: user.User.GetUserInfo:output_type -> user.GetUserInfoResp
-	0,  // 18: user.User.UpdateInfo:output_type -> user.EmptyResp
-	8,  // 19: user.User.VerifyPassword:output_type -> user.VerifyPasswordResp
-	12, // 20: user.User.GetFriends:output_type -> user.GetFriendsResp
-	0,  // 21: user.User.CreateFriend:output_type -> user.EmptyResp
-	0,  // 22: user.User.UpdateFriend:output_type -> user.EmptyResp
-	0,  // 23: user.User.DeleteFriend:output_type -> user.EmptyResp
-	17, // 24: user.User.NewFriendApply:output_type -> user.NewFriendApplyResp
-	19, // 25: user.User.HandleFriendApply:output_type -> user.HandleFriendApplyResp
-	21, // 26: user.User.GetPendingFriendApplies:output_type -> user.GetPendingFriendAppliesResp
-	16, // [16:27] is the sub-list for method output_type
-	5,  // [5:16] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	9,  // 2: user.CreateFriendResp.data:type_name -> user.Friend
+	10, // 3: user.NewFriendApplyResp.data:type_name -> user.FriendRequest
+	9,  // 4: user.NewFriendApplyResp.friend:type_name -> user.Friend
+	10, // 5: user.HandleFriendApplyResp.data:type_name -> user.FriendRequest
+	10, // 6: user.GetPendingFriendAppliesResp.data:type_name -> user.FriendRequest
+	2,  // 7: user.User.CreateUser:input_type -> user.CreateUserReq
+	4,  // 8: user.User.GetUserInfo:input_type -> user.GetUserInfoReq
+	6,  // 9: user.User.UpdateInfo:input_type -> user.UpdateInfoReq
+	7,  // 10: user.User.VerifyPassword:input_type -> user.VerifyPasswordReq
+	11, // 11: user.User.GetFriends:input_type -> user.GetFriendsReq
+	13, // 12: user.User.CreateFriend:input_type -> user.CreateFriendReq
+	15, // 13: user.User.UpdateFriend:input_type -> user.UpdateFriendReq
+	16, // 14: user.User.DeleteFriend:input_type -> user.DeleteFriendReq
+	17, // 15: user.User.NewFriendApply:input_type -> user.NewFriendApplyReq
+	19, // 16: user.User.HandleFriendApply:input_type -> user.HandleFriendApplyReq
+	21, // 17: user.User.GetPendingFriendApplies:input_type -> user.GetPendingFriendAppliesReq
+	3,  // 18: user.User.CreateUser:output_type -> user.CreateUserResp
+	5,  // 19: user.User.GetUserInfo:output_type -> user.GetUserInfoResp
+	0,  // 20: user.User.UpdateInfo:output_type -> user.EmptyResp
+	8,  // 21: user.User.VerifyPassword:output_type -> user.VerifyPasswordResp
+	12, // 22: user.User.GetFriends:output_type -> user.GetFriendsResp
+	14, // 23: user.User.CreateFriend:output_type -> user.CreateFriendResp
+	0,  // 24: user.User.UpdateFriend:output_type -> user.EmptyResp
+	0,  // 25: user.User.DeleteFriend:output_type -> user.EmptyResp
+	18, // 26: user.User.NewFriendApply:output_type -> user.NewFriendApplyResp
+	20, // 27: user.User.HandleFriendApply:output_type -> user.HandleFriendApplyResp
+	22, // 28: user.User.GetPendingFriendApplies:output_type -> user.GetPendingFriendAppliesResp
+	18, // [18:29] is the sub-list for method output_type
+	7,  // [7:18] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_rpc_user_proto_init() }
@@ -1625,7 +1683,7 @@ func file_rpc_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rpc_user_proto_rawDesc), len(file_rpc_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -23,7 +23,7 @@ type UserService interface {
 	// GetFriends 获取好友列表（返回全部）
 	GetFriends(ctx context.Context, userID uint64) ([]*model.UserFriend, error)
 	// CreateFriend 创建好友关系（双向）
-	CreateFriend(ctx context.Context, userID, friendID uint64, source uint8, remark string) error
+	CreateFriend(ctx context.Context, userID, friendID uint64, source uint8, remark string) (*model.UserFriend, error)
 	// UpdateFriend 更新好友信息（备注、拉黑、星标）
 	UpdateFriend(ctx context.Context, userID, friendID uint64, remark string, blocked, starred bool) error
 	// DeleteFriend 删除好友（双向删除）
@@ -31,7 +31,7 @@ type UserService interface {
 
 	// ========== 好友申请 ==========
 	// NewFriendApply 发起好友申请
-	NewFriendApply(ctx context.Context, fromUserID, toUserID uint64, applyMsg string) (*model.FriendApply, error)
+	NewFriendApply(ctx context.Context, fromUserID, toUserID uint64, applyMsg string, source uint8) (*model.FriendApply, *model.UserFriend, error)
 	// HandleFriendApply 处理好友申请（同意/拒绝），返回更新后的申请记录
 	HandleFriendApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) (*model.FriendApply, error)
 	// GetPendingFriendApplies 获取待处理的好友申请（返回全部）

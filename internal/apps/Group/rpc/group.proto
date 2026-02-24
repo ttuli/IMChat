@@ -33,9 +33,10 @@ message Group {
   string avatar = 3;
   uint64 owner_id = 4;
   string notice = 5;            // 群公告
-  int64 created_at = 6;
-  int64 updated_at = 7;
-  int32 member_count = 8;
+  int32 join_type = 6;            // 加群方式
+  int64 created_at = 7;
+  int64 updated_at = 8;
+  int32 member_count = 9;
 }
 
 message GroupMember {
@@ -161,6 +162,14 @@ message GetGroupMemberIDsResp {
   repeated GroupMember members = 1;
 }
 
+message GetGroupManagersReq {
+  uint64 group_id = 1;
+}
+
+message GetGroupManagersResp {
+  repeated GroupMember managers = 1;
+}
+
 // ========== 群申请管理 ==========
 
 message JoinGroupReq {
@@ -171,6 +180,7 @@ message JoinGroupReq {
 
 message JoinGroupResp {
   GroupRequest data = 1;
+  GroupMember member = 2; // Returns GroupMember if join_type is Direct
 }
 
 message HandleGroupApplyReq {
@@ -210,6 +220,7 @@ service GroupRpc {
   rpc SetMemberNickname(SetMemberNicknameReq) returns (EmptyResp);
   rpc MuteMember(MuteMemberReq) returns (EmptyResp);
   rpc GetGroupMemberIDs(GetGroupMemberIDsReq) returns (GetGroupMemberIDsResp);
+  rpc GetGroupManagers(GetGroupManagersReq) returns (GetGroupManagersResp);
 
   // 群申请管理
   rpc JoinGroup(JoinGroupReq) returns (JoinGroupResp);

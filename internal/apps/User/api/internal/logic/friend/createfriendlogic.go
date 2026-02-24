@@ -26,15 +26,26 @@ func NewCreateFriendLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Crea
 	}
 }
 
-func (l *CreateFriendLogic) CreateFriend(req *types.CreateFriendReq) error {
+func (l *CreateFriendLogic) CreateFriend(req *types.CreateFriendReq) (*types.CreateFriendResp, error) {
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
-	_, err := l.svcCtx.CreateFriend(l.ctx, &user.CreateFriendReq{
+	resp, err := l.svcCtx.CreateFriend(l.ctx, &user.CreateFriendReq{
 		UserId:   userID,
 		FriendId: req.FriendId,
 		Source:   int32(req.Source),
 		Remark:   req.Remark,
 	})
 
-	return err
+	return &types.CreateFriendResp{
+		Data: &types.Friend{
+			UserId:     resp.Data.UserId,
+			FriendId:   resp.Data.FriendId,
+			Remark:     resp.Data.Remark,
+			Starred:    resp.Data.Starred,
+			Blocked:    resp.Data.Blocked,
+			Source:     int32(resp.Data.Source),
+			CreateTime: resp.Data.CreateTime,
+			Extra:      resp.Data.Extra,
+		},
+	}, err
 }

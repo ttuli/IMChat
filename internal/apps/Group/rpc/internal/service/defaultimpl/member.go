@@ -217,3 +217,11 @@ func (s *groupService) GetGroupMemberIDs(ctx context.Context, groupID uint64) ([
 	}
 	return members, nil
 }
+
+func (s *groupService) GetGroupManagers(ctx context.Context, groupID uint64) ([]*model.GroupMember, error) {
+	managers, err := s.groupDAO.FindManagersByGroupID(ctx, groupID)
+	if err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "获取群管理角色失败")
+	}
+	return managers, nil
+}

@@ -115,25 +115,11 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *com
 		return errors.New("target user is on local node")
 	}
 
-	// 通过 Pub/Sub 转发到目标节点
-	internalMsg := &common.InternalMessage{
-		TargetId:   targetUserID,
-		TargetType: common.TargetType_USER,
-		Message:    msg,
-	}
-
-	return r.publisher.PublishToNode(ctx, targetNodeID, internalMsg)
+	return r.publisher.PublishToNode(ctx, targetNodeID, msg)
 }
 
 func (r *Router) RouteGroupMessage(ctx context.Context, targetGroupID uint64, msg *common.WSMessage) error {
-	// 通过 Pub/Sub 广播到所有节点
-	internalMsg := &common.InternalMessage{
-		TargetId:   targetGroupID,
-		TargetType: common.TargetType_GROUP,
-		Message:    msg,
-	}
-
-	return r.publisher.BroadcastToAllNodes(ctx, internalMsg)
+	return r.publisher.BroadcastToAllNodes(ctx, msg)
 }
 
 func (r *Router) RouteMsgToDB(ctx context.Context, msg *common.WSMessage) error {

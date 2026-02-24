@@ -18,6 +18,8 @@ type (
 	CreateGroupResp       = group.CreateGroupResp
 	DismissGroupReq       = group.DismissGroupReq
 	EmptyResp             = group.EmptyResp
+	GetGroupManagersReq   = group.GetGroupManagersReq
+	GetGroupManagersResp  = group.GetGroupManagersResp
 	GetGroupMemberIDsReq  = group.GetGroupMemberIDsReq
 	GetGroupMemberIDsResp = group.GetGroupMemberIDsResp
 	GetGroupReq           = group.GetGroupReq
@@ -57,6 +59,7 @@ type (
 		SetMemberNickname(ctx context.Context, in *SetMemberNicknameReq, opts ...grpc.CallOption) (*EmptyResp, error)
 		MuteMember(ctx context.Context, in *MuteMemberReq, opts ...grpc.CallOption) (*EmptyResp, error)
 		GetGroupMemberIDs(ctx context.Context, in *GetGroupMemberIDsReq, opts ...grpc.CallOption) (*GetGroupMemberIDsResp, error)
+		GetGroupManagers(ctx context.Context, in *GetGroupManagersReq, opts ...grpc.CallOption) (*GetGroupManagersResp, error)
 		// 群申请管理
 		JoinGroup(ctx context.Context, in *JoinGroupReq, opts ...grpc.CallOption) (*JoinGroupResp, error)
 		HandleGroupApply(ctx context.Context, in *HandleGroupApplyReq, opts ...grpc.CallOption) (*HandleGroupApplyResp, error)
@@ -134,6 +137,11 @@ func (m *defaultGroupRpc) MuteMember(ctx context.Context, in *MuteMemberReq, opt
 func (m *defaultGroupRpc) GetGroupMemberIDs(ctx context.Context, in *GetGroupMemberIDsReq, opts ...grpc.CallOption) (*GetGroupMemberIDsResp, error) {
 	client := group.NewGroupRpcClient(m.cli.Conn())
 	return client.GetGroupMemberIDs(ctx, in, opts...)
+}
+
+func (m *defaultGroupRpc) GetGroupManagers(ctx context.Context, in *GetGroupManagersReq, opts ...grpc.CallOption) (*GetGroupManagersResp, error) {
+	client := group.NewGroupRpcClient(m.cli.Conn())
+	return client.GetGroupManagers(ctx, in, opts...)
 }
 
 // 群申请管理

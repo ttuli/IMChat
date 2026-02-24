@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"IM2/internal/apps/Group/rpc/group"
 	"IM2/internal/apps/websocket/gateway/svc"
 	"IM2/internal/common"
 	"IM2/pkg/logger"
@@ -42,16 +43,27 @@ func (s *GatewayServer) Start() error {
 	// 3. 启动路由心跳 (定期续期活跃用户路由)
 	s.svcCtx.Router.StartRouteHeartbeat(s.ctx, s.svcCtx.ConnectionManager.GetAllLocalUserIDs)
 
-	// 4. 订阅跨节点消息
-	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, s.handleInternalMessage); err != nil {
-		return fmt.Errorf("subscribe failed: %w", err)
+	// 4. 订阅跨节点路由消息
+	nodeSubject := fmt.Sprintf("%s.%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
+
+	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, nodeSubject,
+		s.svcCtx.Config.WebSocket.NodeID, s.handleQueueSubscribeMessage); err != nil {
+		return fmt.Errorf("subscribe route message failed: %w", err)
+	}
+	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, s.svcCtx.Config.Nats.BroadcastSubject, s.handleSubscribeMessage); err != nil {
+		return fmt.Errorf("subscribe broadcast message failed: %w", err)
+	}
+	// 5. 订阅业务通知消息 (NATS WsSubject)
+	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.QueueBroadcastSubject,
+		s.svcCtx.Config.Nats.QueueName, s.handleQueueSubscribeMessage); err != nil {
+		return fmt.Errorf("subscribe notice failed: %w", err)
 	}
 
 	fmt.Println("WebSocket Gateway Server logic started successfully")
 	return nil
 }
 
-// Stop 停止服务
+// WebSocket Gateway Server logic stopped
 func (s *GatewayServer) Stop() error {
 	fmt.Println("Stopping WebSocket Gateway Server logic...")
 	if s.cancel != nil {
@@ -90,18 +102,40 @@ func (s *GatewayServer) Stop() error {
 	return nil
 }
 
-func (s *GatewayServer) handleInternalMessage(ctx context.Context, msg *common.InternalMessage) error {
+func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
 	// 获取本地连接
-	switch msg.TargetType {
+	switch msg.RouteTargetType {
 	case common.TargetType_USER:
-		conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.TargetId)
+		conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.RouteTarget)
 		if ok {
-			return conn.Send(msg.Message)
+			return conn.Send(msg)
 		}
 	case common.TargetType_GROUP:
-		return s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, msg.TargetId, msg.Message)
+		return s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, msg.RouteTarget, msg)
 	default:
 		return nil
 	}
+	return nil
+}
+
+func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
+	switch msg.Type {
+	case common.MessageType_GROUP_REQUEST:
+		resp, err := s.svcCtx.GroupRpc.GetGroupManagers(ctx, &group.GetGroupManagersReq{
+			GroupId: msg.RouteTarget,
+		})
+		if err != nil {
+			s.svcCtx.TelemetryBus.Publish(err)
+			return nil
+		}
+		for _, manager := range resp.Managers {
+			err := s.svcCtx.ConnectionManager.SendToUser(ctx, manager.UserId, msg)
+			if err != nil {
+				s.svcCtx.TelemetryBus.Publish(err)
+			}
+		}
+		return nil
+	}
+
 	return nil
 }

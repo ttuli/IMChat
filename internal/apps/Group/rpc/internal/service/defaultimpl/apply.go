@@ -4,41 +4,66 @@ import (
 	"context"
 	"time"
 
+	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
+	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
 // ========== 群申请管理 ==========
 
-func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64, applyMsg string) (*model.GroupApply, error) {
+func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64, applyMsg string) (*model.GroupApply, *model.GroupMember, error) {
 	// 1. 检查群组是否存在
-	_, err := s.groupDAO.FindByID(ctx, groupID)
+	group, err := s.groupDAO.FindByID(ctx, groupID)
 	if err == gorm.ErrRecordNotFound {
-		return nil, xerr.New(xerr.ErrNotFound, "群组不存在")
+		return nil, nil, xerr.New(xerr.ErrNotFound, "群组不存在")
 	}
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询群组失败")
+		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "查询群组失败")
 	}
 
 	// 2. 检查是否已是群成员
 	isMember, _ := s.groupDAO.IsMember(ctx, groupID, fromUserID)
 	if isMember {
-		return nil, xerr.New(xerr.ErrInvalidParams, "已是群成员，无需申请")
+		return nil, nil, xerr.New(xerr.ErrInvalidParams, "已是群成员，无需申请")
 	}
 
-	// 3. 检查是否存在重复的待处理申请
+	// 3. 如果群组设置了"直接同意"，则不创建申请，直接进群
+	if group.JoinType == int(model.JoinTypeDirect) {
+		member := &model.GroupMember{
+			GroupID:  groupID,
+			UserID:   fromUserID,
+			Role:     model.GroupRoleMember,
+			JoinedAt: time.Now(),
+		}
+		if err := s.groupDAO.InsertMember(ctx, member); err != nil {
+			return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "直接加入群组失败")
+		}
+
+		msg := common.NewGroupOperationMsg(common.MessageType_GROUP_JOIN, groupID, fromUserID, 0, nil)
+		bytes, _ := proto.Marshal(msg)
+		err = s.nats.Publish(s.config.NATS.BroadcastSubject, bytes)
+		if err != nil {
+			logger.Errorf("发送nats失败: %v", err)
+		}
+
+		return nil, member, nil
+	}
+
+	// 4. 检查是否存在重复的待处理申请
 	existing, err := s.applyDAO.FindExistingPendingApply(ctx, fromUserID, groupID)
 	if err == nil && existing != nil {
-		return nil, xerr.New(xerr.ErrInvalidParams, "已有待处理的入群申请")
+		return nil, nil, xerr.New(xerr.ErrInvalidParams, "已有待处理的入群申请")
 	}
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询已有申请失败")
+		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "查询已有申请失败")
 	}
 
 	now := time.Now()
-	// 4. 创建群级别申请（任何管理员/群主都可处理）
+	// 5. 创建群级别申请（任何管理员/群主都可处理）
 	apply := &model.GroupApply{
 		FromUserID: fromUserID,
 		GroupID:    groupID,
@@ -48,10 +73,17 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 		UpdateTime: now,
 	}
 	if err := s.applyDAO.InsertApply(ctx, apply); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "创建入群申请失败")
+		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "创建入群申请失败")
 	}
 
-	return apply, nil
+	msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
+	bytes, _ := proto.Marshal(msg)
+	err = s.nats.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
+	if err != nil {
+		logger.Errorf("发送nats失败: %v", err)
+	}
+
+	return apply, nil, nil
 }
 
 func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID uint64, status uint8, rejectReason string) (*model.GroupApply, error) {
@@ -99,12 +131,28 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 			}); err != nil {
 				return nil, xerr.Wrap(err, xerr.ErrDatabase, "添加群成员失败")
 			}
+
+			msg := common.NewGroupOperationMsg(common.MessageType_GROUP_JOIN, apply.GroupID, apply.FromUserID, 0, nil)
+			bytes, _ := proto.Marshal(msg)
+			err = s.nats.Publish(s.config.NATS.BroadcastSubject, bytes)
+			if err != nil {
+				logger.Errorf("发送nats失败: %v", err)
+			}
 		}
 	}
 
 	// 6. 返回更新后的记录
 	apply.Status = status
 	apply.HandlerID = operatorID
+	apply.UpdateTime = time.Now()
+
+	msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
+	bytes, _ := proto.Marshal(msg)
+	err = s.nats.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
+	if err != nil {
+		logger.Errorf("发送nats失败: %v", err)
+	}
+
 	return apply, nil
 }
 

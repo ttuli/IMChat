@@ -40,8 +40,11 @@ type NatsConf struct {
 	// NATS 服务器地址，例如 nats://localhost:4222
 	Url string `json:"url"`
 
-	NodeSubjectPrefix string
-	DBSubject         string
+	NodeSubjectPrefix     string
+	BroadcastSubject      string
+	DBSubject             string
+	QueueBroadcastSubject string
+	QueueName             string
 }
 
 // WebSocketConf WebSocket 配置

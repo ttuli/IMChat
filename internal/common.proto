@@ -21,18 +21,12 @@ message ApiResponse {
 
 // WebSocket传输的顶层消息
 message WSMessage {
-  int64 timestamp = 1;            // 时间戳(毫秒)
-  MessageType type = 2;           // 消息类型
-  bytes payload = 3;              // 具体消息内容(根据type解析)
-  int32 version = 4;              // 协议版本号
-}
-
-// 跨节点内部通信消息
-message InternalMessage {
-  uint64 target_id = 1;      // 路由目标
-  TargetType target_type = 2; // 路由目标类型
-  WSMessage message = 3;          // 实际消息
-  map<string, string> internal_ext = 4; // 内部扩展字段
+  uint64 route_target = 1;         // 路由目标
+  TargetType route_target_type = 2; // 路由目标类型
+  int64 timestamp = 3;            // 时间戳(毫秒)
+  MessageType type = 4;           // 消息类型
+  bytes payload = 5;              // 具体消息内容(根据type解析)
+  int32 version = 6;              // 协议版本号
 }
 
 enum TargetType {
@@ -280,9 +274,10 @@ message GroupInfo {
   string name = 3;                // 群组名称
   string avatar = 4;              // 群头像
   string notice = 5;              // 群公告
-  int32 member_count = 6;         // 成员数量
-  int64 create_time = 7;          // 创建时间
-  int64 update_time = 8;          // 更新时间
+  int32 join_type = 6;            // 加群方式
+  int32 member_count = 7;         // 成员数量
+  int64 create_time = 8;          // 创建时间
+  int64 update_time = 9;          // 更新时间
 }
 
 // 群成员信息 (对标 model/group_member.go)

@@ -16,5 +16,11 @@ type Config struct {
 		ApplyDAO string
 	}
 
+	NATS struct {
+		Url                   string
+		BroadcastSubject      string
+		QueueBroadcastSubject string
+	}
+
 	IDRpc zrpc.RpcClientConf
 }

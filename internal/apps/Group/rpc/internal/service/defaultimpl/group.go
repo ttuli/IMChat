@@ -35,6 +35,7 @@ func (s *groupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 		OwnerID:     ownerID,
 		Name:        name,
 		Avatar:      avatar,
+		JoinType:    int(model.JoinTypeVerify),
 		MemberCount: 1 + len(memberIDs),
 		CreateTime:  now,
 		UpdateTime:  now,

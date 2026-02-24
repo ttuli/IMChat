@@ -275,6 +275,17 @@ func (m *GroupDAO) FindMembersByGroupID(ctx context.Context, groupID uint64) ([]
 	return members, nil
 }
 
+// FindManagersByGroupID 查询群管理员和群主列表
+func (m *GroupDAO) FindManagersByGroupID(ctx context.Context, groupID uint64) ([]*model.GroupMember, error) {
+	var members []*model.GroupMember
+	if err := m.DB.WithContext(ctx).
+		Where("group_id = ? AND role IN ?", groupID, []int8{model.GroupRoleOwner, model.GroupRoleAdmin}).
+		Find(&members).Error; err != nil {
+		return nil, err
+	}
+	return members, nil
+}
+
 // FindMember 查询单个成员
 func (m *GroupDAO) FindMember(ctx context.Context, groupID, userID uint64) (*model.GroupMember, error) {
 	var member model.GroupMember

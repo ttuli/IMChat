@@ -2,47 +2,88 @@ package defaultimpl
 
 import (
 	"context"
+	"time"
 
+	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
+	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
 // ========== 好友申请 ==========
 
 // NewFriendApply 发起好友申请
-func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID uint64, applyMsg string) (*model.FriendApply, error) {
+func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID uint64, applyMsg string, source uint8) (*model.FriendApply, *model.UserFriend, error) {
 	// 1. 检查是否已经是好友
 	_, err := s.friendDAO.FindFriendRelation(ctx, fromUserID, toUserID)
 	if err == nil {
-		return nil, xerr.New(xerr.ErrInvalidParams, "已经是好友，无需重复申请")
+		return nil, nil, xerr.New(xerr.ErrInvalidParams, "已经是好友，无需重复申请")
 	}
 	if err != gorm.ErrRecordNotFound {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
+		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
 	}
 
-	// 2. 检查是否存在重复的待处理申请
+	// 2. 检查对方用户的加好友设置
+	toUser, err := s.userDAO.FindOneByID(ctx, toUserID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil, xerr.New(xerr.ErrNotFound, "目标用户不存在")
+		}
+		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "查询用户失败")
+	}
+
+	// 3. 如果对方设置了"直接同意"，则不创建申请，直接创建好友关系
+	if toUser.JoinType == model.JoinTypeDirect {
+		err = s.friendDAO.DB().Transaction(func(tx *gorm.DB) error {
+			return s.friendDAO.InsertFriendTx(ctx, tx, fromUserID, toUserID, source)
+		})
+		if err != nil {
+			return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "直接添加好友失败")
+		}
+
+		friendRecord, _ := s.friendDAO.FindFriendRelation(ctx, fromUserID, toUserID)
+
+		msg, _ := common.ConvertFriendToWSMessage(friendRecord, toUserID)
+		data, _ := proto.Marshal(msg)
+		err = s.nats.Publish(s.Config.NATS.BroadcastSubject, data)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		return nil, friendRecord, nil
+	}
+
+	// 4. 检查是否存在重复的待处理申请
 	existing, err := s.friendApplyDAO.FindExistingPendingApply(ctx, fromUserID, toUserID)
 	if err == nil && existing != nil {
-		return nil, xerr.New(xerr.ErrInvalidParams, "已有待处理的好友申请")
+		return nil, nil, xerr.New(xerr.ErrInvalidParams, "已有待处理的好友申请")
 	}
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询已有申请失败")
+		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "查询已有申请失败")
 	}
 
-	// 3. 创建新申请
+	// 5. 创建新申请
 	apply := &model.FriendApply{
 		FromUserID: fromUserID,
 		ToUserID:   toUserID,
 		ApplyMsg:   applyMsg,
 		Status:     model.ApplyStatusPending,
+		Source:     source,
 	}
 	if err := s.friendApplyDAO.InsertFriendApply(ctx, apply); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "创建好友申请失败")
+		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "创建好友申请失败")
 	}
 
-	return apply, nil
+	msg, _ := common.ConvertFriendApplyToWSMessage(apply, toUserID)
+	data, _ := proto.Marshal(msg)
+	err = s.nats.Publish(s.Config.NATS.BroadcastSubject, data)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	return apply, nil, nil
 }
 
 // HandleFriendApply 处理好友申请（同意/拒绝），返回更新后的申请记录
@@ -88,8 +129,16 @@ func (s *userService) HandleFriendApply(ctx context.Context, applyID, operatorID
 	}
 
 	// 5. 返回更新后的记录
+	apply.HandleTime = time.Now()
 	apply.Status = status
 	apply.RejectReason = rejectReason
+
+	msg, _ := common.ConvertFriendApplyToWSMessage(apply, apply.FromUserID)
+	data, _ := proto.Marshal(msg)
+	err = s.nats.Publish(s.Config.NATS.BroadcastSubject, data)
+	if err != nil {
+		logger.Error(err.Error())
+	}
 	return apply, nil
 }
 

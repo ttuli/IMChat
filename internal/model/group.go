@@ -9,6 +9,7 @@ type Group struct {
 	Avatar      string    `gorm:"column:avatar;type:varchar(255);not null;comment:群头像" json:"avatar"`
 	Notice      string    `gorm:"column:notice;type:varchar(1000);comment:群公告" json:"notice"`
 	MemberCount int       `gorm:"column:member_count;type:int;not null;default:1;comment:群成员数" json:"member_count"`
+	JoinType    int       `gorm:"column:join_type;type:int;not null;default:1;comment:加群方式" json:"join_type"`
 	CreateTime  time.Time `gorm:"column:create_time;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"create_time"`
 	UpdateTime  time.Time `gorm:"column:update_time;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);autoUpdateTime;comment:更新时间" json:"update_time"`
 }

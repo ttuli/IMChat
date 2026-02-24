@@ -21,30 +21,36 @@ func (s *userService) GetFriends(ctx context.Context, userID uint64) ([]*model.U
 }
 
 // CreateFriend 创建好友关系（双向）
-func (s *userService) CreateFriend(ctx context.Context, userID, friendID uint64, source uint8, remark string) error {
+func (s *userService) CreateFriend(ctx context.Context, userID, friendID uint64, source uint8, remark string) (*model.UserFriend, error) {
 	// 检查是否已经是好友
 	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
 	if err == nil {
-		return xerr.New(xerr.ErrInvalidParams, "已经是好友")
+		return nil, xerr.New(xerr.ErrInvalidParams, "已经是好友")
 	}
 	if err != gorm.ErrRecordNotFound {
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
 	}
 
 	// 创建双向好友关系
 	if err := s.friendDAO.InsertFriend(ctx, userID, friendID, source); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "创建好友关系失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "创建好友关系失败")
 	}
 
 	// 如果有备注，更新备注
 	if remark != "" {
 		updates := map[string]any{"remark": remark}
 		if err := s.friendDAO.UpdateFriend(ctx, userID, friendID, updates); err != nil {
-			return xerr.Wrap(err, xerr.ErrDatabase, "更新好友备注失败")
+			return nil, xerr.Wrap(err, xerr.ErrDatabase, "更新好友备注失败")
 		}
 	}
 
-	return nil
+	// 返回创建好的好友记录
+	friend, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	if err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "获取好友记录失败")
+	}
+
+	return friend, nil
 }
 
 // UpdateFriend 更新好友信息（备注、拉黑、星标）

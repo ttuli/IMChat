@@ -50,7 +50,7 @@ func (s *UserServer) GetFriends(ctx context.Context, in *user.GetFriendsReq) (*u
 	return l.GetFriends(in)
 }
 
-func (s *UserServer) CreateFriend(ctx context.Context, in *user.CreateFriendReq) (*user.EmptyResp, error) {
+func (s *UserServer) CreateFriend(ctx context.Context, in *user.CreateFriendReq) (*user.CreateFriendResp, error) {
 	l := userlogic.NewCreateFriendLogic(ctx, s.svcCtx)
 	return l.CreateFriend(in)
 }

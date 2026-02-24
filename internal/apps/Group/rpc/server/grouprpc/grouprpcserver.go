@@ -85,6 +85,11 @@ func (s *GroupRpcServer) GetGroupMemberIDs(ctx context.Context, in *group.GetGro
 	return l.GetGroupMemberIDs(in)
 }
 
+func (s *GroupRpcServer) GetGroupManagers(ctx context.Context, in *group.GetGroupManagersReq) (*group.GetGroupManagersResp, error) {
+	l := grouprpclogic.NewGetGroupManagersLogic(ctx, s.svcCtx)
+	return l.GetGroupManagers(in)
+}
+
 // 群申请管理
 func (s *GroupRpcServer) JoinGroup(ctx context.Context, in *group.JoinGroupReq) (*group.JoinGroupResp, error) {
 	l := grouprpclogic.NewJoinGroupLogic(ctx, s.svcCtx)

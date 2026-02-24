@@ -21,11 +21,11 @@ func CreateFriendHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := friend.NewCreateFriendLogic(r.Context(), svcCtx)
-		err := l.CreateFriend(&req)
+		resp, err := l.CreateFriend(&req)
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
-			httpx.Ok(w)
+			resultx.OkProtoCtx(r.Context(), w, r, resp)
 		}
 	}
 }

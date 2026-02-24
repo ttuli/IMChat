@@ -31,21 +31,3 @@ func (c *ProtoCodec) Decode(data []byte) (*common.WSMessage, error) {
 	}
 	return msg, nil
 }
-
-// EncodeInternal 编码内部消息
-func (c *ProtoCodec) EncodeInternal(msg *common.InternalMessage) ([]byte, error) {
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// DecodeInternal 解码内部消息
-func (c *ProtoCodec) DecodeInternal(data []byte) (*common.InternalMessage, error) {
-	msg := &common.InternalMessage{}
-	if err := proto.Unmarshal(data, msg); err != nil {
-		return nil, err
-	}
-	return msg, nil
-}

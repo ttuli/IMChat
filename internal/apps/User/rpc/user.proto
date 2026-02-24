@@ -111,6 +111,10 @@ message CreateFriendReq {
   int32 source = 4;
 }
 
+message CreateFriendResp {
+  Friend data = 1;
+}
+
 message UpdateFriendReq {
   uint64 user_id = 1;
   uint64 friend_id = 2;
@@ -136,6 +140,7 @@ message NewFriendApplyReq {
 
 message NewFriendApplyResp {
   FriendRequest data = 1;
+  Friend friend = 2; // Returns Friend if join_type is Direct
 }
 
 message HandleFriendApplyReq {
@@ -168,7 +173,7 @@ service User {
 
   // 好友管理
   rpc GetFriends(GetFriendsReq) returns (GetFriendsResp);
-  rpc CreateFriend(CreateFriendReq) returns (EmptyResp);
+  rpc CreateFriend(CreateFriendReq) returns (CreateFriendResp);
   rpc UpdateFriend(UpdateFriendReq) returns (EmptyResp);
   rpc DeleteFriend(DeleteFriendReq) returns (EmptyResp);
 

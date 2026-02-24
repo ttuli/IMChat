@@ -121,6 +121,12 @@ message CreateFriendReq {
   string remark = 3;
 }
 
+// CreateFriendResp
+message CreateFriendResp {
+  // @gotags: json:"data"
+  Friend data = 1;
+}
+
 // UpdateFriendReq
 message UpdateFriendReq {
   // @gotags: json:"friend_id"
@@ -152,6 +158,8 @@ message NewFriendApplyReq {
 // NewFriendApplyResp
 message NewFriendApplyResp {
   FriendRequest data = 1;
+  // @gotags: json:"friend,omitempty"
+  Friend friend = 2;
 }
 
 // HandleFriendApplyReq
