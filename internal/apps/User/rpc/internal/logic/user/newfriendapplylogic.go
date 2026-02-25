@@ -43,7 +43,7 @@ func (l *NewFriendApplyLogic) NewFriendApply(in *user.NewFriendApplyReq) (*user.
 			RequestTime:  apply.CreateTime.UnixMilli(),
 			HandleTime:   apply.HandleTime.UnixMilli(),
 			RejectReason: apply.RejectReason,
-		}
+		}	
 	} else if friend != nil {
 		resp.Friend = &user.Friend{
 			UserId:     friend.UserID,

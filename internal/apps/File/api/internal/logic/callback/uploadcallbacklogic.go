@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	file "IM2/internal/apps/File"
 	"IM2/internal/apps/File/api/svc"
 	"IM2/internal/apps/File/api/types"
 	"IM2/internal/apps/User/rpc/user"
@@ -29,7 +28,6 @@ func NewUploadCallbackLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Up
 }
 
 func (l *UploadCallbackLogic) UploadCallback(req *types.CallbackData) error {
-	fmt.Println(*req)
 	if req.FileName == "" {
 		return xerr.New(xerr.ErrInvalidParams, "empty filename")
 	}
@@ -37,8 +35,8 @@ func (l *UploadCallbackLogic) UploadCallback(req *types.CallbackData) error {
 		return xerr.New(xerr.ErrInvalidParams, "empty id")
 	}
 
-	switch file.FileType(req.FileType) {
-	case file.FileTypeAvatar:
+	switch types.FileType(req.FileType) {
+	case types.FileType_FileTypeAvatar:
 		region := l.svcCtx.Config.Oss.Avatar.Region
 		bucketName := l.svcCtx.Config.Oss.Avatar.BucketName
 		avatar := fmt.Sprintf("https://%s.oss-%s.aliyuncs.com/%s", bucketName, region, req.FileName)
@@ -49,8 +47,8 @@ func (l *UploadCallbackLogic) UploadCallback(req *types.CallbackData) error {
 		if err != nil {
 			return err
 		}
-	case file.FileTypeChatImage:
-	case file.FileTypeChatFile:
+	case types.FileType_FileTypeChatImage:
+	case types.FileType_FileTypeChatFile:
 	}
 
 	return nil

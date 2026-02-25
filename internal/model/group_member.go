@@ -11,7 +11,7 @@ type GroupMember struct {
 	Nickname  string    `gorm:"column:nickname;type:varchar(50);not null;default:'';comment:群内昵称" json:"nickname"`
 	MuteUntil int64     `gorm:"column:mute_until;type:bigint;not null;default:0;comment:禁言截止时间（Unix时间戳，0表示未禁言）" json:"mute_until"`
 	JoinedAt  time.Time `gorm:"column:joined_at;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);comment:加入时间" json:"joined_at"`
-	Extra     string    `gorm:"column:extra;type:json;comment:扩展字段(背景图、备注等)" json:"extra"`
+	Extra     string    `gorm:"column:extra;type:varchar(1000);comment:扩展字段(背景图、备注等)" json:"extra"`
 }
 
 func (GroupMember) TableName() string {

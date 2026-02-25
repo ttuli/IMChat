@@ -31,12 +31,12 @@ func main() {
 
 	// 所有需要迁移的模型
 	models := []interface{}{
-		&model.UserFriend{},
+		// &model.UserFriend{},
 		// &model.FriendApply{},
 		// &model.Group{},
 		// &model.Conversation{},
 		// &model.UserConversation{},
-		// &model.GroupMember{},
+		&model.GroupMember{},
 	}
 
 	// 使用 AutoMigrate 批量迁移所有模型

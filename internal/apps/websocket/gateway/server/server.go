@@ -44,7 +44,7 @@ func (s *GatewayServer) Start() error {
 	s.svcCtx.Router.StartRouteHeartbeat(s.ctx, s.svcCtx.ConnectionManager.GetAllLocalUserIDs)
 
 	// 4. 订阅跨节点路由消息
-	nodeSubject := fmt.Sprintf("%s.%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
+	nodeSubject := fmt.Sprintf("%s%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
 
 	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, nodeSubject,
 		s.svcCtx.Config.WebSocket.NodeID, s.handleQueueSubscribeMessage); err != nil {
@@ -53,7 +53,6 @@ func (s *GatewayServer) Start() error {
 	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, s.svcCtx.Config.Nats.BroadcastSubject, s.handleSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe broadcast message failed: %w", err)
 	}
-	// 5. 订阅业务通知消息 (NATS WsSubject)
 	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.QueueBroadcastSubject,
 		s.svcCtx.Config.Nats.QueueName, s.handleQueueSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe notice failed: %w", err)

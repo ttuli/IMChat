@@ -7,12 +7,11 @@
 package types
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -21,6 +20,55 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+type FileType int32
+
+const (
+	FileType_FileTypeAvatar    FileType = 0
+	FileType_FileTypeChatImage FileType = 1
+	FileType_FileTypeChatFile  FileType = 2
+)
+
+// Enum value maps for FileType.
+var (
+	FileType_name = map[int32]string{
+		0: "FileTypeAvatar",
+		1: "FileTypeChatImage",
+		2: "FileTypeChatFile",
+	}
+	FileType_value = map[string]int32{
+		"FileTypeAvatar":    0,
+		"FileTypeChatImage": 1,
+		"FileTypeChatFile":  2,
+	}
+)
+
+func (x FileType) Enum() *FileType {
+	p := new(FileType)
+	*p = x
+	return p
+}
+
+func (x FileType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FileType) Descriptor() protoreflect.EnumDescriptor {
+	return file_file_api_proto_enumTypes[0].Descriptor()
+}
+
+func (FileType) Type() protoreflect.EnumType {
+	return &file_file_api_proto_enumTypes[0]
+}
+
+func (x FileType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FileType.Descriptor instead.
+func (FileType) EnumDescriptor() ([]byte, []int) {
+	return file_file_api_proto_rawDescGZIP(), []int{0}
+}
 
 type PolicyToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -207,7 +255,7 @@ type CallbackData struct {
 	// @gotags: form:"id"
 	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty" form:"id"`
 	// @gotags: form:"file_type"
-	FileType int32 `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty" form:"file_type"`
+	FileType FileType `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,omitempty" form:"file_type"`
 	// @gotags: form:"width"
 	Width int32 `protobuf:"varint,3,opt,name=width,proto3" json:"width,omitempty" form:"width"`
 	// @gotags: form:"height"
@@ -259,11 +307,11 @@ func (x *CallbackData) GetId() uint64 {
 	return 0
 }
 
-func (x *CallbackData) GetFileType() int32 {
+func (x *CallbackData) GetFileType() FileType {
 	if x != nil {
 		return x.FileType
 	}
-	return 0
+	return FileType_FileTypeAvatar
 }
 
 func (x *CallbackData) GetWidth() int32 {
@@ -303,8 +351,8 @@ func (x *CallbackData) GetMimeType() string {
 
 type GetPostSignatureReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"file_type" json:"file_type"
-	FileType      int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type" form:"file_type"`
+	// @gotags: form:"file_type,optional" json:"file_type,optional"
+	FileType      FileType `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,optional" form:"file_type,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -339,11 +387,11 @@ func (*GetPostSignatureReq) Descriptor() ([]byte, []int) {
 	return file_file_api_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetPostSignatureReq) GetFileType() int32 {
+func (x *GetPostSignatureReq) GetFileType() FileType {
 	if x != nil {
 		return x.FileType
 	}
-	return 0
+	return FileType_FileTypeAvatar
 }
 
 var File_file_api_proto protoreflect.FileDescriptor
@@ -365,17 +413,21 @@ const file_file_api_proto_rawDesc = "" +
 	"\rCallbackParam\x12 \n" +
 	"\vcallbackUrl\x18\x01 \x01(\tR\vcallbackUrl\x12\"\n" +
 	"\fcallbackBody\x18\x02 \x01(\tR\fcallbackBody\x12*\n" +
-	"\x10callbackBodyType\x18\x03 \x01(\tR\x10callbackBodyType\"\xb7\x01\n" +
+	"\x10callbackBodyType\x18\x03 \x01(\tR\x10callbackBodyType\"\xc8\x01\n" +
 	"\fCallbackData\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1b\n" +
-	"\tfile_type\x18\x02 \x01(\x05R\bfileType\x12\x14\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12,\n" +
+	"\tfile_type\x18\x02 \x01(\x0e2\x0f.types.FileTypeR\bfileType\x12\x14\n" +
 	"\x05width\x18\x03 \x01(\x05R\x05width\x12\x16\n" +
 	"\x06height\x18\x04 \x01(\x05R\x06height\x12\x12\n" +
 	"\x04size\x18\x05 \x01(\x04R\x04size\x12\x1b\n" +
 	"\tfile_name\x18\x06 \x01(\tR\bfileName\x12\x1b\n" +
-	"\tmime_type\x18\a \x01(\tR\bmimeType\"2\n" +
-	"\x13GetPostSignatureReq\x12\x1b\n" +
-	"\tfile_type\x18\x01 \x01(\x05R\bfileTypeB\n" +
+	"\tmime_type\x18\a \x01(\tR\bmimeType\"C\n" +
+	"\x13GetPostSignatureReq\x12,\n" +
+	"\tfile_type\x18\x01 \x01(\x0e2\x0f.types.FileTypeR\bfileType*K\n" +
+	"\bFileType\x12\x12\n" +
+	"\x0eFileTypeAvatar\x10\x00\x12\x15\n" +
+	"\x11FileTypeChatImage\x10\x01\x12\x14\n" +
+	"\x10FileTypeChatFile\x10\x02B\n" +
 	"Z\b./;typesb\x06proto3"
 
 var (
@@ -390,19 +442,23 @@ func file_file_api_proto_rawDescGZIP() []byte {
 	return file_file_api_proto_rawDescData
 }
 
+var file_file_api_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_file_api_proto_goTypes = []any{
-	(*PolicyToken)(nil),         // 0: types.PolicyToken
-	(*CallbackParam)(nil),       // 1: types.CallbackParam
-	(*CallbackData)(nil),        // 2: types.CallbackData
-	(*GetPostSignatureReq)(nil), // 3: types.GetPostSignatureReq
+	(FileType)(0),               // 0: types.FileType
+	(*PolicyToken)(nil),         // 1: types.PolicyToken
+	(*CallbackParam)(nil),       // 2: types.CallbackParam
+	(*CallbackData)(nil),        // 3: types.CallbackData
+	(*GetPostSignatureReq)(nil), // 4: types.GetPostSignatureReq
 }
 var file_file_api_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: types.CallbackData.file_type:type_name -> types.FileType
+	0, // 1: types.GetPostSignatureReq.file_type:type_name -> types.FileType
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_file_api_proto_init() }
@@ -415,13 +471,14 @@ func file_file_api_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_api_proto_rawDesc), len(file_file_api_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_file_api_proto_goTypes,
 		DependencyIndexes: file_file_api_proto_depIdxs,
+		EnumInfos:         file_file_api_proto_enumTypes,
 		MessageInfos:      file_file_api_proto_msgTypes,
 	}.Build()
 	File_file_api_proto = out.File

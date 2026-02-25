@@ -21,6 +21,20 @@ type Config struct {
 			CallbackURL string
 			Product     string
 		}
+		ChatImage struct {
+			BucketName  string
+			Region      string
+			Dir         string
+			CallbackURL string
+			Product     string
+		}
+		ChatFile struct {
+			BucketName  string
+			Region      string
+			Dir         string
+			CallbackURL string
+			Product     string
+		}
 	}
 
 	APISIX service.APISIXConfig

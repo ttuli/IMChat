@@ -13,7 +13,6 @@ import (
 	"os"
 	"time"
 
-	file "IM2/internal/apps/File"
 	"IM2/internal/apps/File/api/svc"
 	"IM2/internal/apps/File/api/types"
 	tokenmanager "IM2/pkg/tokenManager"
@@ -42,13 +41,25 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	id := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	var region, bucketName, dir, callbackUrl, product string
-	switch file.FileType(req.FileType) {
-	case file.FileTypeAvatar:
+	switch req.FileType {
+	case types.FileType_FileTypeAvatar:
 		region = l.svcCtx.Config.Oss.Avatar.Region
 		bucketName = l.svcCtx.Config.Oss.Avatar.BucketName
 		dir = l.svcCtx.Config.Oss.Avatar.Dir
 		callbackUrl = l.svcCtx.Config.Oss.Avatar.CallbackURL
 		product = l.svcCtx.Config.Oss.Avatar.Product
+	case types.FileType_FileTypeChatImage:
+		region = l.svcCtx.Config.Oss.ChatImage.Region
+		bucketName = l.svcCtx.Config.Oss.ChatImage.BucketName
+		dir = l.svcCtx.Config.Oss.ChatImage.Dir
+		callbackUrl = l.svcCtx.Config.Oss.ChatImage.CallbackURL
+		product = l.svcCtx.Config.Oss.ChatImage.Product
+	case types.FileType_FileTypeChatFile:
+		region = l.svcCtx.Config.Oss.ChatFile.Region
+		bucketName = l.svcCtx.Config.Oss.ChatFile.BucketName
+		dir = l.svcCtx.Config.Oss.ChatFile.Dir
+		callbackUrl = l.svcCtx.Config.Oss.ChatFile.CallbackURL
+		product = l.svcCtx.Config.Oss.ChatFile.Product
 	default:
 		return nil, xerr.New(xerr.ErrInvalidParams, "文件类型不合法")
 	}
