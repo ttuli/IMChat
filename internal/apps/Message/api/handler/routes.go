@@ -30,6 +30,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: message.GetUserConversationsHandler(serverCtx),
 			},
 			{
+				// 获取用户的活跃会话列表(根据UserID)
+				Method:  http.MethodGet,
+				Path:    "/conversations/user/active",
+				Handler: message.GetUserActiveConversationsHandler(serverCtx),
+			},
+			{
 				// 获取历史消息
 				Method:  http.MethodGet,
 				Path:    "/history",

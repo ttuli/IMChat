@@ -345,15 +345,16 @@ enum GroupOperationType {
 message Conversation {
   string conversation_id = 1;     // 会话ID
   ConversationType type = 2;      // 会话类型
-  uint64 target_id = 3;           // 目标ID (私聊=对方user_id, 群聊=group_id)
-  string last_content = 4;        // 最后一条消息摘要文本
-  int64 last_message_time = 5;    // 最后消息时间
-  int64 unread_count = 6;         // 未读消息数
-  int64 create_time = 7;          // 创建时间
-  int64 update_time = 8;          // 更新时间
-  bool is_top = 9;                // 是否置顶
-  bool is_disturb = 10;           // 是否免打扰
-  MessageType last_msg_type = 11; // 最后消息类型 (用于渲染图标)
+  string last_content = 3;        // 最后一条消息摘要文本
+  int64 max_seq = 4;
+  uint64 last_sender = 5;
+  int64 last_message_time = 6;    // 最后消息时间
+  int64 unread_count = 7;         // 未读消息数
+  int64 create_time = 8;          // 创建时间
+  int64 update_time = 9;         // 更新时间
+  bool is_top = 10;                // 是否置顶
+  bool is_disturb = 11;           // 是否免打扰
+  MessageType last_msg_type = 12; // 最后消息类型 (用于渲染图标)
 }
 
 enum ConversationType {

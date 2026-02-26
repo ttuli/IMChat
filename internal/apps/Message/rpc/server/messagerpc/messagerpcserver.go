@@ -47,3 +47,8 @@ func (s *MessageRpcServer) GetUserConversations(ctx context.Context, in *message
 	l := messagerpclogic.NewGetUserConversationsLogic(ctx, s.svcCtx)
 	return l.GetUserConversations(in)
 }
+
+func (s *MessageRpcServer) GetUserActiveConversations(ctx context.Context, in *message.GetUserActiveConversationsReq) (*message.GetUserActiveConversationsResp, error) {
+	l := messagerpclogic.NewGetUserActiveConversationsLogic(ctx, s.svcCtx)
+	return l.GetUserActiveConversations(in)
+}

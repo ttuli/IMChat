@@ -77,3 +77,28 @@ func (c *ConversationDAO) UpdateUserConversation(ctx context.Context, userID uin
 		Where("user_id = ? AND conversation_id = ?", userID, conversationID).
 		Updates(updates).Error
 }
+
+// InsertUserConversation 插入新的用户会话
+func (c *ConversationDAO) InsertUserConversation(ctx context.Context, userId uint64, conversationId string) error {
+	return c.db.WithContext(ctx).Create(&model.UserConversation{
+		UserID:         userId,
+		ConversationID: conversationId,
+		IsTop:          false,
+		IsDisturb:      false,
+		IsMute:         false,
+		LastReadSeq:    0,
+	}).Error
+}
+
+// Transaction 提供开启事务的能力
+func (c *ConversationDAO) Transaction(ctx context.Context, fc func(tx *gorm.DB) error) error {
+	return c.db.WithContext(ctx).Transaction(fc)
+}
+
+// BatchInsertUserConversations 批量插入用户会话记录
+func (c *ConversationDAO) BatchInsertUserConversations(ctx context.Context, userConvs []*model.UserConversation) error {
+	if len(userConvs) == 0 {
+		return nil
+	}
+	return c.db.WithContext(ctx).Create(&userConvs).Error
+}

@@ -13,7 +13,7 @@ type Config struct {
 			DataSource  string
 			RedisSource redis.RedisConf
 		}
-		ApplyDAO string
+		ApplyDAO   string
 	}
 
 	NATS struct {

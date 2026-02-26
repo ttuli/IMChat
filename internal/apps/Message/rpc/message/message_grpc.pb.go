@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessageRpc_GetHistory_FullMethodName           = "/message.MessageRpc/GetHistory"
-	MessageRpc_GetConversationList_FullMethodName  = "/message.MessageRpc/GetConversationList"
-	MessageRpc_ReadMessage_FullMethodName          = "/message.MessageRpc/ReadMessage"
-	MessageRpc_UpdateConversation_FullMethodName   = "/message.MessageRpc/UpdateConversation"
-	MessageRpc_GetUserConversations_FullMethodName = "/message.MessageRpc/GetUserConversations"
+	MessageRpc_GetHistory_FullMethodName                 = "/message.MessageRpc/GetHistory"
+	MessageRpc_GetConversationList_FullMethodName        = "/message.MessageRpc/GetConversationList"
+	MessageRpc_ReadMessage_FullMethodName                = "/message.MessageRpc/ReadMessage"
+	MessageRpc_UpdateConversation_FullMethodName         = "/message.MessageRpc/UpdateConversation"
+	MessageRpc_GetUserConversations_FullMethodName       = "/message.MessageRpc/GetUserConversations"
+	MessageRpc_GetUserActiveConversations_FullMethodName = "/message.MessageRpc/GetUserActiveConversations"
 )
 
 // MessageRpcClient is the client API for MessageRpc service.
@@ -35,6 +36,7 @@ type MessageRpcClient interface {
 	ReadMessage(ctx context.Context, in *ReadMessageReq, opts ...grpc.CallOption) (*ReadMessageResp, error)
 	UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error)
 	GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
+	GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error)
 }
 
 type messageRpcClient struct {
@@ -95,6 +97,16 @@ func (c *messageRpcClient) GetUserConversations(ctx context.Context, in *GetUser
 	return out, nil
 }
 
+func (c *messageRpcClient) GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserActiveConversationsResp)
+	err := c.cc.Invoke(ctx, MessageRpc_GetUserActiveConversations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MessageRpcServer is the server API for MessageRpc service.
 // All implementations must embed UnimplementedMessageRpcServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type MessageRpcServer interface {
 	ReadMessage(context.Context, *ReadMessageReq) (*ReadMessageResp, error)
 	UpdateConversation(context.Context, *UpdateConversationReq) (*UpdateConversationResp, error)
 	GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error)
+	GetUserActiveConversations(context.Context, *GetUserActiveConversationsReq) (*GetUserActiveConversationsResp, error)
 	mustEmbedUnimplementedMessageRpcServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedMessageRpcServer) UpdateConversation(context.Context, *Update
 }
 func (UnimplementedMessageRpcServer) GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserConversations not implemented")
+}
+func (UnimplementedMessageRpcServer) GetUserActiveConversations(context.Context, *GetUserActiveConversationsReq) (*GetUserActiveConversationsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserActiveConversations not implemented")
 }
 func (UnimplementedMessageRpcServer) mustEmbedUnimplementedMessageRpcServer() {}
 func (UnimplementedMessageRpcServer) testEmbeddedByValue()                    {}
@@ -240,6 +256,24 @@ func _MessageRpc_GetUserConversations_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageRpc_GetUserActiveConversations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserActiveConversationsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageRpcServer).GetUserActiveConversations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageRpc_GetUserActiveConversations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageRpcServer).GetUserActiveConversations(ctx, req.(*GetUserActiveConversationsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MessageRpc_ServiceDesc is the grpc.ServiceDesc for MessageRpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var MessageRpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserConversations",
 			Handler:    _MessageRpc_GetUserConversations_Handler,
+		},
+		{
+			MethodName: "GetUserActiveConversations",
+			Handler:    _MessageRpc_GetUserActiveConversations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

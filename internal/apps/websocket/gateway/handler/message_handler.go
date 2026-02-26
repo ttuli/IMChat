@@ -52,11 +52,6 @@ func (h *MessageHandler) handleChatMessage(ctx context.Context, msg *common.WSMe
 	default:
 		return nil
 	}
-	
-	// 发送给目标用户
-	if err := h.svcCtx.ConnectionManager.SendToUser(ctx, base.Target, msg); err != nil {
-		h.svcCtx.TelemetryBus.Publish(err)
-	}
 
 	// 发送 ACK
 	return h.conn.Send(protocol.NewAckMessage(base, common.AckStatus_ACK_STATUS_SUCCESS))

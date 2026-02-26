@@ -87,6 +87,15 @@ message UpdateConversationReq {
 
 message UpdateConversationResp {}
 
+message GetUserActiveConversationsReq {
+  uint64 user_id = 1;
+  int64 timestamp = 2;
+}
+
+message GetUserActiveConversationsResp {
+  repeated Conversation conversations = 1;
+}
+
 // ========== 服务定义 ==========
 
 service MessageRpc {
@@ -95,4 +104,5 @@ service MessageRpc {
   rpc ReadMessage(ReadMessageReq) returns (ReadMessageResp);
   rpc UpdateConversation(UpdateConversationReq) returns (UpdateConversationResp);
   rpc GetUserConversations(GetUserConversationsReq) returns (GetUserConversationsResp);
+  rpc GetUserActiveConversations(GetUserActiveConversationsReq) returns (GetUserActiveConversationsResp);
 }

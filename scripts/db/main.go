@@ -17,7 +17,7 @@ func initDB() *gorm.DB {
 		panic(fmt.Sprintf("加载 .env 文件失败: %v", err))
 	}
 
-	dsn := env.GetString("DB_ADDRESS_Friend", "")
+	dsn := env.GetString("DB_ADDRESS_MESSAGE", "")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -34,9 +34,9 @@ func main() {
 		// &model.UserFriend{},
 		// &model.FriendApply{},
 		// &model.Group{},
-		// &model.Conversation{},
+		&model.Conversation{},
 		// &model.UserConversation{},
-		&model.GroupMember{},
+		// &model.GroupMember{},
 	}
 
 	// 使用 AutoMigrate 批量迁移所有模型

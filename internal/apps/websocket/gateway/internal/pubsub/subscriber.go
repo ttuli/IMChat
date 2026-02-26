@@ -17,7 +17,7 @@ type MessageHandler func(ctx context.Context, msg *common.WSMessage) error
 
 // Subscriber NATS 消息订阅者
 type Subscriber struct {
-	conn          *nats.Conn
+	js            nats.JetStreamContext
 	codec         protocol.Codec
 	nodeID        string
 	subscriptions []*nats.Subscription
@@ -25,9 +25,9 @@ type Subscriber struct {
 }
 
 // NewSubscriber 创建订阅者
-func NewSubscriber(conn *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus) *Subscriber {
+func NewSubscriber(js nats.JetStreamContext, codec protocol.Codec, nodeID string, bus *telemetry.Bus) *Subscriber {
 	return &Subscriber{
-		conn:         conn,
+		js:           js,
 		codec:        codec,
 		nodeID:       nodeID,
 		telemetryBus: bus,
@@ -41,18 +41,22 @@ func (s *Subscriber) Subscribe(ctx context.Context, subject string, handler Mess
 		internalMsg, err := s.codec.Decode(msg.Data)
 		if err != nil {
 			s.telemetryBus.Publish(err)
+			msg.Nak()
 			return
 		}
 
 		if handler != nil {
 			if err := handler(ctx, internalMsg); err != nil {
 				s.telemetryBus.Publish(err)
+				msg.Nak()
+				return
 			}
 		}
+		msg.Ack()
 	}
 
 	// 1. 订阅指定主题
-	sub, err := s.conn.Subscribe(subject, msgHandler)
+	sub, err := s.js.Subscribe(subject, msgHandler)
 	if err != nil {
 		s.telemetryBus.Publish(err)
 		return fmt.Errorf("subscribe to subject %s failed: %w", subject, err)
@@ -69,17 +73,21 @@ func (s *Subscriber) QueueSubscribe(ctx context.Context, subject string, queue s
 		internalMsg, err := s.codec.Decode(msg.Data)
 		if err != nil {
 			s.telemetryBus.Publish(err)
+			msg.Nak()
 			return
 		}
 
 		if handler != nil {
 			if err := handler(ctx, internalMsg); err != nil {
 				s.telemetryBus.Publish(err)
+				msg.Nak()
+				return
 			}
 		}
+		msg.Ack()
 	}
 
-	sub, err := s.conn.QueueSubscribe(subject, queue, msgHandler)
+	sub, err := s.js.QueueSubscribe(subject, queue, msgHandler)
 	if err != nil {
 		s.telemetryBus.Publish(err)
 		return fmt.Errorf("queue subscribe to subject %s failed: %w", subject, err)

@@ -17,6 +17,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:         c,
 		MessageService: defaultimpl.NewMessageService(c),
-		ListenService:  listener.NewNatsListener(c.Listener),
+		ListenService:  listener.NewNatsListener(c),
 	}
 }

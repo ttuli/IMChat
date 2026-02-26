@@ -58,6 +58,8 @@ func (s *GatewayServer) Start() error {
 		return fmt.Errorf("subscribe notice failed: %w", err)
 	}
 
+	go s.svcCtx.ConversationDao.StartSyncWorker()
+
 	fmt.Println("WebSocket Gateway Server logic started successfully")
 	return nil
 }
@@ -88,6 +90,7 @@ func (s *GatewayServer) Stop() error {
 
 	// 4. 关闭 NATS
 	s.svcCtx.NatsConn.Close()
+	s.svcCtx.ConversationDao.CloseDAO()
 
 	// 5. 关闭 Redis (路由 KV)
 	if err := s.svcCtx.RedisClient.Close(); err != nil {

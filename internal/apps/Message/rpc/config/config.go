@@ -6,19 +6,23 @@ import (
 )
 
 type ListenerConfig struct {
-	Url               string
-	NodeSubjectPrefix string
-	DBSubject         string
-	DBAddress         string
+	Url              string
+	BroadcastSubject string
+	DBSubject        string
 }
 
 type Config struct {
 	zrpc.RpcServerConf
-	Redisx redis.RedisConf
 
 	Listener ListenerConfig
 
 	DAO struct {
-		ConversationTable string
+		MessageDAO struct {
+			Dbsource string
+		}
+		ConversationDAO struct {
+			Dbsource string
+			Redisx   redis.RedisConf
+		}
 	}
 }

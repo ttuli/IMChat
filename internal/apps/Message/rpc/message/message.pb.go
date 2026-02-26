@@ -817,6 +817,102 @@ func (*UpdateConversationResp) Descriptor() ([]byte, []int) {
 	return file_rpc_message_proto_rawDescGZIP(), []int{12}
 }
 
+type GetUserActiveConversationsReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserActiveConversationsReq) Reset() {
+	*x = GetUserActiveConversationsReq{}
+	mi := &file_rpc_message_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserActiveConversationsReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserActiveConversationsReq) ProtoMessage() {}
+
+func (x *GetUserActiveConversationsReq) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserActiveConversationsReq.ProtoReflect.Descriptor instead.
+func (*GetUserActiveConversationsReq) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetUserActiveConversationsReq) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GetUserActiveConversationsReq) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+type GetUserActiveConversationsResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Conversations []*Conversation        `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserActiveConversationsResp) Reset() {
+	*x = GetUserActiveConversationsResp{}
+	mi := &file_rpc_message_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserActiveConversationsResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserActiveConversationsResp) ProtoMessage() {}
+
+func (x *GetUserActiveConversationsResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserActiveConversationsResp.ProtoReflect.Descriptor instead.
+func (*GetUserActiveConversationsResp) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetUserActiveConversationsResp) GetConversations() []*Conversation {
+	if x != nil {
+		return x.Conversations
+	}
+	return nil
+}
+
 var File_rpc_message_proto protoreflect.FileDescriptor
 
 const file_rpc_message_proto_rawDesc = "" +
@@ -885,7 +981,12 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\n" +
 	"is_disturb\x18\x04 \x01(\x05R\tisDisturb\x12\x17\n" +
 	"\ais_mute\x18\x05 \x01(\x05R\x06isMute\"\x18\n" +
-	"\x16UpdateConversationResp2\x9b\x03\n" +
+	"\x16UpdateConversationResp\"V\n" +
+	"\x1dGetUserActiveConversationsReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1c\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"]\n" +
+	"\x1eGetUserActiveConversationsResp\x12;\n" +
+	"\rconversations\x18\x01 \x03(\v2\x15.message.ConversationR\rconversations2\x8a\x04\n" +
 	"\n" +
 	"MessageRpc\x12=\n" +
 	"\n" +
@@ -893,7 +994,8 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\x13GetConversationList\x12\x1f.message.GetConversationListReq\x1a .message.GetConversationListResp\x12@\n" +
 	"\vReadMessage\x12\x17.message.ReadMessageReq\x1a\x18.message.ReadMessageResp\x12U\n" +
 	"\x12UpdateConversation\x12\x1e.message.UpdateConversationReq\x1a\x1f.message.UpdateConversationResp\x12[\n" +
-	"\x14GetUserConversations\x12 .message.GetUserConversationsReq\x1a!.message.GetUserConversationsRespB\vZ\t./messageb\x06proto3"
+	"\x14GetUserConversations\x12 .message.GetUserConversationsReq\x1a!.message.GetUserConversationsResp\x12m\n" +
+	"\x1aGetUserActiveConversations\x12&.message.GetUserActiveConversationsReq\x1a'.message.GetUserActiveConversationsRespB\vZ\t./messageb\x06proto3"
 
 var (
 	file_rpc_message_proto_rawDescOnce sync.Once
@@ -907,41 +1009,46 @@ func file_rpc_message_proto_rawDescGZIP() []byte {
 	return file_rpc_message_proto_rawDescData
 }
 
-var file_rpc_message_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_rpc_message_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_rpc_message_proto_goTypes = []any{
-	(*Message)(nil),                  // 0: message.Message
-	(*Conversation)(nil),             // 1: message.Conversation
-	(*UserConversation)(nil),         // 2: message.UserConversation
-	(*GetHistoryReq)(nil),            // 3: message.GetHistoryReq
-	(*GetHistoryResp)(nil),           // 4: message.GetHistoryResp
-	(*GetConversationListReq)(nil),   // 5: message.GetConversationListReq
-	(*GetConversationListResp)(nil),  // 6: message.GetConversationListResp
-	(*GetUserConversationsReq)(nil),  // 7: message.GetUserConversationsReq
-	(*GetUserConversationsResp)(nil), // 8: message.GetUserConversationsResp
-	(*ReadMessageReq)(nil),           // 9: message.ReadMessageReq
-	(*ReadMessageResp)(nil),          // 10: message.ReadMessageResp
-	(*UpdateConversationReq)(nil),    // 11: message.UpdateConversationReq
-	(*UpdateConversationResp)(nil),   // 12: message.UpdateConversationResp
+	(*Message)(nil),                        // 0: message.Message
+	(*Conversation)(nil),                   // 1: message.Conversation
+	(*UserConversation)(nil),               // 2: message.UserConversation
+	(*GetHistoryReq)(nil),                  // 3: message.GetHistoryReq
+	(*GetHistoryResp)(nil),                 // 4: message.GetHistoryResp
+	(*GetConversationListReq)(nil),         // 5: message.GetConversationListReq
+	(*GetConversationListResp)(nil),        // 6: message.GetConversationListResp
+	(*GetUserConversationsReq)(nil),        // 7: message.GetUserConversationsReq
+	(*GetUserConversationsResp)(nil),       // 8: message.GetUserConversationsResp
+	(*ReadMessageReq)(nil),                 // 9: message.ReadMessageReq
+	(*ReadMessageResp)(nil),                // 10: message.ReadMessageResp
+	(*UpdateConversationReq)(nil),          // 11: message.UpdateConversationReq
+	(*UpdateConversationResp)(nil),         // 12: message.UpdateConversationResp
+	(*GetUserActiveConversationsReq)(nil),  // 13: message.GetUserActiveConversationsReq
+	(*GetUserActiveConversationsResp)(nil), // 14: message.GetUserActiveConversationsResp
 }
 var file_rpc_message_proto_depIdxs = []int32{
 	0,  // 0: message.GetHistoryResp.messages:type_name -> message.Message
 	1,  // 1: message.GetConversationListResp.conversations:type_name -> message.Conversation
 	2,  // 2: message.GetUserConversationsResp.conversations:type_name -> message.UserConversation
-	3,  // 3: message.MessageRpc.GetHistory:input_type -> message.GetHistoryReq
-	5,  // 4: message.MessageRpc.GetConversationList:input_type -> message.GetConversationListReq
-	9,  // 5: message.MessageRpc.ReadMessage:input_type -> message.ReadMessageReq
-	11, // 6: message.MessageRpc.UpdateConversation:input_type -> message.UpdateConversationReq
-	7,  // 7: message.MessageRpc.GetUserConversations:input_type -> message.GetUserConversationsReq
-	4,  // 8: message.MessageRpc.GetHistory:output_type -> message.GetHistoryResp
-	6,  // 9: message.MessageRpc.GetConversationList:output_type -> message.GetConversationListResp
-	10, // 10: message.MessageRpc.ReadMessage:output_type -> message.ReadMessageResp
-	12, // 11: message.MessageRpc.UpdateConversation:output_type -> message.UpdateConversationResp
-	8,  // 12: message.MessageRpc.GetUserConversations:output_type -> message.GetUserConversationsResp
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	1,  // 3: message.GetUserActiveConversationsResp.conversations:type_name -> message.Conversation
+	3,  // 4: message.MessageRpc.GetHistory:input_type -> message.GetHistoryReq
+	5,  // 5: message.MessageRpc.GetConversationList:input_type -> message.GetConversationListReq
+	9,  // 6: message.MessageRpc.ReadMessage:input_type -> message.ReadMessageReq
+	11, // 7: message.MessageRpc.UpdateConversation:input_type -> message.UpdateConversationReq
+	7,  // 8: message.MessageRpc.GetUserConversations:input_type -> message.GetUserConversationsReq
+	13, // 9: message.MessageRpc.GetUserActiveConversations:input_type -> message.GetUserActiveConversationsReq
+	4,  // 10: message.MessageRpc.GetHistory:output_type -> message.GetHistoryResp
+	6,  // 11: message.MessageRpc.GetConversationList:output_type -> message.GetConversationListResp
+	10, // 12: message.MessageRpc.ReadMessage:output_type -> message.ReadMessageResp
+	12, // 13: message.MessageRpc.UpdateConversation:output_type -> message.UpdateConversationResp
+	8,  // 14: message.MessageRpc.GetUserConversations:output_type -> message.GetUserConversationsResp
+	14, // 15: message.MessageRpc.GetUserActiveConversations:output_type -> message.GetUserActiveConversationsResp
+	10, // [10:16] is the sub-list for method output_type
+	4,  // [4:10] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_rpc_message_proto_init() }
@@ -955,7 +1062,7 @@ func file_rpc_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rpc_message_proto_rawDesc), len(file_rpc_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

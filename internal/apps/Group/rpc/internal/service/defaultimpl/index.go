@@ -18,11 +18,16 @@ type groupService struct {
 	applyDAO    *dao.ApplyDAO
 	idGenerator idgenclient.Idgen
 	nats        *nats.Conn
+	js          nats.JetStreamContext
 }
 
 // NewGroupService 创建群组服务
 func NewGroupService(c config.Config) service.GroupService {
 	nc, err := nats.Connect(c.NATS.Url)
+	if err != nil {
+		panic(err)
+	}
+	js, err := nc.JetStream()
 	if err != nil {
 		panic(err)
 	}
@@ -33,5 +38,6 @@ func NewGroupService(c config.Config) service.GroupService {
 		idGenerator: idgenclient.NewIdgen(zrpc.MustNewClient(c.IDRpc,
 			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
 		nats: nc,
+		js:   js,
 	}
 }

@@ -33,6 +33,7 @@ type ServiceContext struct {
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
 	MessageDao        *dao.MessageDAO
+	ConversationDao   *dao.ConversationDAO
 
 	GroupRpc grouprpc.GroupRpc
 }
@@ -71,8 +72,14 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	bus := telemetry.NewBus(nodeID, 0)
 	bus.RegisterHandler(telemetry.DefaultLogHandler)
 
+	// 生成 JetStream 上下文
+	js, err := natsConn.JetStream()
+	if err != nil {
+		log.Fatalf("failed to create jetstream context: %v", err)
+	}
+
 	// 创建路由器
-	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus, pubsub.SubjectConfig{
+	r := router.NewRouter(redisClient, js, codec, nodeID, bus, pubsub.SubjectConfig{
 		NodeSubjectPrefix: c.Nats.NodeSubjectPrefix,
 		DBSubject:         c.Nats.DBSubject,
 	})
@@ -81,7 +88,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	connMgr := connection.NewDefaultManager(nodeID, r)
 
 	// 创建订阅者
-	sub := pubsub.NewSubscriber(natsConn, codec, nodeID, bus)
+	sub := pubsub.NewSubscriber(js, codec, nodeID, bus)
 
 	svc := &ServiceContext{
 		Config:            c,
@@ -93,6 +100,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
 		MessageDao:        dao.NewMessageDAO(c.DAO.MysqlSource, c.DAO.CacheSource),
+		ConversationDao:   dao.NewConversationDAO(c.DAO.MysqlSource, c.DAO.CacheSource),
+
 		GroupRpc: grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
 			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
 	}

@@ -36,11 +36,11 @@ type Router struct {
 }
 
 // NewRouter 创建路由器
-func NewRouter(client *redis.Client, natsConn *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig pubsub.SubjectConfig) *Router {
+func NewRouter(client *redis.Client, js nats.JetStreamContext, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig pubsub.SubjectConfig) *Router {
 	return &Router{
 		client:       client,
 		nodeID:       nodeID,
-		publisher:    pubsub.NewPublisher(natsConn, codec, nodeID, subjectConfig),
+		publisher:    pubsub.NewPublisher(js, codec, nodeID, subjectConfig),
 		telemetryBus: bus,
 	}
 }

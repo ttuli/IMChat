@@ -1,6 +1,7 @@
 package common
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,18 @@ func GetConversationType(sessionId string) ConversationType {
 		return ConversationType_CONVERSATION_TYPE_GROUP
 	}
 	return ConversationType_CONVERSATION_TYPE_PRIVATE
+}
+
+func GenerateUserSessionId(userId uint64, targetId uint64) string {
+	if userId < targetId {
+		return "private_" + strconv.FormatUint(userId, 10) + "_" + strconv.FormatUint(targetId, 10)
+	} else {
+		return "private_" + strconv.FormatUint(targetId, 10) + "_" + strconv.FormatUint(userId, 10)
+	}
+}
+
+func GenerateGroupSessionId(groupId uint64) string {
+	return "group_" + strconv.FormatUint(groupId, 10)
 }
 
 func IsGroupSession(sessionId string) bool {
@@ -88,7 +101,7 @@ func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*
 }
 
 // ConvertGroupApplyToWSMessage converts a model.GroupApply to a WSMessage
-func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetID uint64) (*WSMessage, error) {
+func ConvertGroupApplyToWSMessage(apply *model.GroupApply, groupID uint64) (*WSMessage, error) {
 	pbApply := &GroupApply{
 		Id:          apply.ID,
 		SenderId:    apply.FromUserID,
@@ -106,7 +119,7 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetID uint64) (*WS
 	}
 
 	return &WSMessage{
-		RouteTarget:     targetID,
+		RouteTarget:     groupID,
 		RouteTargetType: TargetType_GROUP,
 		Timestamp:       apply.UpdateTime.UnixMilli(),
 		Type:            MessageType_GROUP_REQUEST,

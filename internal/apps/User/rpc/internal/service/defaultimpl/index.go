@@ -19,11 +19,16 @@ type userService struct {
 	friendApplyDAO *dao.FriendApplyDAO
 	idGenerator    idgenclient.Idgen
 	nats           *nats.Conn
+	js             nats.JetStreamContext
 }
 
 // NewUserService 创建用户服务
 func NewUserService(c config.Config) service.UserService {
 	nast, err := nats.Connect(c.NATS.Url)
+	if err != nil {
+		panic(err)
+	}
+	js, err := nast.JetStream()
 	if err != nil {
 		panic(err)
 	}
@@ -35,5 +40,6 @@ func NewUserService(c config.Config) service.UserService {
 			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
 		Config: c,
 		nats:   nast,
+		js:     js,
 	}
 }

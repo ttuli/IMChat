@@ -42,19 +42,19 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 
 	var region, bucketName, dir, callbackUrl, product string
 	switch req.FileType {
-	case types.FileType_FileTypeAvatar:
+	case int32(types.FileType_FileTypeAvatar):
 		region = l.svcCtx.Config.Oss.Avatar.Region
 		bucketName = l.svcCtx.Config.Oss.Avatar.BucketName
 		dir = l.svcCtx.Config.Oss.Avatar.Dir
 		callbackUrl = l.svcCtx.Config.Oss.Avatar.CallbackURL
 		product = l.svcCtx.Config.Oss.Avatar.Product
-	case types.FileType_FileTypeChatImage:
+	case int32(types.FileType_FileTypeChatImage):
 		region = l.svcCtx.Config.Oss.ChatImage.Region
 		bucketName = l.svcCtx.Config.Oss.ChatImage.BucketName
 		dir = l.svcCtx.Config.Oss.ChatImage.Dir
 		callbackUrl = l.svcCtx.Config.Oss.ChatImage.CallbackURL
 		product = l.svcCtx.Config.Oss.ChatImage.Product
-	case types.FileType_FileTypeChatFile:
+	case int32(types.FileType_FileTypeChatFile):
 		region = l.svcCtx.Config.Oss.ChatFile.Region
 		bucketName = l.svcCtx.Config.Oss.ChatFile.BucketName
 		dir = l.svcCtx.Config.Oss.ChatFile.Dir

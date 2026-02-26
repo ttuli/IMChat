@@ -18,16 +18,16 @@ type SubjectConfig struct {
 
 // Publisher NATS 消息发布者
 type Publisher struct {
-	conn          *nats.Conn
+	js            nats.JetStreamContext
 	codec         protocol.Codec
 	nodeID        string
 	subjectConfig SubjectConfig
 }
 
 // NewPublisher 创建发布者
-func NewPublisher(conn *nats.Conn, codec protocol.Codec, nodeID string, subjectConfig SubjectConfig) *Publisher {
+func NewPublisher(js nats.JetStreamContext, codec protocol.Codec, nodeID string, subjectConfig SubjectConfig) *Publisher {
 	return &Publisher{
-		conn:          conn,
+		js:            js,
 		codec:         codec,
 		nodeID:        nodeID,
 		subjectConfig: subjectConfig,
@@ -43,7 +43,7 @@ func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *commo
 		return err
 	}
 
-	if err := p.conn.Publish(subject, data); err != nil {
+	if _, err := p.js.Publish(subject, data); err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessa
 		return err
 	}
 
-	if err := p.conn.Publish(subject, data); err != nil {
+	if _, err := p.js.Publish(subject, data); err != nil {
 		return err
 	}
 
@@ -76,7 +76,7 @@ func (p *Publisher) PublishToDB(ctx context.Context, msg *common.WSMessage) erro
 		return err
 	}
 
-	if err := p.conn.Publish(subject, data); err != nil {
+	if _, err := p.js.Publish(subject, data); err != nil {
 		return err
 	}
 

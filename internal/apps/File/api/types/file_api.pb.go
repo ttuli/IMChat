@@ -252,20 +252,20 @@ func (x *CallbackParam) GetCallbackBodyType() string {
 
 type CallbackData struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// @gotags: form:"id"
-	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty" form:"id"`
-	// @gotags: form:"file_type"
-	FileType FileType `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,omitempty" form:"file_type"`
-	// @gotags: form:"width"
-	Width int32 `protobuf:"varint,3,opt,name=width,proto3" json:"width,omitempty" form:"width"`
-	// @gotags: form:"height"
-	Height int32 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty" form:"height"`
-	// @gotags: form:"size"
-	Size uint64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty" form:"size"`
-	// @gotags: form:"file_name"
-	FileName string `protobuf:"bytes,6,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty" form:"file_name"`
-	// @gotags: form:"mime_type"
-	MimeType      string `protobuf:"bytes,7,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty" form:"mime_type"`
+	// @gotags: form:"id,optional" json:"id,optional"
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,optional" form:"id,optional"`
+	// @gotags: form:"file_type,optional" json:"file_type,optional"
+	FileType int32 `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3" json:"file_type,optional" form:"file_type,optional"`
+	// @gotags: form:"width,optional" json:"width,optional"
+	Width int32 `protobuf:"varint,3,opt,name=width,proto3" json:"width,optional" form:"width,optional"`
+	// @gotags: form:"height,optional" json:"height,optional"
+	Height int32 `protobuf:"varint,4,opt,name=height,proto3" json:"height,optional" form:"height,optional"`
+	// @gotags: form:"size,optional" json:"size,optional"
+	Size uint64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,optional" form:"size,optional"`
+	// @gotags: form:"file_name,optional" json:"file_name,optional"
+	FileName string `protobuf:"bytes,6,opt,name=file_name,json=fileName,proto3" json:"file_name,optional" form:"file_name,optional"`
+	// @gotags: form:"mime_type,optional" json:"mime_type,optional"
+	MimeType      string `protobuf:"bytes,7,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,optional" form:"mime_type,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -307,11 +307,11 @@ func (x *CallbackData) GetId() uint64 {
 	return 0
 }
 
-func (x *CallbackData) GetFileType() FileType {
+func (x *CallbackData) GetFileType() int32 {
 	if x != nil {
 		return x.FileType
 	}
-	return FileType_FileTypeAvatar
+	return 0
 }
 
 func (x *CallbackData) GetWidth() int32 {
@@ -352,7 +352,7 @@ func (x *CallbackData) GetMimeType() string {
 type GetPostSignatureReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"file_type,optional" json:"file_type,optional"
-	FileType      FileType `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,optional" form:"file_type,optional"`
+	FileType      int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type,optional" form:"file_type,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -387,11 +387,11 @@ func (*GetPostSignatureReq) Descriptor() ([]byte, []int) {
 	return file_file_api_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetPostSignatureReq) GetFileType() FileType {
+func (x *GetPostSignatureReq) GetFileType() int32 {
 	if x != nil {
 		return x.FileType
 	}
-	return FileType_FileTypeAvatar
+	return 0
 }
 
 var File_file_api_proto protoreflect.FileDescriptor
@@ -413,17 +413,17 @@ const file_file_api_proto_rawDesc = "" +
 	"\rCallbackParam\x12 \n" +
 	"\vcallbackUrl\x18\x01 \x01(\tR\vcallbackUrl\x12\"\n" +
 	"\fcallbackBody\x18\x02 \x01(\tR\fcallbackBody\x12*\n" +
-	"\x10callbackBodyType\x18\x03 \x01(\tR\x10callbackBodyType\"\xc8\x01\n" +
+	"\x10callbackBodyType\x18\x03 \x01(\tR\x10callbackBodyType\"\xb7\x01\n" +
 	"\fCallbackData\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\x12,\n" +
-	"\tfile_type\x18\x02 \x01(\x0e2\x0f.types.FileTypeR\bfileType\x12\x14\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1b\n" +
+	"\tfile_type\x18\x02 \x01(\x05R\bfileType\x12\x14\n" +
 	"\x05width\x18\x03 \x01(\x05R\x05width\x12\x16\n" +
 	"\x06height\x18\x04 \x01(\x05R\x06height\x12\x12\n" +
 	"\x04size\x18\x05 \x01(\x04R\x04size\x12\x1b\n" +
 	"\tfile_name\x18\x06 \x01(\tR\bfileName\x12\x1b\n" +
-	"\tmime_type\x18\a \x01(\tR\bmimeType\"C\n" +
-	"\x13GetPostSignatureReq\x12,\n" +
-	"\tfile_type\x18\x01 \x01(\x0e2\x0f.types.FileTypeR\bfileType*K\n" +
+	"\tmime_type\x18\a \x01(\tR\bmimeType\"2\n" +
+	"\x13GetPostSignatureReq\x12\x1b\n" +
+	"\tfile_type\x18\x01 \x01(\x05R\bfileType*K\n" +
 	"\bFileType\x12\x12\n" +
 	"\x0eFileTypeAvatar\x10\x00\x12\x15\n" +
 	"\x11FileTypeChatImage\x10\x01\x12\x14\n" +
@@ -452,13 +452,11 @@ var file_file_api_proto_goTypes = []any{
 	(*GetPostSignatureReq)(nil), // 4: types.GetPostSignatureReq
 }
 var file_file_api_proto_depIdxs = []int32{
-	0, // 0: types.CallbackData.file_type:type_name -> types.FileType
-	0, // 1: types.GetPostSignatureReq.file_type:type_name -> types.FileType
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_file_api_proto_init() }

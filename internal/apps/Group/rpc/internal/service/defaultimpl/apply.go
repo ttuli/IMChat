@@ -45,7 +45,7 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 
 		msg := common.NewGroupOperationMsg(common.MessageType_GROUP_JOIN, groupID, fromUserID, 0, nil)
 		bytes, _ := proto.Marshal(msg)
-		err = s.nats.Publish(s.config.NATS.BroadcastSubject, bytes)
+		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 		if err != nil {
 			logger.Errorf("发送nats失败: %v", err)
 		}
@@ -78,7 +78,7 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 
 	msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
 	bytes, _ := proto.Marshal(msg)
-	err = s.nats.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
+	_, err = s.js.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
 	if err != nil {
 		logger.Errorf("发送nats失败: %v", err)
 	}
@@ -132,12 +132,13 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 				return nil, xerr.Wrap(err, xerr.ErrDatabase, "添加群成员失败")
 			}
 
-			msg := common.NewGroupOperationMsg(common.MessageType_GROUP_JOIN, apply.GroupID, apply.FromUserID, 0, nil)
+			msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
 			bytes, _ := proto.Marshal(msg)
-			err = s.nats.Publish(s.config.NATS.BroadcastSubject, bytes)
+			_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 			if err != nil {
 				logger.Errorf("发送nats失败: %v", err)
 			}
+
 		}
 	}
 
@@ -148,7 +149,7 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 
 	msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
 	bytes, _ := proto.Marshal(msg)
-	err = s.nats.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
+	_, err = s.js.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
 	if err != nil {
 		logger.Errorf("发送nats失败: %v", err)
 	}

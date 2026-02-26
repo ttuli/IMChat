@@ -18,7 +18,7 @@ import (
 func (h *MessageHandler) processMessage(ctx context.Context, msg *common.WSMessage) (*common.BaseMessage, error) {
 	timeStamp := time.Now().UnixMilli()
 	msg.Timestamp = timeStamp
-	base, repack, err := h.prepareMessage(msg)
+	base, repack, err := h.prepareMessage(ctx, msg)
 	if err != nil {
 		logger.Errorf("[MessageHandler] prepare message failed: %v", err)
 		return nil, err
@@ -61,12 +61,16 @@ func (h *MessageHandler) processMessage(ctx context.Context, msg *common.WSMessa
 
 // prepareMessage 反序列化消息并返回 BaseMessage 指针和重新打包闭包
 // 修改 base 字段后调用 repack() 即可将修改后的消息重新序列化到 msg.Payload
-func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.BaseMessage, repack func() error, err error) {
+func (h *MessageHandler) prepareMessage(ctx context.Context, msg *common.WSMessage) (base *common.BaseMessage, repack func() error, err error) {
 	switch msg.Type {
 	case common.MessageType_CHAT_TEXT, common.MessageType_GROUP_TEXT:
 		var m common.TextMessage
 		if err := proto.Unmarshal(msg.Payload, &m); err != nil {
 			return nil, nil, err
+		}
+		err := h.svcCtx.ConversationDao.UpdateLastContent(ctx, m.Base.SessionId, m.Base.FromUserId, m.Content)
+		if err != nil {
+			logger.Errorf("update last content failed: %v", err)
 		}
 		return m.Base, func() error {
 			data, err := proto.Marshal(&m)
@@ -82,6 +86,11 @@ func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.Bas
 		if err := proto.Unmarshal(msg.Payload, &m); err != nil {
 			return nil, nil, err
 		}
+		err := h.svcCtx.ConversationDao.UpdateLastContent(ctx, m.Base.SessionId,
+			m.Base.FromUserId, "[图片]")
+		if err != nil {
+			logger.Errorf("update last content failed: %v", err)
+		}
 		return m.Base, func() error {
 			data, err := proto.Marshal(&m)
 			if err != nil {
@@ -95,6 +104,11 @@ func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.Bas
 		var m common.VideoMessage
 		if err := proto.Unmarshal(msg.Payload, &m); err != nil {
 			return nil, nil, err
+		}
+		err := h.svcCtx.ConversationDao.UpdateLastContent(ctx, m.Base.SessionId,
+			m.Base.FromUserId, "[视频]")
+		if err != nil {
+			logger.Errorf("update last content failed: %v", err)
 		}
 		return m.Base, func() error {
 			data, err := proto.Marshal(&m)
@@ -110,6 +124,11 @@ func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.Bas
 		if err := proto.Unmarshal(msg.Payload, &m); err != nil {
 			return nil, nil, err
 		}
+		err := h.svcCtx.ConversationDao.UpdateLastContent(ctx, m.Base.SessionId,
+			m.Base.FromUserId, "[语音]")
+		if err != nil {
+			logger.Errorf("update last content failed: %v", err)
+		}
 		return m.Base, func() error {
 			data, err := proto.Marshal(&m)
 			if err != nil {
@@ -123,6 +142,11 @@ func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.Bas
 		var m common.FileMessage
 		if err := proto.Unmarshal(msg.Payload, &m); err != nil {
 			return nil, nil, err
+		}
+		err := h.svcCtx.ConversationDao.UpdateLastContent(ctx, m.Base.SessionId,
+			m.Base.FromUserId, "[文件]")
+		if err != nil {
+			logger.Errorf("update last content failed: %v", err)
 		}
 		return m.Base, func() error {
 			data, err := proto.Marshal(&m)
@@ -138,6 +162,11 @@ func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.Bas
 		if err := proto.Unmarshal(msg.Payload, &m); err != nil {
 			return nil, nil, err
 		}
+		err := h.svcCtx.ConversationDao.UpdateLastContent(ctx, m.Base.SessionId,
+			m.Base.FromUserId, "[位置]")
+		if err != nil {
+			logger.Errorf("update last content failed: %v", err)
+		}
 		return m.Base, func() error {
 			data, err := proto.Marshal(&m)
 			if err != nil {
@@ -152,6 +181,11 @@ func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.Bas
 		if err := proto.Unmarshal(msg.Payload, &m); err != nil {
 			return nil, nil, err
 		}
+		err := h.svcCtx.ConversationDao.UpdateLastContent(ctx, m.Base.SessionId,
+			m.Base.FromUserId, "[自定义]")
+		if err != nil {
+			logger.Errorf("update last content failed: %v", err)
+		}
 		return m.Base, func() error {
 			data, err := proto.Marshal(&m)
 			if err != nil {
@@ -164,4 +198,11 @@ func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.Bas
 	default:
 		return nil, nil, fmt.Errorf("unsupported message type: %v", msg.Type)
 	}
+}
+
+
+func (h *MessageHandler) handleGetSessionInfoReq(ctx context.Context, msg *common.WSMessage) error {
+	
+	
+	return nil
 }

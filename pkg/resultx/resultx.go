@@ -91,7 +91,6 @@ func ErrorHandler(ctx context.Context, err error) (int, any) {
 // 其他 → 返回 JSON（包裹在 Response 结构中）
 func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg proto.Message) {
 	if strings.Contains(r.Header.Get("Accept"), "application/x-protobuf") {
-		fmt.Println("Accept: application/x-protobuf")
 		data, err := proto.Marshal(msg)
 		if err != nil {
 			httpx.WriteJsonCtx(ctx, w, http.StatusInternalServerError, &Response{

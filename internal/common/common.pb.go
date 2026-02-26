@@ -2466,9 +2466,10 @@ type GroupInfo struct {
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                   // 群组名称
 	Avatar        string                 `protobuf:"bytes,4,opt,name=avatar,proto3" json:"avatar,omitempty"`                               // 群头像
 	Notice        string                 `protobuf:"bytes,5,opt,name=notice,proto3" json:"notice,omitempty"`                               // 群公告
-	MemberCount   int32                  `protobuf:"varint,6,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"` // 成员数量
-	CreateTime    int64                  `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`    // 创建时间
-	UpdateTime    int64                  `protobuf:"varint,8,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`    // 更新时间
+	JoinType      int32                  `protobuf:"varint,6,opt,name=join_type,json=joinType,proto3" json:"join_type,omitempty"`          // 加群方式
+	MemberCount   int32                  `protobuf:"varint,7,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"` // 成员数量
+	CreateTime    int64                  `protobuf:"varint,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`    // 创建时间
+	UpdateTime    int64                  `protobuf:"varint,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`    // 更新时间
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2536,6 +2537,13 @@ func (x *GroupInfo) GetNotice() string {
 		return x.Notice
 	}
 	return ""
+}
+
+func (x *GroupInfo) GetJoinType() int32 {
+	if x != nil {
+		return x.JoinType
+	}
+	return 0
 }
 
 func (x *GroupInfo) GetMemberCount() int32 {
@@ -2856,17 +2864,18 @@ func (x *GroupNotification) GetGroupInfo() *GroupInfo {
 
 type Conversation struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	ConversationId  string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`                    // 会话ID
-	Type            ConversationType       `protobuf:"varint,2,opt,name=type,proto3,enum=common.ConversationType" json:"type,omitempty"`                                // 会话类型
-	TargetId        uint64                 `protobuf:"varint,3,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`                                     // 目标ID (私聊=对方user_id, 群聊=group_id)
-	LastContent     string                 `protobuf:"bytes,4,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"`                             // 最后一条消息摘要文本
-	LastMessageTime int64                  `protobuf:"varint,5,opt,name=last_message_time,json=lastMessageTime,proto3" json:"last_message_time,omitempty"`              // 最后消息时间
-	UnreadCount     int64                  `protobuf:"varint,6,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`                            // 未读消息数
-	CreateTime      int64                  `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                               // 创建时间
-	UpdateTime      int64                  `protobuf:"varint,8,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`                               // 更新时间
-	IsTop           bool                   `protobuf:"varint,9,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`                                              // 是否置顶
-	IsDisturb       bool                   `protobuf:"varint,10,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`                                 // 是否免打扰
-	LastMsgType     MessageType            `protobuf:"varint,11,opt,name=last_msg_type,json=lastMsgType,proto3,enum=common.MessageType" json:"last_msg_type,omitempty"` // 最后消息类型 (用于渲染图标)
+	ConversationId  string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 会话ID
+	Type            ConversationType       `protobuf:"varint,2,opt,name=type,proto3,enum=common.ConversationType" json:"type,omitempty"`             // 会话类型
+	LastContent     string                 `protobuf:"bytes,3,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"`          // 最后一条消息摘要文本
+	MaxSeq          int64                  `protobuf:"varint,4,opt,name=max_seq,json=maxSeq,proto3" json:"max_seq,omitempty"`
+	LastSender      uint64                 `protobuf:"varint,5,opt,name=last_sender,json=lastSender,proto3" json:"last_sender,omitempty"`
+	LastMessageTime int64                  `protobuf:"varint,6,opt,name=last_message_time,json=lastMessageTime,proto3" json:"last_message_time,omitempty"`              // 最后消息时间
+	UnreadCount     int64                  `protobuf:"varint,7,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`                            // 未读消息数
+	CreateTime      int64                  `protobuf:"varint,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                               // 创建时间
+	UpdateTime      int64                  `protobuf:"varint,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`                               // 更新时间
+	IsTop           bool                   `protobuf:"varint,10,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`                                             // 是否置顶
+	IsDisturb       bool                   `protobuf:"varint,11,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`                                 // 是否免打扰
+	LastMsgType     MessageType            `protobuf:"varint,12,opt,name=last_msg_type,json=lastMsgType,proto3,enum=common.MessageType" json:"last_msg_type,omitempty"` // 最后消息类型 (用于渲染图标)
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -2915,18 +2924,25 @@ func (x *Conversation) GetType() ConversationType {
 	return ConversationType_CONVERSATION_TYPE_PRIVATE
 }
 
-func (x *Conversation) GetTargetId() uint64 {
-	if x != nil {
-		return x.TargetId
-	}
-	return 0
-}
-
 func (x *Conversation) GetLastContent() string {
 	if x != nil {
 		return x.LastContent
 	}
 	return ""
+}
+
+func (x *Conversation) GetMaxSeq() int64 {
+	if x != nil {
+		return x.MaxSeq
+	}
+	return 0
+}
+
+func (x *Conversation) GetLastSender() uint64 {
+	if x != nil {
+		return x.LastSender
+	}
+	return 0
 }
 
 func (x *Conversation) GetLastMessageTime() int64 {
@@ -3582,17 +3598,18 @@ const file_common_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
 	"\tis_typing\x18\x03 \x01(\bR\bisTyping\x12\x1c\n" +
-	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"\xdf\x01\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"\xfc\x01\n" +
 	"\tGroupInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\x04R\aownerId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x16\n" +
 	"\x06avatar\x18\x04 \x01(\tR\x06avatar\x12\x16\n" +
-	"\x06notice\x18\x05 \x01(\tR\x06notice\x12!\n" +
-	"\fmember_count\x18\x06 \x01(\x05R\vmemberCount\x12\x1f\n" +
-	"\vcreate_time\x18\a \x01(\x03R\n" +
+	"\x06notice\x18\x05 \x01(\tR\x06notice\x12\x1b\n" +
+	"\tjoin_type\x18\x06 \x01(\x05R\bjoinType\x12!\n" +
+	"\fmember_count\x18\a \x01(\x05R\vmemberCount\x12\x1f\n" +
+	"\vcreate_time\x18\b \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
-	"\vupdate_time\x18\b \x01(\x03R\n" +
+	"\vupdate_time\x18\t \x01(\x03R\n" +
 	"updateTime\"\xd6\x01\n" +
 	"\vGroupMember\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x17\n" +
@@ -3626,23 +3643,25 @@ const file_common_proto_rawDesc = "" +
 	"\aop_time\x18\x05 \x01(\x03R\x06opTime\x12\x16\n" +
 	"\x06reason\x18\x06 \x01(\tR\x06reason\x120\n" +
 	"\n" +
-	"group_info\x18\a \x01(\v2\x11.common.GroupInfoR\tgroupInfo\"\xa5\x03\n" +
+	"group_info\x18\a \x01(\v2\x11.common.GroupInfoR\tgroupInfo\"\xc2\x03\n" +
 	"\fConversation\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12,\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x18.common.ConversationTypeR\x04type\x12\x1b\n" +
-	"\ttarget_id\x18\x03 \x01(\x04R\btargetId\x12!\n" +
-	"\flast_content\x18\x04 \x01(\tR\vlastContent\x12*\n" +
-	"\x11last_message_time\x18\x05 \x01(\x03R\x0flastMessageTime\x12!\n" +
-	"\funread_count\x18\x06 \x01(\x03R\vunreadCount\x12\x1f\n" +
-	"\vcreate_time\x18\a \x01(\x03R\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x18.common.ConversationTypeR\x04type\x12!\n" +
+	"\flast_content\x18\x03 \x01(\tR\vlastContent\x12\x17\n" +
+	"\amax_seq\x18\x04 \x01(\x03R\x06maxSeq\x12\x1f\n" +
+	"\vlast_sender\x18\x05 \x01(\x04R\n" +
+	"lastSender\x12*\n" +
+	"\x11last_message_time\x18\x06 \x01(\x03R\x0flastMessageTime\x12!\n" +
+	"\funread_count\x18\a \x01(\x03R\vunreadCount\x12\x1f\n" +
+	"\vcreate_time\x18\b \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
-	"\vupdate_time\x18\b \x01(\x03R\n" +
+	"\vupdate_time\x18\t \x01(\x03R\n" +
 	"updateTime\x12\x15\n" +
-	"\x06is_top\x18\t \x01(\bR\x05isTop\x12\x1d\n" +
+	"\x06is_top\x18\n" +
+	" \x01(\bR\x05isTop\x12\x1d\n" +
 	"\n" +
-	"is_disturb\x18\n" +
-	" \x01(\bR\tisDisturb\x127\n" +
-	"\rlast_msg_type\x18\v \x01(\x0e2\x13.common.MessageTypeR\vlastMsgType\"\xaf\x02\n" +
+	"is_disturb\x18\v \x01(\bR\tisDisturb\x127\n" +
+	"\rlast_msg_type\x18\f \x01(\x0e2\x13.common.MessageTypeR\vlastMsgType\"\xaf\x02\n" +
 	"\x12SystemNotification\x12'\n" +
 	"\x0fnotification_id\x18\x01 \x01(\tR\x0enotificationId\x12,\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x18.common.NotificationTypeR\x04type\x12\x14\n" +

@@ -37,9 +37,7 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 
 	// 3. 如果对方设置了"直接同意"，则不创建申请，直接创建好友关系
 	if toUser.JoinType == model.JoinTypeDirect {
-		err = s.friendDAO.DB().Transaction(func(tx *gorm.DB) error {
-			return s.friendDAO.InsertFriendTx(ctx, tx, fromUserID, toUserID, source)
-		})
+		err = s.friendDAO.InsertFriendTx(ctx, s.friendDAO.DB(), fromUserID, toUserID, source)
 		if err != nil {
 			return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "直接添加好友失败")
 		}
@@ -48,7 +46,7 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 
 		msg, _ := common.ConvertFriendToWSMessage(friendRecord, toUserID)
 		data, _ := proto.Marshal(msg)
-		err = s.nats.Publish(s.Config.NATS.BroadcastSubject, data)
+		_, err = s.js.Publish(s.Config.NATS.BroadcastSubject, data)
 		if err != nil {
 			logger.Error(err.Error())
 		}
@@ -79,7 +77,7 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 
 	msg, _ := common.ConvertFriendApplyToWSMessage(apply, toUserID)
 	data, _ := proto.Marshal(msg)
-	err = s.nats.Publish(s.Config.NATS.BroadcastSubject, data)
+	_, err = s.js.Publish(s.Config.NATS.BroadcastSubject, data)
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -136,7 +134,7 @@ func (s *userService) HandleFriendApply(ctx context.Context, applyID, operatorID
 
 	msg, _ := common.ConvertFriendApplyToWSMessage(apply, apply.FromUserID)
 	data, _ := proto.Marshal(msg)
-	err = s.nats.Publish(s.Config.NATS.BroadcastSubject, data)
+	_, err = s.js.Publish(s.Config.NATS.BroadcastSubject, data)
 	if err != nil {
 		logger.Error(err.Error())
 	}

@@ -35,25 +35,25 @@ message CallbackParam {
 }
 
 message CallbackData {
-  // @gotags: form:"id"
+  // @gotags: form:"id,optional" json:"id,optional"
   uint64 id = 1;
-  // @gotags: form:"file_type"
-  FileType file_type = 2;
-  // @gotags: form:"width"
+  // @gotags: form:"file_type,optional" json:"file_type,optional"
+  int32 file_type = 2;
+  // @gotags: form:"width,optional" json:"width,optional"
   int32 width = 3;
-  // @gotags: form:"height"
+  // @gotags: form:"height,optional" json:"height,optional"
   int32 height = 4;
-  // @gotags: form:"size"
+  // @gotags: form:"size,optional" json:"size,optional"
   uint64 size = 5;
-  // @gotags: form:"file_name"
+  // @gotags: form:"file_name,optional" json:"file_name,optional"
   string file_name = 6;
-  // @gotags: form:"mime_type"
+  // @gotags: form:"mime_type,optional" json:"mime_type,optional"
   string mime_type = 7;
 }
 
 message GetPostSignatureReq {
   // @gotags: form:"file_type,optional" json:"file_type,optional"
-  FileType file_type = 1;
+  int32 file_type = 1;
 }
 
 enum FileType {

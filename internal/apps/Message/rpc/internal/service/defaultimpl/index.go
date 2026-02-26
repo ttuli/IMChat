@@ -17,7 +17,7 @@ type messageService struct {
 func NewMessageService(c config.Config) service.MessageService {
 	return &messageService{
 		Config:          c,
-		messageDAO:      dao.NewMessageDAO(c.Listener.DBAddress),
-		conversationDAO: dao.NewConversationDAO(c.DAO.ConversationTable, c.Redisx),
+		messageDAO:      dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource),
+		conversationDAO: dao.NewConversationDAO(c.DAO.ConversationDAO.Dbsource, c.DAO.ConversationDAO.Redisx),
 	}
 }

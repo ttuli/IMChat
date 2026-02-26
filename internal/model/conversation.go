@@ -6,6 +6,7 @@ import "time"
 type Conversation struct {
 	ConversationID string    `gorm:"column:conversation_id;type:varchar(128);not null;uniqueIndex:uni_conv_id;comment:唯一会话标识" json:"conversation_id"`
 	Type           int8      `gorm:"column:type;type:tinyint;not null;comment:会话类型: 1-单聊 2-群聊" json:"type"`
+	LastContent    string    `gorm:"column:last_content;type:varchar(1024);not null;default:'';comment:最后一条消息内容" json:"last_content"`
 	MaxSeq         uint64    `gorm:"column:max_seq;type:bigint unsigned;not null;default:0;comment:最大消息序号" json:"max_seq"`
 	CreateTime     time.Time `gorm:"column:create_time;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"create_time"`
 	UpdateTime     time.Time `gorm:"column:update_time;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);autoUpdateTime;comment:更新时间" json:"update_time"`
