@@ -182,6 +182,18 @@ func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *co
 				s.svcCtx.TelemetryBus.Publish(err)
 			}
 		}
+		var apply common.GroupApply
+		if err := proto.Unmarshal(msg.Payload, &apply); err != nil {
+			s.svcCtx.TelemetryBus.Publish(err)
+			return nil
+		}
+		if apply.HandlerId != 0 {
+			err = s.svcCtx.ConnectionManager.SendToUser(ctx, apply.SenderId, msg)
+			if err != nil {
+				s.svcCtx.TelemetryBus.Publish(err)
+			}
+		}
+
 		return nil
 	}
 

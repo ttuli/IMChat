@@ -36,10 +36,10 @@ func (l *GetPendingAppliesLogic) GetPendingApplies(in *group.GetPendingAppliesRe
 			FromUserId:  a.FromUserID,
 			GroupId:     a.GroupID,
 			ApplyMsg:    a.ApplyMsg,
-			Status:      group.ApplyStatus(a.Status + 1), // model: 0-pending → proto: 1-pending
+			Status:      group.ApplyStatus(a.Status),
 			HandlerId:   a.HandlerID,
-			RequestTime: a.CreateTime.Unix(),
-			HandleTime:  a.UpdateTime.Unix(),
+			RequestTime: a.CreateTime.UnixMilli(),
+			HandleTime:  a.UpdateTime.UnixMilli(),
 		})
 	}
 

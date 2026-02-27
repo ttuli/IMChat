@@ -119,7 +119,7 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 		w.Write(respData)
 		return
 	}
-	httpx.OkJsonCtx(ctx, w, Success(msg))
+	httpx.OkJsonCtx(ctx, w, msg)
 }
 
 // ErrorProtoCtx 根据 Accept 头协商错误响应格式

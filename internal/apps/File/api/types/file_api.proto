@@ -56,6 +56,20 @@ message GetPostSignatureReq {
   int32 file_type = 1;
 }
 
+message GetAccessUrlReq {
+  // @gotags: form:"file_key,optional" json:"file_key,optional"
+  string file_key = 1;
+  // @gotags: form:"file_type,optional" json:"file_type,optional"
+  FileType file_type = 2;
+  // @gotags: form:"oss_process,optional" json:"oss_process,optional"
+  string oss_process = 3;
+}
+
+message GetAccessUrlResp {
+  // @gotags: json:"access_url"
+  string access_url = 1;
+}
+
 enum FileType {
   FileTypeAvatar    = 0;
 	FileTypeChatImage = 1;

@@ -70,7 +70,7 @@ func (s *groupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 	}
 
 	// 5. 发送群创建通知
-	wsMsg := common.NewGroupCreateNotification(ownerID, members)
+	wsMsg := common.NewGroupCreateNotification(ownerID, members, group)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
 		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)

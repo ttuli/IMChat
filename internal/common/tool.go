@@ -127,7 +127,7 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, groupID uint64) (*WSM
 	}, nil
 }
 
-func NewGroupCreateNotification(operator uint64, members []*model.GroupMember) *WSMessage {
+func NewGroupCreateNotification(operator uint64, members []*model.GroupMember, group *model.Group) *WSMessage {
 	if len(members) == 0 {
 		return nil
 	}
@@ -148,6 +148,18 @@ func NewGroupCreateNotification(operator uint64, members []*model.GroupMember) *
 		OperatorId: operator,
 		TargetIds:  targets,
 		OpTime:     time.Now().UnixMilli(),
+	}
+	if group != nil {
+		notify.GroupInfo = &GroupInfo{
+			Id:          group.ID,
+			OwnerId:     group.OwnerID,
+			Name:        group.Name,
+			Avatar:      group.Avatar,
+			Notice:      group.Notice,
+			MemberCount: int32(group.MemberCount),
+			CreateTime:  group.CreateTime.UnixMilli(),
+			UpdateTime:  group.UpdateTime.UnixMilli(),
+		}
 	}
 	payload, err := proto.Marshal(notify)
 	if err != nil {

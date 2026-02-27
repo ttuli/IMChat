@@ -394,6 +394,114 @@ func (x *GetPostSignatureReq) GetFileType() int32 {
 	return 0
 }
 
+type GetAccessUrlReq struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: form:"file_key,optional" json:"file_key,optional"
+	FileKey string `protobuf:"bytes,1,opt,name=file_key,json=fileKey,proto3" json:"file_key,optional" form:"file_key,optional"`
+	// @gotags: form:"file_type,optional" json:"file_type,optional"
+	FileType FileType `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,optional" form:"file_type,optional"`
+	// @gotags: form:"oss_process,optional" json:"oss_process,optional"
+	OssProcess    string `protobuf:"bytes,3,opt,name=oss_process,json=ossProcess,proto3" json:"oss_process,optional" form:"oss_process,optional"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAccessUrlReq) Reset() {
+	*x = GetAccessUrlReq{}
+	mi := &file_file_api_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAccessUrlReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAccessUrlReq) ProtoMessage() {}
+
+func (x *GetAccessUrlReq) ProtoReflect() protoreflect.Message {
+	mi := &file_file_api_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAccessUrlReq.ProtoReflect.Descriptor instead.
+func (*GetAccessUrlReq) Descriptor() ([]byte, []int) {
+	return file_file_api_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetAccessUrlReq) GetFileKey() string {
+	if x != nil {
+		return x.FileKey
+	}
+	return ""
+}
+
+func (x *GetAccessUrlReq) GetFileType() FileType {
+	if x != nil {
+		return x.FileType
+	}
+	return FileType_FileTypeAvatar
+}
+
+func (x *GetAccessUrlReq) GetOssProcess() string {
+	if x != nil {
+		return x.OssProcess
+	}
+	return ""
+}
+
+type GetAccessUrlResp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"access_url"
+	AccessUrl     string `protobuf:"bytes,1,opt,name=access_url,json=accessUrl,proto3" json:"access_url"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAccessUrlResp) Reset() {
+	*x = GetAccessUrlResp{}
+	mi := &file_file_api_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAccessUrlResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAccessUrlResp) ProtoMessage() {}
+
+func (x *GetAccessUrlResp) ProtoReflect() protoreflect.Message {
+	mi := &file_file_api_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAccessUrlResp.ProtoReflect.Descriptor instead.
+func (*GetAccessUrlResp) Descriptor() ([]byte, []int) {
+	return file_file_api_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetAccessUrlResp) GetAccessUrl() string {
+	if x != nil {
+		return x.AccessUrl
+	}
+	return ""
+}
+
 var File_file_api_proto protoreflect.FileDescriptor
 
 const file_file_api_proto_rawDesc = "" +
@@ -423,7 +531,15 @@ const file_file_api_proto_rawDesc = "" +
 	"\tfile_name\x18\x06 \x01(\tR\bfileName\x12\x1b\n" +
 	"\tmime_type\x18\a \x01(\tR\bmimeType\"2\n" +
 	"\x13GetPostSignatureReq\x12\x1b\n" +
-	"\tfile_type\x18\x01 \x01(\x05R\bfileType*K\n" +
+	"\tfile_type\x18\x01 \x01(\x05R\bfileType\"{\n" +
+	"\x0fGetAccessUrlReq\x12\x19\n" +
+	"\bfile_key\x18\x01 \x01(\tR\afileKey\x12,\n" +
+	"\tfile_type\x18\x02 \x01(\x0e2\x0f.types.FileTypeR\bfileType\x12\x1f\n" +
+	"\voss_process\x18\x03 \x01(\tR\n" +
+	"ossProcess\"1\n" +
+	"\x10GetAccessUrlResp\x12\x1d\n" +
+	"\n" +
+	"access_url\x18\x01 \x01(\tR\taccessUrl*K\n" +
 	"\bFileType\x12\x12\n" +
 	"\x0eFileTypeAvatar\x10\x00\x12\x15\n" +
 	"\x11FileTypeChatImage\x10\x01\x12\x14\n" +
@@ -443,20 +559,23 @@ func file_file_api_proto_rawDescGZIP() []byte {
 }
 
 var file_file_api_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_file_api_proto_goTypes = []any{
 	(FileType)(0),               // 0: types.FileType
 	(*PolicyToken)(nil),         // 1: types.PolicyToken
 	(*CallbackParam)(nil),       // 2: types.CallbackParam
 	(*CallbackData)(nil),        // 3: types.CallbackData
 	(*GetPostSignatureReq)(nil), // 4: types.GetPostSignatureReq
+	(*GetAccessUrlReq)(nil),     // 5: types.GetAccessUrlReq
+	(*GetAccessUrlResp)(nil),    // 6: types.GetAccessUrlResp
 }
 var file_file_api_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: types.GetAccessUrlReq.file_type:type_name -> types.FileType
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_file_api_proto_init() }
@@ -470,7 +589,7 @@ func file_file_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_api_proto_rawDesc), len(file_file_api_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

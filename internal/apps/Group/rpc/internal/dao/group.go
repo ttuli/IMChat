@@ -356,11 +356,11 @@ func (m *GroupDAO) FindAdminGroupIDs(ctx context.Context, userID uint64) ([]uint
 func (m *GroupDAO) FindAllGroupIDsByUserID(ctx context.Context, userID uint64) ([]uint64, error) {
 	var groupIDs []uint64
 	if err := m.DB.WithContext(ctx).Model(&model.GroupMember{}).
-		Select("group_id").
 		Where("user_id = ?", userID).
 		Pluck("group_id", &groupIDs).Error; err != nil {
 		return nil, err
 	}
+	fmt.Println(groupIDs)
 	return groupIDs, nil
 }
 

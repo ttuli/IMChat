@@ -10,8 +10,6 @@ import (
 	fileupload "IM2/internal/apps/File/api/handler/fileupload"
 	"IM2/internal/apps/File/api/svc"
 
-	"IM2/middleware"
-
 	"github.com/zeromicro/go-zero/rest"
 )
 
@@ -30,13 +28,19 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{middleware.WithRedisJwtAuth(serverCtx.TokenManager)},
+			[]rest.Middleware{},
 			[]rest.Route{
 				{
 					// 获取签名
 					Method:  http.MethodGet,
 					Path:    "/getPostSignature",
 					Handler: fileupload.GetPostSignatureHandler(serverCtx),
+				},
+				{
+					// 获取签名
+					Method:  http.MethodGet,
+					Path:    "/getAccessUrl",
+					Handler: fileupload.GetFileAccessUrlHandler(serverCtx),
 				},
 			}...,
 		),

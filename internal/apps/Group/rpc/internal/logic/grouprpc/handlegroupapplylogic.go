@@ -24,8 +24,7 @@ func NewHandleGroupApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *HandleGroupApplyLogic) HandleGroupApply(in *group.HandleGroupApplyReq) (*group.HandleGroupApplyResp, error) {
-	status := uint8(in.Status - 1)
-	apply, err := l.svcCtx.GroupService.HandleGroupApply(l.ctx, in.Id, in.OperatorId, status, in.RejectReason)
+	apply, err := l.svcCtx.GroupService.HandleGroupApply(l.ctx, in.Id, in.OperatorId, uint8(in.Status), in.RejectReason)
 	if err != nil {
 		return nil, err
 	}
