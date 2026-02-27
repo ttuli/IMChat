@@ -697,7 +697,9 @@ type UpdateGroupReq struct {
 	// @gotags: json:"avatar,optional"
 	Avatar string `protobuf:"bytes,3,opt,name=avatar,proto3" json:"avatar,optional"`
 	// @gotags: json:"notice,optional"
-	Notice        string `protobuf:"bytes,4,opt,name=notice,proto3" json:"notice,optional"`
+	Notice string `protobuf:"bytes,4,opt,name=notice,proto3" json:"notice,optional"`
+	// @gotags: json:"join_type,optional"
+	JoinType      int32 `protobuf:"varint,5,opt,name=join_type,json=joinType,proto3" json:"join_type,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -758,6 +760,13 @@ func (x *UpdateGroupReq) GetNotice() string {
 		return x.Notice
 	}
 	return ""
+}
+
+func (x *UpdateGroupReq) GetJoinType() int32 {
+	if x != nil {
+		return x.JoinType
+	}
+	return 0
 }
 
 // JoinGroupReq
@@ -1668,12 +1677,13 @@ const file_group_api_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x03(\v2\x18.types.group.GroupMemberR\x04data\"L\n" +
 	"\fGetGroupResp\x12&\n" +
 	"\x04data\x18\x01 \x03(\v2\x12.types.group.GroupR\x04data\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"o\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\x8c\x01\n" +
 	"\x0eUpdateGroupReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06avatar\x18\x03 \x01(\tR\x06avatar\x12\x16\n" +
-	"\x06notice\x18\x04 \x01(\tR\x06notice\"C\n" +
+	"\x06notice\x18\x04 \x01(\tR\x06notice\x12\x1b\n" +
+	"\tjoin_type\x18\x05 \x01(\x05R\bjoinType\"C\n" +
 	"\fJoinGroupReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"p\n" +

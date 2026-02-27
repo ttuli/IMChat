@@ -23,7 +23,7 @@ type GroupService interface {
 	GetGroups(ctx context.Context, groupIDs []uint64, nameKeyword string, limit, offset int32) ([]*model.Group, int64, error)
 
 	// UpdateGroup 更新群组信息
-	UpdateGroup(ctx context.Context, groupID, operatorID uint64, name, avatar string) error
+	UpdateGroup(ctx context.Context, groupID, operatorID uint64, name, avatar string, joinType int32) error
 
 	// DismissGroup 解散群组
 	DismissGroup(ctx context.Context, groupID, operatorID uint64) error

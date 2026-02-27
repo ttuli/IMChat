@@ -30,6 +30,7 @@ type ServiceContext struct {
 	Subscriber        *pubsub.Subscriber
 	RedisClient       *redis.Client
 	NatsConn          *nats.Conn
+	Js                nats.JetStreamContext
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
 	MessageDao        *dao.MessageDAO
@@ -53,8 +54,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	// 创建 Redis 客户端 (用于路由 KV 存储)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     c.Redis.Host,
-		Password: c.Redis.Pass,
+		Addr:     c.RouteStore.Host,
+		Password: c.RouteStore.Pass,
 		DB:       0,
 	})
 
@@ -77,7 +78,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if err != nil {
 		log.Fatalf("failed to create jetstream context: %v", err)
 	}
-
 	// 创建路由器
 	r := router.NewRouter(redisClient, js, codec, nodeID, bus, pubsub.SubjectConfig{
 		NodeSubjectPrefix: c.Nats.NodeSubjectPrefix,
@@ -97,6 +97,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Subscriber:        sub,
 		RedisClient:       redisClient,
 		NatsConn:          natsConn,
+		Js:                js,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
 		MessageDao:        dao.NewMessageDAO(c.DAO.MysqlSource, c.DAO.CacheSource),

@@ -79,8 +79,8 @@ func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*
 		FromUserId:   apply.FromUserID,
 		ToUserId:     apply.ToUserID,
 		ApplyMsg:     apply.ApplyMsg,
-		Status:       ApplyStatus(apply.Status),
-		Source:       ApplySource(apply.Source),
+		Status:       ApplyStatus(int32(apply.Status)),
+		Source:       ApplySource(int32(apply.Source)),
 		RequestTime:  apply.CreateTime.UnixMilli(),
 		HandleTime:   apply.HandleTime.UnixMilli(),
 		RejectReason: apply.RejectReason,
@@ -125,6 +125,36 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, groupID uint64) (*WSM
 		Type:            MessageType_GROUP_REQUEST,
 		Payload:         payload,
 	}, nil
+}
+
+func NewGroupCreateNotification(operator uint64, members []*model.GroupMember) *WSMessage {
+	if len(members) == 0 {
+		return nil
+	}
+	gid := members[0].GroupID
+	wmsg := &WSMessage{
+		Type:            MessageType_GROUP_CREATE,
+		RouteTargetType: TargetType_GROUP,
+		Timestamp:       time.Now().UnixMilli(),
+		RouteTarget:     gid,
+	}
+	targets := make([]uint64, 0, len(members))
+	for _, member := range members {
+		targets = append(targets, member.UserID)
+	}
+	notify := &GroupNotification{
+		OpType:     GroupOperationType_GROUP_OP_CREATE,
+		GroupId:    gid,
+		OperatorId: operator,
+		TargetIds:  targets,
+		OpTime:     time.Now().UnixMilli(),
+	}
+	payload, err := proto.Marshal(notify)
+	if err != nil {
+		return nil
+	}
+	wmsg.Payload = payload
+	return wmsg
 }
 
 func NewGroupOperationMsg(msgType MessageType, groupId uint64, targetID uint64, operator uint64, groupInfo *model.Group) *WSMessage {

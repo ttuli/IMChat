@@ -16,7 +16,7 @@ type Config struct {
 	WebSocket WebSocketConf
 
 	// Redis 配置 (用于路由 KV 存储)
-	Redis redis.RedisConf
+	RouteStore redis.RedisConf
 
 	// MySQL 配置
 	DAO struct {

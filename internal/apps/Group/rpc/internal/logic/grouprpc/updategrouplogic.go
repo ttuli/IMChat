@@ -24,7 +24,7 @@ func NewUpdateGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Updat
 }
 
 func (l *UpdateGroupLogic) UpdateGroup(in *group.UpdateGroupReq) (*group.EmptyResp, error) {
-	if err := l.svcCtx.GroupService.UpdateGroup(l.ctx, in.GroupId, in.OperatorId, in.Name, in.Avatar); err != nil {
+	if err := l.svcCtx.GroupService.UpdateGroup(l.ctx, in.GroupId, in.OperatorId, in.Name, in.Avatar, in.JoinType); err != nil {
 		return nil, err
 	}
 	return &group.EmptyResp{}, nil

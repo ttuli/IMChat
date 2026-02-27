@@ -2461,15 +2461,15 @@ func (x *TypingStatus) GetTimestamp() int64 {
 // 群组信息 (对标 model/group.go)
 type GroupInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                      // 群组ID
-	OwnerId       uint64                 `protobuf:"varint,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`             // 群主ID
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                   // 群组名称
-	Avatar        string                 `protobuf:"bytes,4,opt,name=avatar,proto3" json:"avatar,omitempty"`                               // 群头像
-	Notice        string                 `protobuf:"bytes,5,opt,name=notice,proto3" json:"notice,omitempty"`                               // 群公告
-	JoinType      int32                  `protobuf:"varint,6,opt,name=join_type,json=joinType,proto3" json:"join_type,omitempty"`          // 加群方式
-	MemberCount   int32                  `protobuf:"varint,7,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"` // 成员数量
-	CreateTime    int64                  `protobuf:"varint,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`    // 创建时间
-	UpdateTime    int64                  `protobuf:"varint,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`    // 更新时间
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                                  // 群组ID
+	OwnerId       uint64                 `protobuf:"varint,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`                         // 群主ID
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                               // 群组名称
+	Avatar        string                 `protobuf:"bytes,4,opt,name=avatar,proto3" json:"avatar,omitempty"`                                           // 群头像
+	Notice        string                 `protobuf:"bytes,5,opt,name=notice,proto3" json:"notice,omitempty"`                                           // 群公告
+	JoinType      JoinType               `protobuf:"varint,6,opt,name=join_type,json=joinType,proto3,enum=common.JoinType" json:"join_type,omitempty"` // 加群方式
+	MemberCount   int32                  `protobuf:"varint,7,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`             // 成员数量
+	CreateTime    int64                  `protobuf:"varint,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                // 创建时间
+	UpdateTime    int64                  `protobuf:"varint,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`                // 更新时间
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2539,11 +2539,11 @@ func (x *GroupInfo) GetNotice() string {
 	return ""
 }
 
-func (x *GroupInfo) GetJoinType() int32 {
+func (x *GroupInfo) GetJoinType() JoinType {
 	if x != nil {
 		return x.JoinType
 	}
-	return 0
+	return JoinType_JOIN_TYPE_UNSPECIFIED
 }
 
 func (x *GroupInfo) GetMemberCount() int32 {
@@ -3598,14 +3598,14 @@ const file_common_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
 	"\tis_typing\x18\x03 \x01(\bR\bisTyping\x12\x1c\n" +
-	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"\xfc\x01\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"\x8e\x02\n" +
 	"\tGroupInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\x04R\aownerId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x16\n" +
 	"\x06avatar\x18\x04 \x01(\tR\x06avatar\x12\x16\n" +
-	"\x06notice\x18\x05 \x01(\tR\x06notice\x12\x1b\n" +
-	"\tjoin_type\x18\x06 \x01(\x05R\bjoinType\x12!\n" +
+	"\x06notice\x18\x05 \x01(\tR\x06notice\x12-\n" +
+	"\tjoin_type\x18\x06 \x01(\x0e2\x10.common.JoinTypeR\bjoinType\x12!\n" +
 	"\fmember_count\x18\a \x01(\x05R\vmemberCount\x12\x1f\n" +
 	"\vcreate_time\x18\b \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
@@ -3959,26 +3959,27 @@ var file_common_proto_depIdxs = []int32{
 	22, // 12: common.CustomMessage.base:type_name -> common.BaseMessage
 	5,  // 13: common.MessageAck.status:type_name -> common.AckStatus
 	6,  // 14: common.UserOnlineStatus.status:type_name -> common.OnlineStatus
-	7,  // 15: common.GroupMember.role:type_name -> common.GroupRole
-	8,  // 16: common.GroupApply.status:type_name -> common.GroupApplyStatus
-	9,  // 17: common.GroupNotification.op_type:type_name -> common.GroupOperationType
-	36, // 18: common.GroupNotification.group_info:type_name -> common.GroupInfo
-	10, // 19: common.Conversation.type:type_name -> common.ConversationType
-	2,  // 20: common.Conversation.last_msg_type:type_name -> common.MessageType
-	11, // 21: common.SystemNotification.type:type_name -> common.NotificationType
-	47, // 22: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
-	12, // 23: common.Friend.source:type_name -> common.FriendSource
-	13, // 24: common.FriendRequest.status:type_name -> common.ApplyStatus
-	14, // 25: common.FriendRequest.source:type_name -> common.ApplySource
-	15, // 26: common.UserInfo.gender:type_name -> common.Gender
-	16, // 27: common.UserInfo.join_type:type_name -> common.JoinType
-	17, // 28: common.UserInfo.status:type_name -> common.UserStatus
-	48, // 29: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	16, // 15: common.GroupInfo.join_type:type_name -> common.JoinType
+	7,  // 16: common.GroupMember.role:type_name -> common.GroupRole
+	8,  // 17: common.GroupApply.status:type_name -> common.GroupApplyStatus
+	9,  // 18: common.GroupNotification.op_type:type_name -> common.GroupOperationType
+	36, // 19: common.GroupNotification.group_info:type_name -> common.GroupInfo
+	10, // 20: common.Conversation.type:type_name -> common.ConversationType
+	2,  // 21: common.Conversation.last_msg_type:type_name -> common.MessageType
+	11, // 22: common.SystemNotification.type:type_name -> common.NotificationType
+	47, // 23: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
+	12, // 24: common.Friend.source:type_name -> common.FriendSource
+	13, // 25: common.FriendRequest.status:type_name -> common.ApplyStatus
+	14, // 26: common.FriendRequest.source:type_name -> common.ApplySource
+	15, // 27: common.UserInfo.gender:type_name -> common.Gender
+	16, // 28: common.UserInfo.join_type:type_name -> common.JoinType
+	17, // 29: common.UserInfo.status:type_name -> common.UserStatus
+	48, // 30: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
+	31, // [31:31] is the sub-list for method output_type
+	31, // [31:31] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }

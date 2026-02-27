@@ -10,6 +10,7 @@ import (
 	"IM2/internal/common"
 	"IM2/internal/model"
 	"IM2/pkg/logger"
+	nats_util "IM2/pkg/nats"
 
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
@@ -50,14 +51,19 @@ func NewNatsListener(c config.Config) *NatsListener {
 }
 
 func (l *NatsListener) Listen() error {
-	_, err := l.js.Subscribe(l.c.Listener.DBSubject, func(msg *nats.Msg) {
+	err := nats_util.InitStream(l.js, []string{l.c.Listener.DBSubject, l.c.Listener.BroadcastSubject})
+	if err != nil {
+		return err
+	}
+
+	_, err = l.js.Subscribe(l.c.Listener.DBSubject, func(msg *nats.Msg) {
 		err := l.handleMessage(msg)
 		if err != nil {
 			msg.Nak()
 		} else {
 			msg.Ack()
 		}
-	})
+	}, nats.DeliverNew())
 	if err != nil {
 		return err
 	}
@@ -67,9 +73,10 @@ func (l *NatsListener) Listen() error {
 		if err != nil {
 			msg.Nak()
 		} else {
+			fmt.Println("handleBroadcastMsg: ack")
 			msg.Ack()
 		}
-	})
+	}, nats.DeliverNew())
 
 	return err
 }
@@ -94,20 +101,40 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 	defer cancel()
 
 	switch wsMsg.Type {
+	case common.MessageType_GROUP_CREATE:
+		var groupCreate common.GroupNotification
+		if err := proto.Unmarshal(wsMsg.Payload, &groupCreate); err != nil {
+			return err
+		}
+		session := common.GenerateGroupSessionId(groupCreate.GroupId)
+		userConvs := make([]*model.UserConversation, 0, len(groupCreate.TargetIds))
+		for _, targetID := range groupCreate.TargetIds {
+			userConvs = append(userConvs, &model.UserConversation{
+				UserID:         targetID,
+				ConversationID: session,
+				IsTop:          false,
+				IsDisturb:      false,
+				IsMute:         false,
+				LastReadSeq:    0,
+			})
+		}
+		if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeGroup); err != nil {
+			return err
+		}
 	case common.MessageType_GROUP_REQUEST:
 		var groupRequest common.GroupApply
-		if err := proto.Unmarshal(msg.Data, &groupRequest); err != nil {
+		if err := proto.Unmarshal(wsMsg.Payload, &groupRequest); err != nil {
 			return err
 		}
 		if groupRequest.Status == common.GroupApplyStatus_GROUP_APPLY_STATUS_ACCEPTED {
 			session := common.GenerateGroupSessionId(groupRequest.GroupId)
-			if err := l.conversationDAO.InsertUserConversation(ctx, groupRequest.SenderId, session); err != nil {
+			if err := l.conversationDAO.InsertUserConversation(ctx, groupRequest.SenderId, session, model.ConvTypeGroup); err != nil {
 				return err
 			}
 		}
 	case common.MessageType_GROUP_JOIN:
 		var groupJoin common.GroupNotification
-		if err := proto.Unmarshal(msg.Data, &groupJoin); err != nil {
+		if err := proto.Unmarshal(wsMsg.Payload, &groupJoin); err != nil {
 			return err
 		}
 		session := common.GenerateGroupSessionId(groupJoin.GroupId)
@@ -116,13 +143,13 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 			return nil
 		}
 
-		if err := l.conversationDAO.InsertUserConversation(ctx, groupJoin.TargetIds[0], session); err != nil {
+		if err := l.conversationDAO.InsertUserConversation(ctx, groupJoin.TargetIds[0], session, model.ConvTypeGroup); err != nil {
 			return err
 		}
 
 	case common.MessageType_FRIEND_REQUEST:
 		var friendApply common.FriendRequest
-		if err := proto.Unmarshal(msg.Data, &friendApply); err != nil {
+		if err := proto.Unmarshal(wsMsg.Payload, &friendApply); err != nil {
 			return err
 		}
 		if friendApply.Status == common.ApplyStatus_APPLY_STATUS_AGREED {
@@ -146,13 +173,13 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 				},
 			}
 
-			if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs); err != nil {
+			if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeSingle); err != nil {
 				return err
 			}
 		}
 	case common.MessageType_FRIEND_ADD:
 		var friendMsg common.Friend
-		if err := proto.Unmarshal(msg.Data, &friendMsg); err != nil {
+		if err := proto.Unmarshal(wsMsg.Payload, &friendMsg); err != nil {
 			return err
 		}
 		session := common.GenerateUserSessionId(friendMsg.FriendId, friendMsg.UserId)
@@ -175,7 +202,7 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 			},
 		}
 
-		if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs); err != nil {
+		if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeSingle); err != nil {
 			return err
 		}
 	}

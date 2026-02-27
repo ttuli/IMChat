@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"IM2/internal/apps/Idgen/rpc/idgen"
+	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
+	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -66,6 +69,16 @@ func (s *groupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 		return nil, xerr.Wrap(err, xerr.ErrDatabase, "创建群组失败")
 	}
 
+	// 5. 发送群创建通知
+	wsMsg := common.NewGroupCreateNotification(ownerID, members)
+	if wsMsg != nil {
+		bytes, _ := proto.Marshal(wsMsg)
+		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+		if err != nil {
+			logger.Errorf("发送nats失败: %v", err)
+		}
+	}
+
 	return group, nil
 }
 
@@ -94,7 +107,7 @@ func (s *groupService) GetGroups(ctx context.Context, groupIDs []uint64, nameKey
 	return groups, total, nil
 }
 
-func (s *groupService) UpdateGroup(ctx context.Context, groupID, operatorID uint64, name, avatar string) error {
+func (s *groupService) UpdateGroup(ctx context.Context, groupID, operatorID uint64, name, avatar string, joinType int32) error {
 	// 1. 检查权限（必须是群主或管理员）
 	_, err := s.groupDAO.FindMember(ctx, groupID, operatorID)
 	if err == gorm.ErrRecordNotFound {
@@ -120,7 +133,9 @@ func (s *groupService) UpdateGroup(ctx context.Context, groupID, operatorID uint
 	if avatar != "" {
 		group.Avatar = avatar
 	}
-
+	if joinType != 0 {
+		group.JoinType = int(joinType)
+	}
 	if err := s.groupDAO.UpdateGroup(ctx, group); err != nil {
 		return xerr.Wrap(err, xerr.ErrDatabase, "更新群组失败")
 	}

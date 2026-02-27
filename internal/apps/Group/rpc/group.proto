@@ -94,6 +94,7 @@ message UpdateGroupReq {
   string name = 3;
   string avatar = 4;
   string notice = 5;            // 群公告
+  int32 join_type = 6;            // 加群方式
 }
 
 message DismissGroupReq {

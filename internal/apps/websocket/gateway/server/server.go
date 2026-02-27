@@ -9,6 +9,9 @@ import (
 	"IM2/internal/apps/websocket/gateway/svc"
 	"IM2/internal/common"
 	"IM2/pkg/logger"
+	nats_util "IM2/pkg/nats"
+
+	"google.golang.org/protobuf/proto"
 )
 
 type GatewayServer struct {
@@ -45,6 +48,14 @@ func (s *GatewayServer) Start() error {
 
 	// 4. 订阅跨节点路由消息
 	nodeSubject := fmt.Sprintf("%s%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
+	subjects := []string{
+		nodeSubject,
+		s.svcCtx.Config.Nats.BroadcastSubject,
+		s.svcCtx.Config.Nats.QueueBroadcastSubject,
+	}
+	if err := nats_util.InitStream(s.svcCtx.Js, subjects); err != nil {
+		return fmt.Errorf("init stream failed: %w", err)
+	}
 
 	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, nodeSubject,
 		s.svcCtx.Config.WebSocket.NodeID, s.handleQueueSubscribeMessage); err != nil {
@@ -113,11 +124,46 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 			return conn.Send(msg)
 		}
 	case common.TargetType_GROUP:
+		s.syncGroupMembership(msg)
 		return s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, msg.RouteTarget, msg)
 	default:
 		return nil
 	}
 	return nil
+}
+
+// syncGroupMembership 根据群组事件类型同步本地 groupConnections 映射。
+// 在消息发送前调用，确保发送时本地连接状态已是最新。
+func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) {
+	var notify common.GroupNotification
+	if err := proto.Unmarshal(msg.Payload, &notify); err != nil {
+		logger.Errorf("[syncGroupMembership] unmarshal failed: %v", err)
+		return
+	}
+
+	switch msg.Type {
+	case common.MessageType_GROUP_CREATE, common.MessageType_GROUP_JOIN:
+		// 将本地在线的新成员加入群连接映射
+		for _, uid := range notify.TargetIds {
+			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
+				s.svcCtx.ConnectionManager.AddGroupConnection(msg.RouteTarget, conn)
+			}
+		}
+	case common.MessageType_GROUP_KICK, common.MessageType_GROUP_LEAVE:
+		// 将被踢/主动退群的成员从群连接映射中移除
+		for _, uid := range notify.TargetIds {
+			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
+				s.svcCtx.ConnectionManager.RemoveGroupConnection(msg.RouteTarget, conn)
+			}
+		}
+	case common.MessageType_GROUP_DISMISS:
+		// 群解散：移除所有本地成员的群连接映射（遍历 TargetIds，若为空则无操作）
+		for _, uid := range notify.TargetIds {
+			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
+				s.svcCtx.ConnectionManager.RemoveGroupConnection(msg.RouteTarget, conn)
+			}
+		}
+	}
 }
 
 func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {

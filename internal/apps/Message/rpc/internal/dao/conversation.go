@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"time"
 
 	"IM2/internal/model"
 	"IM2/pkg/redisc"
@@ -9,6 +10,7 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -79,15 +81,32 @@ func (c *ConversationDAO) UpdateUserConversation(ctx context.Context, userID uin
 }
 
 // InsertUserConversation 插入新的用户会话
-func (c *ConversationDAO) InsertUserConversation(ctx context.Context, userId uint64, conversationId string) error {
-	return c.db.WithContext(ctx).Create(&model.UserConversation{
-		UserID:         userId,
-		ConversationID: conversationId,
-		IsTop:          false,
-		IsDisturb:      false,
-		IsMute:         false,
-		LastReadSeq:    0,
-	}).Error
+func (c *ConversationDAO) InsertUserConversation(ctx context.Context, userId uint64, conversationId string, convType int8) error {
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. 同步插入或更新 Conversation 表 (存在则只更新 update_time)
+		err := tx.Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "conversation_id"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"update_time": time.Now(),
+			}),
+		}).Create(&model.Conversation{
+			ConversationID: conversationId,
+			Type:           convType,
+		}).Error
+		if err != nil {
+			return err
+		}
+
+		// 2. 插入 UserConversation 记录，忽略冲突
+		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.UserConversation{
+			UserID:         userId,
+			ConversationID: conversationId,
+			IsTop:          false,
+			IsDisturb:      false,
+			IsMute:         false,
+			LastReadSeq:    0,
+		}).Error
+	})
 }
 
 // Transaction 提供开启事务的能力
@@ -96,9 +115,29 @@ func (c *ConversationDAO) Transaction(ctx context.Context, fc func(tx *gorm.DB) 
 }
 
 // BatchInsertUserConversations 批量插入用户会话记录
-func (c *ConversationDAO) BatchInsertUserConversations(ctx context.Context, userConvs []*model.UserConversation) error {
+func (c *ConversationDAO) BatchInsertUserConversations(ctx context.Context, userConvs []*model.UserConversation, convType int8) error {
 	if len(userConvs) == 0 {
 		return nil
 	}
-	return c.db.WithContext(ctx).Create(&userConvs).Error
+
+	conversationId := userConvs[0].ConversationID
+
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. 同步插入或更新 Conversation 表
+		err := tx.Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "conversation_id"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"update_time": time.Now(),
+			}),
+		}).Create(&model.Conversation{
+			ConversationID: conversationId,
+			Type:           convType,
+		}).Error
+		if err != nil {
+			return err
+		}
+
+		// 2. 批量插入 UserConversation，忽略冲突
+		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&userConvs).Error
+	})
 }

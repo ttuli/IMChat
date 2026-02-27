@@ -711,7 +711,8 @@ type UpdateGroupReq struct {
 	OperatorId    uint64                 `protobuf:"varint,2,opt,name=operator_id,json=operatorId,proto3" json:"operator_id,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	Avatar        string                 `protobuf:"bytes,4,opt,name=avatar,proto3" json:"avatar,omitempty"`
-	Notice        string                 `protobuf:"bytes,5,opt,name=notice,proto3" json:"notice,omitempty"` // 群公告
+	Notice        string                 `protobuf:"bytes,5,opt,name=notice,proto3" json:"notice,omitempty"`                      // 群公告
+	JoinType      int32                  `protobuf:"varint,6,opt,name=join_type,json=joinType,proto3" json:"join_type,omitempty"` // 加群方式
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -779,6 +780,13 @@ func (x *UpdateGroupReq) GetNotice() string {
 		return x.Notice
 	}
 	return ""
+}
+
+func (x *UpdateGroupReq) GetJoinType() int32 {
+	if x != nil {
+		return x.JoinType
+	}
+	return 0
 }
 
 type DismissGroupReq struct {
@@ -1885,14 +1893,15 @@ const file_rpc_group_proto_rawDesc = "" +
 	"\x06offset\x18\x04 \x01(\x05R\x06offset\"F\n" +
 	"\fGetGroupResp\x12 \n" +
 	"\x04data\x18\x01 \x03(\v2\f.group.GroupR\x04data\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\x90\x01\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xad\x01\n" +
 	"\x0eUpdateGroupReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x1f\n" +
 	"\voperator_id\x18\x02 \x01(\x04R\n" +
 	"operatorId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x16\n" +
 	"\x06avatar\x18\x04 \x01(\tR\x06avatar\x12\x16\n" +
-	"\x06notice\x18\x05 \x01(\tR\x06notice\"M\n" +
+	"\x06notice\x18\x05 \x01(\tR\x06notice\x12\x1b\n" +
+	"\tjoin_type\x18\x06 \x01(\x05R\bjoinType\"M\n" +
 	"\x0fDismissGroupReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x1f\n" +
 	"\voperator_id\x18\x02 \x01(\x04R\n" +

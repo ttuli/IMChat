@@ -124,6 +124,8 @@ message UpdateGroupReq {
   string avatar = 3;
   // @gotags: json:"notice,optional"
   string notice = 4;
+  // @gotags: json:"join_type,optional"
+  int32 join_type = 5;
 }
 
 // JoinGroupReq

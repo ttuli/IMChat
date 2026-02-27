@@ -35,6 +35,8 @@ func (l *UpdateGroupLogic) UpdateGroup(req *types.UpdateGroupReq) error {
 		OperatorId: operatorID,
 		Name:       req.Name,
 		Avatar:     req.Avatar,
+		Notice:     req.Notice,
+		JoinType:   req.JoinType,
 	})
 	return err
 }
