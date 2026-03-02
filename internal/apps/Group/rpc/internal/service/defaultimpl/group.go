@@ -46,6 +46,7 @@ func (s *groupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 
 	// 3. 构建成员列表（群主 + 初始成员）
 	members := make([]*model.GroupMember, 0, 1+len(memberIDs))
+	targetIds := make([]uint64, 0, 1+len(memberIDs))
 	members = append(members, &model.GroupMember{
 		GroupID:  groupID,
 		UserID:   ownerID,
@@ -61,6 +62,7 @@ func (s *groupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 				Role:     model.GroupRoleMember,
 				JoinedAt: now,
 			})
+			targetIds = append(targetIds, memberID)
 		}
 	}
 
@@ -70,7 +72,7 @@ func (s *groupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 	}
 
 	// 5. 发送群创建通知
-	wsMsg := common.NewGroupCreateNotification(ownerID, members, group)
+	wsMsg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
 		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
@@ -108,7 +110,6 @@ func (s *groupService) GetGroups(ctx context.Context, groupIDs []uint64, nameKey
 }
 
 func (s *groupService) UpdateGroup(ctx context.Context, groupID, operatorID uint64, name, avatar string, joinType int32) error {
-	// 1. 检查权限（必须是群主或管理员）
 	_, err := s.groupDAO.FindMember(ctx, groupID, operatorID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(xerr.ErrForbidden, "非群成员无权操作")
@@ -139,6 +140,7 @@ func (s *groupService) UpdateGroup(ctx context.Context, groupID, operatorID uint
 	if err := s.groupDAO.UpdateGroup(ctx, group); err != nil {
 		return xerr.Wrap(err, xerr.ErrDatabase, "更新群组失败")
 	}
+
 	return nil
 }
 
@@ -155,14 +157,24 @@ func (s *groupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 		return xerr.New(xerr.ErrForbidden, "只有群主可以解散群")
 	}
 
-	// 2. 删除所有成员
-	if err := s.groupDAO.DeleteMembersByGroupID(ctx, groupID); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "删除群成员失败")
+	// 2. 在事务中删除所有成员和群组
+	if err := s.groupDAO.Transaction(ctx, func(tx *gorm.DB) error {
+		if err := tx.Where("group_id = ?", groupID).Delete(&model.GroupMember{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&model.Group{}, groupID).Error
+	}); err != nil {
+		return xerr.Wrap(err, xerr.ErrDatabase, "解散群组失败")
 	}
 
-	// 3. 删除群组
-	if err := s.groupDAO.DeleteGroup(ctx, groupID); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "删除群组失败")
+	// 3. 发送群解散通知
+	wsMsg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
+	if wsMsg != nil {
+		bytes, _ := proto.Marshal(wsMsg)
+		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+		if err != nil {
+			logger.Errorf("发送nats失败: %v", err)
+		}
 	}
 
 	return nil

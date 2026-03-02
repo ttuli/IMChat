@@ -151,14 +151,8 @@ const (
 	MessageType_USER_OFFLINE       MessageType = 401 // 用户下线
 	MessageType_USER_TYPING        MessageType = 402 // 正在输入
 	MessageType_USER_STATUS_CHANGE MessageType = 403 // 状态变更
-	// 群组操作 500-599
-	MessageType_GROUP_CREATE      MessageType = 500 // 创建群组
-	MessageType_GROUP_DISMISS     MessageType = 501 // 解散群组
-	MessageType_GROUP_JOIN        MessageType = 502 // 加入群组
-	MessageType_GROUP_LEAVE       MessageType = 503 // 离开群组
-	MessageType_GROUP_KICK        MessageType = 504 // 踢出群组
-	MessageType_GROUP_INVITE      MessageType = 505 // 邀请入群
-	MessageType_GROUP_INFO_UPDATE MessageType = 506 // 群信息更新
+	// 群组操作
+	MessageType_GROUP_OP_NOTIFICATION MessageType = 500 // 群操作通知
 	// 通知类 600-699
 	MessageType_NOTIFICATION   MessageType = 600 // 系统通知
 	MessageType_FRIEND_REQUEST MessageType = 601 // 好友请求
@@ -196,13 +190,7 @@ var (
 		401: "USER_OFFLINE",
 		402: "USER_TYPING",
 		403: "USER_STATUS_CHANGE",
-		500: "GROUP_CREATE",
-		501: "GROUP_DISMISS",
-		502: "GROUP_JOIN",
-		503: "GROUP_LEAVE",
-		504: "GROUP_KICK",
-		505: "GROUP_INVITE",
-		506: "GROUP_INFO_UPDATE",
+		500: "GROUP_OP_NOTIFICATION",
 		600: "NOTIFICATION",
 		601: "FRIEND_REQUEST",
 		602: "FRIEND_ADD",
@@ -212,43 +200,37 @@ var (
 		900: "ERROR",
 	}
 	MessageType_value = map[string]int32{
-		"UNKNOWN":            0,
-		"CHAT_TEXT":          100,
-		"CHAT_IMAGE":         101,
-		"CHAT_VIDEO":         102,
-		"CHAT_AUDIO":         103,
-		"CHAT_FILE":          104,
-		"CHAT_LOCATION":      105,
-		"CHAT_CUSTOM":        106,
-		"GROUP_TEXT":         200,
-		"GROUP_IMAGE":        201,
-		"GROUP_VIDEO":        202,
-		"GROUP_AUDIO":        203,
-		"GROUP_FILE":         204,
-		"GROUP_NOTICE":       205,
-		"MSG_ACK":            300,
-		"MSG_READ":           301,
-		"MSG_DELIVERED":      302,
-		"MSG_RECALL":         303,
-		"MSG_DELETE":         304,
-		"USER_ONLINE":        400,
-		"USER_OFFLINE":       401,
-		"USER_TYPING":        402,
-		"USER_STATUS_CHANGE": 403,
-		"GROUP_CREATE":       500,
-		"GROUP_DISMISS":      501,
-		"GROUP_JOIN":         502,
-		"GROUP_LEAVE":        503,
-		"GROUP_KICK":         504,
-		"GROUP_INVITE":       505,
-		"GROUP_INFO_UPDATE":  506,
-		"NOTIFICATION":       600,
-		"FRIEND_REQUEST":     601,
-		"FRIEND_ADD":         602,
-		"GROUP_REQUEST":      603,
-		"APPLY_ACCEPT":       604,
-		"APPLY_REJECT":       605,
-		"ERROR":              900,
+		"UNKNOWN":               0,
+		"CHAT_TEXT":             100,
+		"CHAT_IMAGE":            101,
+		"CHAT_VIDEO":            102,
+		"CHAT_AUDIO":            103,
+		"CHAT_FILE":             104,
+		"CHAT_LOCATION":         105,
+		"CHAT_CUSTOM":           106,
+		"GROUP_TEXT":            200,
+		"GROUP_IMAGE":           201,
+		"GROUP_VIDEO":           202,
+		"GROUP_AUDIO":           203,
+		"GROUP_FILE":            204,
+		"GROUP_NOTICE":          205,
+		"MSG_ACK":               300,
+		"MSG_READ":              301,
+		"MSG_DELIVERED":         302,
+		"MSG_RECALL":            303,
+		"MSG_DELETE":            304,
+		"USER_ONLINE":           400,
+		"USER_OFFLINE":          401,
+		"USER_TYPING":           402,
+		"USER_STATUS_CHANGE":    403,
+		"GROUP_OP_NOTIFICATION": 500,
+		"NOTIFICATION":          600,
+		"FRIEND_REQUEST":        601,
+		"FRIEND_ADD":            602,
+		"GROUP_REQUEST":         603,
+		"APPLY_ACCEPT":          604,
+		"APPLY_REJECT":          605,
+		"ERROR":                 900,
 	}
 )
 
@@ -341,58 +323,6 @@ func (MessageStatus) EnumDescriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{3}
 }
 
-type FileType int32
-
-const (
-	FileType_FILE_TYPE_UNSPECIFIED FileType = 0
-	FileType_FILE_TYPE_AVATAR      FileType = 1 // 头像
-	FileType_FILE_TYPE_CHAT_IMAGE  FileType = 2 // 聊天图片
-	FileType_FILE_TYPE_CHAT_FILE   FileType = 3 // 聊天文件
-)
-
-// Enum value maps for FileType.
-var (
-	FileType_name = map[int32]string{
-		0: "FILE_TYPE_UNSPECIFIED",
-		1: "FILE_TYPE_AVATAR",
-		2: "FILE_TYPE_CHAT_IMAGE",
-		3: "FILE_TYPE_CHAT_FILE",
-	}
-	FileType_value = map[string]int32{
-		"FILE_TYPE_UNSPECIFIED": 0,
-		"FILE_TYPE_AVATAR":      1,
-		"FILE_TYPE_CHAT_IMAGE":  2,
-		"FILE_TYPE_CHAT_FILE":   3,
-	}
-)
-
-func (x FileType) Enum() *FileType {
-	p := new(FileType)
-	*p = x
-	return p
-}
-
-func (x FileType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (FileType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[4].Descriptor()
-}
-
-func (FileType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[4]
-}
-
-func (x FileType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use FileType.Descriptor instead.
-func (FileType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{4}
-}
-
 type AckStatus int32
 
 const (
@@ -426,11 +356,11 @@ func (x AckStatus) String() string {
 }
 
 func (AckStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[5].Descriptor()
+	return file_common_proto_enumTypes[4].Descriptor()
 }
 
 func (AckStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[5]
+	return &file_common_proto_enumTypes[4]
 }
 
 func (x AckStatus) Number() protoreflect.EnumNumber {
@@ -439,7 +369,7 @@ func (x AckStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AckStatus.Descriptor instead.
 func (AckStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{5}
+	return file_common_proto_rawDescGZIP(), []int{4}
 }
 
 type OnlineStatus int32
@@ -481,11 +411,11 @@ func (x OnlineStatus) String() string {
 }
 
 func (OnlineStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[6].Descriptor()
+	return file_common_proto_enumTypes[5].Descriptor()
 }
 
 func (OnlineStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[6]
+	return &file_common_proto_enumTypes[5]
 }
 
 func (x OnlineStatus) Number() protoreflect.EnumNumber {
@@ -494,7 +424,7 @@ func (x OnlineStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use OnlineStatus.Descriptor instead.
 func (OnlineStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{6}
+	return file_common_proto_rawDescGZIP(), []int{5}
 }
 
 type GroupRole int32
@@ -533,11 +463,11 @@ func (x GroupRole) String() string {
 }
 
 func (GroupRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[7].Descriptor()
+	return file_common_proto_enumTypes[6].Descriptor()
 }
 
 func (GroupRole) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[7]
+	return &file_common_proto_enumTypes[6]
 }
 
 func (x GroupRole) Number() protoreflect.EnumNumber {
@@ -546,7 +476,7 @@ func (x GroupRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GroupRole.Descriptor instead.
 func (GroupRole) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{7}
+	return file_common_proto_rawDescGZIP(), []int{6}
 }
 
 type GroupApplyStatus int32
@@ -588,11 +518,11 @@ func (x GroupApplyStatus) String() string {
 }
 
 func (GroupApplyStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[8].Descriptor()
+	return file_common_proto_enumTypes[7].Descriptor()
 }
 
 func (GroupApplyStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[8]
+	return &file_common_proto_enumTypes[7]
 }
 
 func (x GroupApplyStatus) Number() protoreflect.EnumNumber {
@@ -601,46 +531,52 @@ func (x GroupApplyStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GroupApplyStatus.Descriptor instead.
 func (GroupApplyStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{8}
+	return file_common_proto_rawDescGZIP(), []int{7}
 }
 
 type GroupOperationType int32
 
 const (
-	GroupOperationType_GROUP_OP_CREATE      GroupOperationType = 0 // 创建
-	GroupOperationType_GROUP_OP_DISMISS     GroupOperationType = 1 // 解散
-	GroupOperationType_GROUP_OP_JOIN        GroupOperationType = 2 // 加入
-	GroupOperationType_GROUP_OP_LEAVE       GroupOperationType = 3 // 离开
-	GroupOperationType_GROUP_OP_KICK        GroupOperationType = 4 // 踢出
-	GroupOperationType_GROUP_OP_INVITE      GroupOperationType = 5 // 邀请
-	GroupOperationType_GROUP_OP_UPDATE_INFO GroupOperationType = 6 // 更新信息
-	GroupOperationType_GROUP_OP_MUTE        GroupOperationType = 7 // 禁言
-	GroupOperationType_GROUP_OP_UNMUTE      GroupOperationType = 8 // 取消禁言
+	GroupOperationType_GROUP_OP_CREATE             GroupOperationType = 0  // 创建
+	GroupOperationType_GROUP_OP_DISMISS            GroupOperationType = 1  // 解散
+	GroupOperationType_GROUP_OP_JOIN               GroupOperationType = 2  // 加入
+	GroupOperationType_GROUP_OP_LEAVE              GroupOperationType = 3  // 离开
+	GroupOperationType_GROUP_OP_KICK               GroupOperationType = 4  // 踢出
+	GroupOperationType_GROUP_OP_INVITE             GroupOperationType = 5  // 邀请
+	GroupOperationType_GROUP_OP_UPDATE_INFO        GroupOperationType = 6  // 更新信息
+	GroupOperationType_GROUP_OP_MUTE               GroupOperationType = 7  // 禁言
+	GroupOperationType_GROUP_OP_UNMUTE             GroupOperationType = 8  // 取消禁言
+	GroupOperationType_GROUP_OP_INFO_UPDATE_NAME   GroupOperationType = 9  // 群名称更新
+	GroupOperationType_GROUP_OP_INFO_UPDATE_NOTICE GroupOperationType = 10 // 群公告更新
 )
 
 // Enum value maps for GroupOperationType.
 var (
 	GroupOperationType_name = map[int32]string{
-		0: "GROUP_OP_CREATE",
-		1: "GROUP_OP_DISMISS",
-		2: "GROUP_OP_JOIN",
-		3: "GROUP_OP_LEAVE",
-		4: "GROUP_OP_KICK",
-		5: "GROUP_OP_INVITE",
-		6: "GROUP_OP_UPDATE_INFO",
-		7: "GROUP_OP_MUTE",
-		8: "GROUP_OP_UNMUTE",
+		0:  "GROUP_OP_CREATE",
+		1:  "GROUP_OP_DISMISS",
+		2:  "GROUP_OP_JOIN",
+		3:  "GROUP_OP_LEAVE",
+		4:  "GROUP_OP_KICK",
+		5:  "GROUP_OP_INVITE",
+		6:  "GROUP_OP_UPDATE_INFO",
+		7:  "GROUP_OP_MUTE",
+		8:  "GROUP_OP_UNMUTE",
+		9:  "GROUP_OP_INFO_UPDATE_NAME",
+		10: "GROUP_OP_INFO_UPDATE_NOTICE",
 	}
 	GroupOperationType_value = map[string]int32{
-		"GROUP_OP_CREATE":      0,
-		"GROUP_OP_DISMISS":     1,
-		"GROUP_OP_JOIN":        2,
-		"GROUP_OP_LEAVE":       3,
-		"GROUP_OP_KICK":        4,
-		"GROUP_OP_INVITE":      5,
-		"GROUP_OP_UPDATE_INFO": 6,
-		"GROUP_OP_MUTE":        7,
-		"GROUP_OP_UNMUTE":      8,
+		"GROUP_OP_CREATE":             0,
+		"GROUP_OP_DISMISS":            1,
+		"GROUP_OP_JOIN":               2,
+		"GROUP_OP_LEAVE":              3,
+		"GROUP_OP_KICK":               4,
+		"GROUP_OP_INVITE":             5,
+		"GROUP_OP_UPDATE_INFO":        6,
+		"GROUP_OP_MUTE":               7,
+		"GROUP_OP_UNMUTE":             8,
+		"GROUP_OP_INFO_UPDATE_NAME":   9,
+		"GROUP_OP_INFO_UPDATE_NOTICE": 10,
 	}
 )
 
@@ -655,11 +591,11 @@ func (x GroupOperationType) String() string {
 }
 
 func (GroupOperationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[9].Descriptor()
+	return file_common_proto_enumTypes[8].Descriptor()
 }
 
 func (GroupOperationType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[9]
+	return &file_common_proto_enumTypes[8]
 }
 
 func (x GroupOperationType) Number() protoreflect.EnumNumber {
@@ -668,7 +604,7 @@ func (x GroupOperationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GroupOperationType.Descriptor instead.
 func (GroupOperationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{9}
+	return file_common_proto_rawDescGZIP(), []int{8}
 }
 
 type ConversationType int32
@@ -701,11 +637,11 @@ func (x ConversationType) String() string {
 }
 
 func (ConversationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[10].Descriptor()
+	return file_common_proto_enumTypes[9].Descriptor()
 }
 
 func (ConversationType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[10]
+	return &file_common_proto_enumTypes[9]
 }
 
 func (x ConversationType) Number() protoreflect.EnumNumber {
@@ -714,7 +650,7 @@ func (x ConversationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConversationType.Descriptor instead.
 func (ConversationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{10}
+	return file_common_proto_rawDescGZIP(), []int{9}
 }
 
 type NotificationType int32
@@ -753,11 +689,11 @@ func (x NotificationType) String() string {
 }
 
 func (NotificationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[11].Descriptor()
+	return file_common_proto_enumTypes[10].Descriptor()
 }
 
 func (NotificationType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[11]
+	return &file_common_proto_enumTypes[10]
 }
 
 func (x NotificationType) Number() protoreflect.EnumNumber {
@@ -766,7 +702,7 @@ func (x NotificationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NotificationType.Descriptor instead.
 func (NotificationType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{11}
+	return file_common_proto_rawDescGZIP(), []int{10}
 }
 
 // 好友关系来源
@@ -806,11 +742,11 @@ func (x FriendSource) String() string {
 }
 
 func (FriendSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[12].Descriptor()
+	return file_common_proto_enumTypes[11].Descriptor()
 }
 
 func (FriendSource) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[12]
+	return &file_common_proto_enumTypes[11]
 }
 
 func (x FriendSource) Number() protoreflect.EnumNumber {
@@ -819,7 +755,7 @@ func (x FriendSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FriendSource.Descriptor instead.
 func (FriendSource) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{12}
+	return file_common_proto_rawDescGZIP(), []int{11}
 }
 
 type ApplyStatus int32
@@ -861,11 +797,11 @@ func (x ApplyStatus) String() string {
 }
 
 func (ApplyStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[13].Descriptor()
+	return file_common_proto_enumTypes[12].Descriptor()
 }
 
 func (ApplyStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[13]
+	return &file_common_proto_enumTypes[12]
 }
 
 func (x ApplyStatus) Number() protoreflect.EnumNumber {
@@ -874,7 +810,7 @@ func (x ApplyStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ApplyStatus.Descriptor instead.
 func (ApplyStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{13}
+	return file_common_proto_rawDescGZIP(), []int{12}
 }
 
 type ApplySource int32
@@ -919,11 +855,11 @@ func (x ApplySource) String() string {
 }
 
 func (ApplySource) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[14].Descriptor()
+	return file_common_proto_enumTypes[13].Descriptor()
 }
 
 func (ApplySource) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[14]
+	return &file_common_proto_enumTypes[13]
 }
 
 func (x ApplySource) Number() protoreflect.EnumNumber {
@@ -932,7 +868,7 @@ func (x ApplySource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ApplySource.Descriptor instead.
 func (ApplySource) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{14}
+	return file_common_proto_rawDescGZIP(), []int{13}
 }
 
 type Gender int32
@@ -971,11 +907,11 @@ func (x Gender) String() string {
 }
 
 func (Gender) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[15].Descriptor()
+	return file_common_proto_enumTypes[14].Descriptor()
 }
 
 func (Gender) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[15]
+	return &file_common_proto_enumTypes[14]
 }
 
 func (x Gender) Number() protoreflect.EnumNumber {
@@ -984,7 +920,7 @@ func (x Gender) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Gender.Descriptor instead.
 func (Gender) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{15}
+	return file_common_proto_rawDescGZIP(), []int{14}
 }
 
 type JoinType int32
@@ -1020,11 +956,11 @@ func (x JoinType) String() string {
 }
 
 func (JoinType) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[16].Descriptor()
+	return file_common_proto_enumTypes[15].Descriptor()
 }
 
 func (JoinType) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[16]
+	return &file_common_proto_enumTypes[15]
 }
 
 func (x JoinType) Number() protoreflect.EnumNumber {
@@ -1033,7 +969,7 @@ func (x JoinType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use JoinType.Descriptor instead.
 func (JoinType) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{16}
+	return file_common_proto_rawDescGZIP(), []int{15}
 }
 
 type UserStatus int32
@@ -1066,11 +1002,11 @@ func (x UserStatus) String() string {
 }
 
 func (UserStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[17].Descriptor()
+	return file_common_proto_enumTypes[16].Descriptor()
 }
 
 func (UserStatus) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[17]
+	return &file_common_proto_enumTypes[16]
 }
 
 func (x UserStatus) Number() protoreflect.EnumNumber {
@@ -1079,7 +1015,7 @@ func (x UserStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UserStatus.Descriptor instead.
 func (UserStatus) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{17}
+	return file_common_proto_rawDescGZIP(), []int{16}
 }
 
 // 常见错误码定义
@@ -1134,11 +1070,11 @@ func (x ErrorCode) String() string {
 }
 
 func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_common_proto_enumTypes[18].Descriptor()
+	return file_common_proto_enumTypes[17].Descriptor()
 }
 
 func (ErrorCode) Type() protoreflect.EnumType {
-	return &file_common_proto_enumTypes[18]
+	return &file_common_proto_enumTypes[17]
 }
 
 func (x ErrorCode) Number() protoreflect.EnumNumber {
@@ -1147,7 +1083,7 @@ func (x ErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErrorCode.Descriptor instead.
 func (ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{18}
+	return file_common_proto_rawDescGZIP(), []int{17}
 }
 
 type ErrorResp struct {
@@ -1878,11 +1814,10 @@ func (x *AudioMessage) GetIsRead() bool {
 type FileMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Base          *BaseMessage           `protobuf:"bytes,1,opt,name=base,proto3" json:"base,omitempty"`
-	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`                                                 // 文件URL
-	FileName      string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`                       // 文件名
-	Size          int64                  `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`                                              // 文件大小
-	FileType      FileType               `protobuf:"varint,5,opt,name=file_type,json=fileType,proto3,enum=common.FileType" json:"file_type,omitempty"` // 文件类型
-	Md5           string                 `protobuf:"bytes,6,opt,name=md5,proto3" json:"md5,omitempty"`                                                 // 文件MD5
+	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`                           // 文件URL
+	FileName      string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"` // 文件名
+	Size          int64                  `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`                        // 文件大小
+	Md5           string                 `protobuf:"bytes,6,opt,name=md5,proto3" json:"md5,omitempty"`                           // 文件MD5
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1943,13 +1878,6 @@ func (x *FileMessage) GetSize() int64 {
 		return x.Size
 	}
 	return 0
-}
-
-func (x *FileMessage) GetFileType() FileType {
-	if x != nil {
-		return x.FileType
-	}
-	return FileType_FILE_TYPE_UNSPECIFIED
 }
 
 func (x *FileMessage) GetMd5() string {
@@ -2771,14 +2699,17 @@ func (x *GroupApply) GetRejectReason() string {
 
 // 群组操作通知
 type GroupNotification struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	GroupId       uint64                 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                             // 群组ID
-	OpType        GroupOperationType     `protobuf:"varint,2,opt,name=op_type,json=opType,proto3,enum=common.GroupOperationType" json:"op_type,omitempty"` // 操作类型
-	OperatorId    uint64                 `protobuf:"varint,3,opt,name=operator_id,json=operatorId,proto3" json:"operator_id,omitempty"`                    // 操作者ID
-	TargetIds     []uint64               `protobuf:"varint,4,rep,packed,name=target_ids,json=targetIds,proto3" json:"target_ids,omitempty"`                // 目标用户ID列表
-	OpTime        int64                  `protobuf:"varint,5,opt,name=op_time,json=opTime,proto3" json:"op_time,omitempty"`                                // 操作时间
-	Reason        string                 `protobuf:"bytes,6,opt,name=reason,proto3" json:"reason,omitempty"`                                               // 操作原因
-	GroupInfo     *GroupInfo             `protobuf:"bytes,7,opt,name=group_info,json=groupInfo,proto3" json:"group_info,omitempty"`                        // 群组信息
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	GroupId    uint64                 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                             // 群组ID
+	OpType     GroupOperationType     `protobuf:"varint,2,opt,name=op_type,json=opType,proto3,enum=common.GroupOperationType" json:"op_type,omitempty"` // 操作类型
+	OperatorId uint64                 `protobuf:"varint,3,opt,name=operator_id,json=operatorId,proto3" json:"operator_id,omitempty"`                    // 操作者ID
+	TargetIds  []uint64               `protobuf:"varint,4,rep,packed,name=target_ids,json=targetIds,proto3" json:"target_ids,omitempty"`                // 目标用户ID列表
+	OpTime     int64                  `protobuf:"varint,5,opt,name=op_time,json=opTime,proto3" json:"op_time,omitempty"`                                // 操作时间
+	Reason     string                 `protobuf:"bytes,6,opt,name=reason,proto3" json:"reason,omitempty"`                                               // 操作原因
+	GroupInfo  *GroupInfo             `protobuf:"bytes,7,opt,name=group_info,json=groupInfo,proto3" json:"group_info,omitempty"`                        // 群组信息
+	// 基础字段
+	MsgId         string `protobuf:"bytes,8,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`             // 消息ID
+	SessionId     string `protobuf:"bytes,9,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // 会话ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2860,6 +2791,20 @@ func (x *GroupNotification) GetGroupInfo() *GroupInfo {
 		return x.GroupInfo
 	}
 	return nil
+}
+
+func (x *GroupNotification) GetMsgId() string {
+	if x != nil {
+		return x.MsgId
+	}
+	return ""
+}
+
+func (x *GroupNotification) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
 }
 
 type Conversation struct {
@@ -3550,13 +3495,12 @@ const file_common_proto_rawDesc = "" +
 	"\bduration\x18\x03 \x01(\x05R\bduration\x12\x12\n" +
 	"\x04size\x18\x04 \x01(\x03R\x04size\x12\x16\n" +
 	"\x06format\x18\x05 \x01(\tR\x06format\x12\x17\n" +
-	"\ais_read\x18\x06 \x01(\bR\x06isRead\"\xba\x01\n" +
+	"\ais_read\x18\x06 \x01(\bR\x06isRead\"\x8b\x01\n" +
 	"\vFileMessage\x12'\n" +
 	"\x04base\x18\x01 \x01(\v2\x13.common.BaseMessageR\x04base\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x12\x1b\n" +
 	"\tfile_name\x18\x03 \x01(\tR\bfileName\x12\x12\n" +
-	"\x04size\x18\x04 \x01(\x03R\x04size\x12-\n" +
-	"\tfile_type\x18\x05 \x01(\x0e2\x10.common.FileTypeR\bfileType\x12\x10\n" +
+	"\x04size\x18\x04 \x01(\x03R\x04size\x12\x10\n" +
 	"\x03md5\x18\x06 \x01(\tR\x03md5\"\xa4\x01\n" +
 	"\x0fLocationMessage\x12'\n" +
 	"\x04base\x18\x01 \x01(\v2\x13.common.BaseMessageR\x04base\x12\x1a\n" +
@@ -3632,7 +3576,7 @@ const file_common_proto_rawDesc = "" +
 	"\frequest_time\x18\a \x01(\x03R\vrequestTime\x12\x1f\n" +
 	"\vhandle_time\x18\b \x01(\x03R\n" +
 	"handleTime\x12#\n" +
-	"\rreject_reason\x18\t \x01(\tR\frejectReason\"\x86\x02\n" +
+	"\rreject_reason\x18\t \x01(\tR\frejectReason\"\xbc\x02\n" +
 	"\x11GroupNotification\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x123\n" +
 	"\aop_type\x18\x02 \x01(\x0e2\x1a.common.GroupOperationTypeR\x06opType\x12\x1f\n" +
@@ -3643,7 +3587,10 @@ const file_common_proto_rawDesc = "" +
 	"\aop_time\x18\x05 \x01(\x03R\x06opTime\x12\x16\n" +
 	"\x06reason\x18\x06 \x01(\tR\x06reason\x120\n" +
 	"\n" +
-	"group_info\x18\a \x01(\v2\x11.common.GroupInfoR\tgroupInfo\"\xc2\x03\n" +
+	"group_info\x18\a \x01(\v2\x11.common.GroupInfoR\tgroupInfo\x12\x15\n" +
+	"\x06msg_id\x18\b \x01(\tR\x05msgId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\t \x01(\tR\tsessionId\"\xc2\x03\n" +
 	"\fConversation\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12,\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x18.common.ConversationTypeR\x04type\x12!\n" +
@@ -3732,7 +3679,7 @@ const file_common_proto_rawDesc = "" +
 	"\n" +
 	"CONNECTING\x10\x01\x12\r\n" +
 	"\tCONNECTED\x10\x02\x12\x10\n" +
-	"\fRECONNECTING\x10\x03*\x9f\x05\n" +
+	"\fRECONNECTING\x10\x03*\xb5\x04\n" +
 	"\vMessageType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tCHAT_TEXT\x10d\x12\x0e\n" +
@@ -3763,16 +3710,8 @@ const file_common_proto_rawDesc = "" +
 	"\vUSER_ONLINE\x10\x90\x03\x12\x11\n" +
 	"\fUSER_OFFLINE\x10\x91\x03\x12\x10\n" +
 	"\vUSER_TYPING\x10\x92\x03\x12\x17\n" +
-	"\x12USER_STATUS_CHANGE\x10\x93\x03\x12\x11\n" +
-	"\fGROUP_CREATE\x10\xf4\x03\x12\x12\n" +
-	"\rGROUP_DISMISS\x10\xf5\x03\x12\x0f\n" +
-	"\n" +
-	"GROUP_JOIN\x10\xf6\x03\x12\x10\n" +
-	"\vGROUP_LEAVE\x10\xf7\x03\x12\x0f\n" +
-	"\n" +
-	"GROUP_KICK\x10\xf8\x03\x12\x11\n" +
-	"\fGROUP_INVITE\x10\xf9\x03\x12\x16\n" +
-	"\x11GROUP_INFO_UPDATE\x10\xfa\x03\x12\x11\n" +
+	"\x12USER_STATUS_CHANGE\x10\x93\x03\x12\x1a\n" +
+	"\x15GROUP_OP_NOTIFICATION\x10\xf4\x03\x12\x11\n" +
 	"\fNOTIFICATION\x10\xd8\x04\x12\x13\n" +
 	"\x0eFRIEND_REQUEST\x10\xd9\x04\x12\x0f\n" +
 	"\n" +
@@ -3789,12 +3728,7 @@ const file_common_proto_rawDesc = "" +
 	"\x18MESSAGE_STATUS_DELIVERED\x10\x03\x12\x17\n" +
 	"\x13MESSAGE_STATUS_READ\x10\x04\x12\x1b\n" +
 	"\x17MESSAGE_STATUS_RECALLED\x10\x05\x12\x19\n" +
-	"\x15MESSAGE_STATUS_FAILED\x10\x06*n\n" +
-	"\bFileType\x12\x19\n" +
-	"\x15FILE_TYPE_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10FILE_TYPE_AVATAR\x10\x01\x12\x18\n" +
-	"\x14FILE_TYPE_CHAT_IMAGE\x10\x02\x12\x17\n" +
-	"\x13FILE_TYPE_CHAT_FILE\x10\x03*T\n" +
+	"\x15MESSAGE_STATUS_FAILED\x10\x06*T\n" +
 	"\tAckStatus\x12\x16\n" +
 	"\x12ACK_STATUS_SUCCESS\x10\x00\x12\x15\n" +
 	"\x11ACK_STATUS_FAILED\x10\x01\x12\x18\n" +
@@ -3815,7 +3749,7 @@ const file_common_proto_rawDesc = "" +
 	"\x1aGROUP_APPLY_STATUS_PENDING\x10\x01\x12\x1f\n" +
 	"\x1bGROUP_APPLY_STATUS_ACCEPTED\x10\x02\x12\x1f\n" +
 	"\x1bGROUP_APPLY_STATUS_REJECTED\x10\x03\x12\x1e\n" +
-	"\x1aGROUP_APPLY_STATUS_IGNORED\x10\x04*\xd0\x01\n" +
+	"\x1aGROUP_APPLY_STATUS_IGNORED\x10\x04*\x90\x02\n" +
 	"\x12GroupOperationType\x12\x13\n" +
 	"\x0fGROUP_OP_CREATE\x10\x00\x12\x14\n" +
 	"\x10GROUP_OP_DISMISS\x10\x01\x12\x11\n" +
@@ -3825,7 +3759,10 @@ const file_common_proto_rawDesc = "" +
 	"\x0fGROUP_OP_INVITE\x10\x05\x12\x18\n" +
 	"\x14GROUP_OP_UPDATE_INFO\x10\x06\x12\x11\n" +
 	"\rGROUP_OP_MUTE\x10\a\x12\x13\n" +
-	"\x0fGROUP_OP_UNMUTE\x10\b*N\n" +
+	"\x0fGROUP_OP_UNMUTE\x10\b\x12\x1d\n" +
+	"\x19GROUP_OP_INFO_UPDATE_NAME\x10\t\x12\x1f\n" +
+	"\x1bGROUP_OP_INFO_UPDATE_NOTICE\x10\n" +
+	"*N\n" +
 	"\x10ConversationType\x12\x1d\n" +
 	"\x19CONVERSATION_TYPE_PRIVATE\x10\x00\x12\x1b\n" +
 	"\x17CONVERSATION_TYPE_GROUP\x10\x01*\x94\x01\n" +
@@ -3890,96 +3827,94 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
-var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
+var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 18)
 var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_common_proto_goTypes = []any{
 	(TargetType)(0),            // 0: common.TargetType
 	(ConnectionState)(0),       // 1: common.ConnectionState
 	(MessageType)(0),           // 2: common.MessageType
 	(MessageStatus)(0),         // 3: common.MessageStatus
-	(FileType)(0),              // 4: common.FileType
-	(AckStatus)(0),             // 5: common.AckStatus
-	(OnlineStatus)(0),          // 6: common.OnlineStatus
-	(GroupRole)(0),             // 7: common.GroupRole
-	(GroupApplyStatus)(0),      // 8: common.GroupApplyStatus
-	(GroupOperationType)(0),    // 9: common.GroupOperationType
-	(ConversationType)(0),      // 10: common.ConversationType
-	(NotificationType)(0),      // 11: common.NotificationType
-	(FriendSource)(0),          // 12: common.FriendSource
-	(ApplyStatus)(0),           // 13: common.ApplyStatus
-	(ApplySource)(0),           // 14: common.ApplySource
-	(Gender)(0),                // 15: common.Gender
-	(JoinType)(0),              // 16: common.JoinType
-	(UserStatus)(0),            // 17: common.UserStatus
-	(ErrorCode)(0),             // 18: common.ErrorCode
-	(*ErrorResp)(nil),          // 19: common.ErrorResp
-	(*ApiResponse)(nil),        // 20: common.ApiResponse
-	(*WSMessage)(nil),          // 21: common.WSMessage
-	(*BaseMessage)(nil),        // 22: common.BaseMessage
-	(*TextMessage)(nil),        // 23: common.TextMessage
-	(*AtInfo)(nil),             // 24: common.AtInfo
-	(*ImageMessage)(nil),       // 25: common.ImageMessage
-	(*VideoMessage)(nil),       // 26: common.VideoMessage
-	(*AudioMessage)(nil),       // 27: common.AudioMessage
-	(*FileMessage)(nil),        // 28: common.FileMessage
-	(*LocationMessage)(nil),    // 29: common.LocationMessage
-	(*CustomMessage)(nil),      // 30: common.CustomMessage
-	(*MessageAck)(nil),         // 31: common.MessageAck
-	(*MessageRead)(nil),        // 32: common.MessageRead
-	(*MessageRecall)(nil),      // 33: common.MessageRecall
-	(*UserOnlineStatus)(nil),   // 34: common.UserOnlineStatus
-	(*TypingStatus)(nil),       // 35: common.TypingStatus
-	(*GroupInfo)(nil),          // 36: common.GroupInfo
-	(*GroupMember)(nil),        // 37: common.GroupMember
-	(*GroupApply)(nil),         // 38: common.GroupApply
-	(*GroupNotification)(nil),  // 39: common.GroupNotification
-	(*Conversation)(nil),       // 40: common.Conversation
-	(*SystemNotification)(nil), // 41: common.SystemNotification
-	(*Friend)(nil),             // 42: common.Friend
-	(*FriendRequest)(nil),      // 43: common.FriendRequest
-	(*UserInfo)(nil),           // 44: common.UserInfo
-	(*ErrorMessage)(nil),       // 45: common.ErrorMessage
-	nil,                        // 46: common.BaseMessage.ExtEntry
-	nil,                        // 47: common.SystemNotification.DataEntry
-	nil,                        // 48: common.ErrorMessage.DetailsEntry
+	(AckStatus)(0),             // 4: common.AckStatus
+	(OnlineStatus)(0),          // 5: common.OnlineStatus
+	(GroupRole)(0),             // 6: common.GroupRole
+	(GroupApplyStatus)(0),      // 7: common.GroupApplyStatus
+	(GroupOperationType)(0),    // 8: common.GroupOperationType
+	(ConversationType)(0),      // 9: common.ConversationType
+	(NotificationType)(0),      // 10: common.NotificationType
+	(FriendSource)(0),          // 11: common.FriendSource
+	(ApplyStatus)(0),           // 12: common.ApplyStatus
+	(ApplySource)(0),           // 13: common.ApplySource
+	(Gender)(0),                // 14: common.Gender
+	(JoinType)(0),              // 15: common.JoinType
+	(UserStatus)(0),            // 16: common.UserStatus
+	(ErrorCode)(0),             // 17: common.ErrorCode
+	(*ErrorResp)(nil),          // 18: common.ErrorResp
+	(*ApiResponse)(nil),        // 19: common.ApiResponse
+	(*WSMessage)(nil),          // 20: common.WSMessage
+	(*BaseMessage)(nil),        // 21: common.BaseMessage
+	(*TextMessage)(nil),        // 22: common.TextMessage
+	(*AtInfo)(nil),             // 23: common.AtInfo
+	(*ImageMessage)(nil),       // 24: common.ImageMessage
+	(*VideoMessage)(nil),       // 25: common.VideoMessage
+	(*AudioMessage)(nil),       // 26: common.AudioMessage
+	(*FileMessage)(nil),        // 27: common.FileMessage
+	(*LocationMessage)(nil),    // 28: common.LocationMessage
+	(*CustomMessage)(nil),      // 29: common.CustomMessage
+	(*MessageAck)(nil),         // 30: common.MessageAck
+	(*MessageRead)(nil),        // 31: common.MessageRead
+	(*MessageRecall)(nil),      // 32: common.MessageRecall
+	(*UserOnlineStatus)(nil),   // 33: common.UserOnlineStatus
+	(*TypingStatus)(nil),       // 34: common.TypingStatus
+	(*GroupInfo)(nil),          // 35: common.GroupInfo
+	(*GroupMember)(nil),        // 36: common.GroupMember
+	(*GroupApply)(nil),         // 37: common.GroupApply
+	(*GroupNotification)(nil),  // 38: common.GroupNotification
+	(*Conversation)(nil),       // 39: common.Conversation
+	(*SystemNotification)(nil), // 40: common.SystemNotification
+	(*Friend)(nil),             // 41: common.Friend
+	(*FriendRequest)(nil),      // 42: common.FriendRequest
+	(*UserInfo)(nil),           // 43: common.UserInfo
+	(*ErrorMessage)(nil),       // 44: common.ErrorMessage
+	nil,                        // 45: common.BaseMessage.ExtEntry
+	nil,                        // 46: common.SystemNotification.DataEntry
+	nil,                        // 47: common.ErrorMessage.DetailsEntry
 }
 var file_common_proto_depIdxs = []int32{
 	0,  // 0: common.WSMessage.route_target_type:type_name -> common.TargetType
 	2,  // 1: common.WSMessage.type:type_name -> common.MessageType
 	3,  // 2: common.BaseMessage.status:type_name -> common.MessageStatus
-	46, // 3: common.BaseMessage.ext:type_name -> common.BaseMessage.ExtEntry
-	22, // 4: common.TextMessage.base:type_name -> common.BaseMessage
-	24, // 5: common.TextMessage.at_list:type_name -> common.AtInfo
-	22, // 6: common.ImageMessage.base:type_name -> common.BaseMessage
-	22, // 7: common.VideoMessage.base:type_name -> common.BaseMessage
-	22, // 8: common.AudioMessage.base:type_name -> common.BaseMessage
-	22, // 9: common.FileMessage.base:type_name -> common.BaseMessage
-	4,  // 10: common.FileMessage.file_type:type_name -> common.FileType
-	22, // 11: common.LocationMessage.base:type_name -> common.BaseMessage
-	22, // 12: common.CustomMessage.base:type_name -> common.BaseMessage
-	5,  // 13: common.MessageAck.status:type_name -> common.AckStatus
-	6,  // 14: common.UserOnlineStatus.status:type_name -> common.OnlineStatus
-	16, // 15: common.GroupInfo.join_type:type_name -> common.JoinType
-	7,  // 16: common.GroupMember.role:type_name -> common.GroupRole
-	8,  // 17: common.GroupApply.status:type_name -> common.GroupApplyStatus
-	9,  // 18: common.GroupNotification.op_type:type_name -> common.GroupOperationType
-	36, // 19: common.GroupNotification.group_info:type_name -> common.GroupInfo
-	10, // 20: common.Conversation.type:type_name -> common.ConversationType
-	2,  // 21: common.Conversation.last_msg_type:type_name -> common.MessageType
-	11, // 22: common.SystemNotification.type:type_name -> common.NotificationType
-	47, // 23: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
-	12, // 24: common.Friend.source:type_name -> common.FriendSource
-	13, // 25: common.FriendRequest.status:type_name -> common.ApplyStatus
-	14, // 26: common.FriendRequest.source:type_name -> common.ApplySource
-	15, // 27: common.UserInfo.gender:type_name -> common.Gender
-	16, // 28: common.UserInfo.join_type:type_name -> common.JoinType
-	17, // 29: common.UserInfo.status:type_name -> common.UserStatus
-	48, // 30: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	45, // 3: common.BaseMessage.ext:type_name -> common.BaseMessage.ExtEntry
+	21, // 4: common.TextMessage.base:type_name -> common.BaseMessage
+	23, // 5: common.TextMessage.at_list:type_name -> common.AtInfo
+	21, // 6: common.ImageMessage.base:type_name -> common.BaseMessage
+	21, // 7: common.VideoMessage.base:type_name -> common.BaseMessage
+	21, // 8: common.AudioMessage.base:type_name -> common.BaseMessage
+	21, // 9: common.FileMessage.base:type_name -> common.BaseMessage
+	21, // 10: common.LocationMessage.base:type_name -> common.BaseMessage
+	21, // 11: common.CustomMessage.base:type_name -> common.BaseMessage
+	4,  // 12: common.MessageAck.status:type_name -> common.AckStatus
+	5,  // 13: common.UserOnlineStatus.status:type_name -> common.OnlineStatus
+	15, // 14: common.GroupInfo.join_type:type_name -> common.JoinType
+	6,  // 15: common.GroupMember.role:type_name -> common.GroupRole
+	7,  // 16: common.GroupApply.status:type_name -> common.GroupApplyStatus
+	8,  // 17: common.GroupNotification.op_type:type_name -> common.GroupOperationType
+	35, // 18: common.GroupNotification.group_info:type_name -> common.GroupInfo
+	9,  // 19: common.Conversation.type:type_name -> common.ConversationType
+	2,  // 20: common.Conversation.last_msg_type:type_name -> common.MessageType
+	10, // 21: common.SystemNotification.type:type_name -> common.NotificationType
+	46, // 22: common.SystemNotification.data:type_name -> common.SystemNotification.DataEntry
+	11, // 23: common.Friend.source:type_name -> common.FriendSource
+	12, // 24: common.FriendRequest.status:type_name -> common.ApplyStatus
+	13, // 25: common.FriendRequest.source:type_name -> common.ApplySource
+	14, // 26: common.UserInfo.gender:type_name -> common.Gender
+	15, // 27: common.UserInfo.join_type:type_name -> common.JoinType
+	16, // 28: common.UserInfo.status:type_name -> common.UserStatus
+	47, // 29: common.ErrorMessage.details:type_name -> common.ErrorMessage.DetailsEntry
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }
@@ -3992,7 +3927,7 @@ func file_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
-			NumEnums:      19,
+			NumEnums:      18,
 			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   0,

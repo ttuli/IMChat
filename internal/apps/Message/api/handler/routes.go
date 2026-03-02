@@ -47,6 +47,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/read",
 				Handler: message.ReadMessageHandler(serverCtx),
 			},
+			{
+				// 撤回消息
+				Method:  http.MethodPost,
+				Path:    "/recall",
+				Handler: message.RecallMessageHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/message"),
 	)

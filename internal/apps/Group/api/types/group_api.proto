@@ -195,8 +195,6 @@ message LeaveGroupReq {
 message DismissGroupReq {
   // @gotags: json:"group_id"
   uint64 group_id = 1;
-  // @gotags: json:"operator_id"
-  uint64 operator_id = 2;
 }
 
 // SetMemberRoleReq

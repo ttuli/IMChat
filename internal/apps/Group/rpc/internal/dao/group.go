@@ -253,9 +253,22 @@ func (m *GroupDAO) delayDeleteCache(groupID uint64) {
 
 // ==================== 群成员管理 ====================
 
-// InsertMember 添加单个成员
+// InsertMember 添加单个成员，并在同一事务内将群人数 +1
 func (m *GroupDAO) InsertMember(ctx context.Context, member *model.GroupMember) error {
-	return m.DB.WithContext(ctx).Create(member).Error
+	m.deleteGroupCache(ctx, member.GroupID)
+	err := m.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(member).Error; err != nil {
+			return err
+		}
+		return tx.Model(&model.Group{}).
+			Where("id = ?", member.GroupID).
+			UpdateColumn("member_count", gorm.Expr("member_count + 1")).Error
+	})
+	if err != nil {
+		return err
+	}
+	m.delayDeleteCache(member.GroupID)
+	return nil
 }
 
 // InsertMembers 批量添加成员
@@ -304,11 +317,23 @@ func (m *GroupDAO) UpdateMember(ctx context.Context, groupID, userID uint64, upd
 		Updates(updates).Error
 }
 
-// DeleteMember 删除成员
+// DeleteMember 删除成员，并在同一事务内将群人数 -1
 func (m *GroupDAO) DeleteMember(ctx context.Context, groupID, userID uint64) error {
-	return m.DB.WithContext(ctx).
-		Where("group_id = ? AND user_id = ?", groupID, userID).
-		Delete(&model.GroupMember{}).Error
+	m.deleteGroupCache(ctx, groupID)
+	err := m.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("group_id = ? AND user_id = ?", groupID, userID).
+			Delete(&model.GroupMember{}).Error; err != nil {
+			return err
+		}
+		return tx.Model(&model.Group{}).
+			Where("id = ?", groupID).
+			UpdateColumn("member_count", gorm.Expr("member_count - 1")).Error
+	})
+	if err != nil {
+		return err
+	}
+	m.delayDeleteCache(groupID)
+	return nil
 }
 
 // DeleteMembersByGroupID 删除群所有成员
@@ -327,6 +352,18 @@ func (m *GroupDAO) CountMembers(ctx context.Context, groupID uint64) (int64, err
 		return 0, err
 	}
 	return count, nil
+}
+
+// IncrMemberCount 原子地更新群成员数（delta 为正数时增加，负数时减少）
+func (m *GroupDAO) IncrMemberCount(ctx context.Context, groupID uint64, delta int) error {
+	m.deleteGroupCache(ctx, groupID)
+	if err := m.DB.WithContext(ctx).Model(&model.Group{}).
+		Where("id = ?", groupID).
+		UpdateColumn("member_count", gorm.Expr("member_count + ?", delta)).Error; err != nil {
+		return err
+	}
+	m.delayDeleteCache(groupID)
+	return nil
 }
 
 // IsMember 检查是否是群成员

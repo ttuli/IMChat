@@ -43,7 +43,7 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 			return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "直接加入群组失败")
 		}
 
-		msg := common.NewGroupOperationMsg(common.MessageType_GROUP_JOIN, groupID, fromUserID, 0, nil)
+		msg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
 		bytes, _ := proto.Marshal(msg)
 		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 		if err != nil {
@@ -110,7 +110,7 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 
 	// 3. 校验状态：只能处理待处理的申请
 	if apply.Status != model.GroupApplyStatusPending {
-		return nil, xerr.New(xerr.ErrInvalidParams, "申请已被处理")
+		return apply, nil
 	}
 
 	// 4. 更新申请状态和处理人
@@ -132,7 +132,7 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 				return nil, xerr.Wrap(err, xerr.ErrDatabase, "添加群成员失败")
 			}
 
-			msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
+			msg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
 			bytes, _ := proto.Marshal(msg)
 			_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 			if err != nil {

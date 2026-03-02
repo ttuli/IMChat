@@ -96,6 +96,14 @@ message GetUserActiveConversationsResp {
   repeated Conversation conversations = 1;
 }
 
+message RecallMessageReq {
+  uint64 user_id = 1;
+  string msg_id = 2;
+  string session_id = 3;
+}
+
+message RecallMessageResp {}
+
 // ========== 服务定义 ==========
 
 service MessageRpc {
@@ -105,4 +113,5 @@ service MessageRpc {
   rpc UpdateConversation(UpdateConversationReq) returns (UpdateConversationResp);
   rpc GetUserConversations(GetUserConversationsReq) returns (GetUserConversationsResp);
   rpc GetUserActiveConversations(GetUserActiveConversationsReq) returns (GetUserActiveConversationsResp);
+  rpc RecallMessage(RecallMessageReq) returns (RecallMessageResp);
 }

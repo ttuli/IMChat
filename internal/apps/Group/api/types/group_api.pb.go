@@ -1212,9 +1212,7 @@ func (x *LeaveGroupReq) GetGroupId() uint64 {
 type DismissGroupReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"group_id"
-	GroupId uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id"`
-	// @gotags: json:"operator_id"
-	OperatorId    uint64 `protobuf:"varint,2,opt,name=operator_id,json=operatorId,proto3" json:"operator_id"`
+	GroupId       uint64 `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1252,13 +1250,6 @@ func (*DismissGroupReq) Descriptor() ([]byte, []int) {
 func (x *DismissGroupReq) GetGroupId() uint64 {
 	if x != nil {
 		return x.GroupId
-	}
-	return 0
-}
-
-func (x *DismissGroupReq) GetOperatorId() uint64 {
-	if x != nil {
-		return x.OperatorId
 	}
 	return 0
 }
@@ -1710,11 +1701,9 @@ const file_group_api_proto_rawDesc = "" +
 	"\voperator_id\x18\x03 \x01(\x04R\n" +
 	"operatorId\"*\n" +
 	"\rLeaveGroupReq\x12\x19\n" +
-	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\"M\n" +
+	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\",\n" +
 	"\x0fDismissGroupReq\x12\x19\n" +
-	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x1f\n" +
-	"\voperator_id\x18\x02 \x01(\x04R\n" +
-	"operatorId\"{\n" +
+	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\"{\n" +
 	"\x10SetMemberRoleReq\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x04R\agroupId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x12\n" +

@@ -25,6 +25,7 @@ const (
 	MessageRpc_UpdateConversation_FullMethodName         = "/message.MessageRpc/UpdateConversation"
 	MessageRpc_GetUserConversations_FullMethodName       = "/message.MessageRpc/GetUserConversations"
 	MessageRpc_GetUserActiveConversations_FullMethodName = "/message.MessageRpc/GetUserActiveConversations"
+	MessageRpc_RecallMessage_FullMethodName              = "/message.MessageRpc/RecallMessage"
 )
 
 // MessageRpcClient is the client API for MessageRpc service.
@@ -37,6 +38,7 @@ type MessageRpcClient interface {
 	UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error)
 	GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
 	GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error)
+	RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error)
 }
 
 type messageRpcClient struct {
@@ -107,6 +109,16 @@ func (c *messageRpcClient) GetUserActiveConversations(ctx context.Context, in *G
 	return out, nil
 }
 
+func (c *messageRpcClient) RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecallMessageResp)
+	err := c.cc.Invoke(ctx, MessageRpc_RecallMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MessageRpcServer is the server API for MessageRpc service.
 // All implementations must embed UnimplementedMessageRpcServer
 // for forward compatibility.
@@ -117,6 +129,7 @@ type MessageRpcServer interface {
 	UpdateConversation(context.Context, *UpdateConversationReq) (*UpdateConversationResp, error)
 	GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error)
 	GetUserActiveConversations(context.Context, *GetUserActiveConversationsReq) (*GetUserActiveConversationsResp, error)
+	RecallMessage(context.Context, *RecallMessageReq) (*RecallMessageResp, error)
 	mustEmbedUnimplementedMessageRpcServer()
 }
 
@@ -144,6 +157,9 @@ func (UnimplementedMessageRpcServer) GetUserConversations(context.Context, *GetU
 }
 func (UnimplementedMessageRpcServer) GetUserActiveConversations(context.Context, *GetUserActiveConversationsReq) (*GetUserActiveConversationsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserActiveConversations not implemented")
+}
+func (UnimplementedMessageRpcServer) RecallMessage(context.Context, *RecallMessageReq) (*RecallMessageResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecallMessage not implemented")
 }
 func (UnimplementedMessageRpcServer) mustEmbedUnimplementedMessageRpcServer() {}
 func (UnimplementedMessageRpcServer) testEmbeddedByValue()                    {}
@@ -274,6 +290,24 @@ func _MessageRpc_GetUserActiveConversations_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageRpc_RecallMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecallMessageReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageRpcServer).RecallMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageRpc_RecallMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageRpcServer).RecallMessage(ctx, req.(*RecallMessageReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MessageRpc_ServiceDesc is the grpc.ServiceDesc for MessageRpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +338,10 @@ var MessageRpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserActiveConversations",
 			Handler:    _MessageRpc_GetUserActiveConversations_Handler,
+		},
+		{
+			MethodName: "RecallMessage",
+			Handler:    _MessageRpc_RecallMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

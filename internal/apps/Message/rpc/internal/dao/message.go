@@ -81,3 +81,23 @@ func (m *MessageDAO) FindByConversation(ctx context.Context, conversationID stri
 
 	return messages, nil
 }
+
+// FindByMsgID 根据 msg_id 查询单条消息
+func (m *MessageDAO) FindByMsgID(ctx context.Context, msgID string) (*model.Message, error) {
+	var msg model.Message
+	err := m.db.Collection(mongoCollMessage).FindOne(ctx, bson.M{"msg_id": msgID}).Decode(&msg)
+	if err != nil {
+		return nil, err
+	}
+	return &msg, nil
+}
+
+// UpdateMessageStatus 更新消息状态（0-正常 1-撤回 2-删除）
+func (m *MessageDAO) UpdateMessageStatus(ctx context.Context, msgID string, status int8) error {
+	_, err := m.db.Collection(mongoCollMessage).UpdateOne(
+		ctx,
+		bson.M{"msg_id": msgID},
+		bson.M{"$set": bson.M{"status": status}},
+	)
+	return err
+}

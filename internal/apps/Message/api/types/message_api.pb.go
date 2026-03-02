@@ -725,6 +725,60 @@ func (x *GetUserActiveConversationsResp) GetConversations() []*Conversation {
 	return nil
 }
 
+type RecallMessageReq struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"msg_id"
+	MsgId string `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id"`
+	// @gotags: json:"session_id"
+	SessionId     string `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecallMessageReq) Reset() {
+	*x = RecallMessageReq{}
+	mi := &file_message_api_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecallMessageReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecallMessageReq) ProtoMessage() {}
+
+func (x *RecallMessageReq) ProtoReflect() protoreflect.Message {
+	mi := &file_message_api_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecallMessageReq.ProtoReflect.Descriptor instead.
+func (*RecallMessageReq) Descriptor() ([]byte, []int) {
+	return file_message_api_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RecallMessageReq) GetMsgId() string {
+	if x != nil {
+		return x.MsgId
+	}
+	return ""
+}
+
+func (x *RecallMessageReq) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
 var File_message_api_proto protoreflect.FileDescriptor
 
 const file_message_api_proto_rawDesc = "" +
@@ -786,7 +840,11 @@ const file_message_api_proto_rawDesc = "" +
 	"\x1dGetUserActiveConversationsReq\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\"[\n" +
 	"\x1eGetUserActiveConversationsResp\x129\n" +
-	"\rconversations\x18\x01 \x03(\v2\x13.types.ConversationR\rconversationsB\n" +
+	"\rconversations\x18\x01 \x03(\v2\x13.types.ConversationR\rconversations\"H\n" +
+	"\x10RecallMessageReq\x12\x15\n" +
+	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionIdB\n" +
 	"Z\b./;typesb\x06proto3"
 
 var (
@@ -801,7 +859,7 @@ func file_message_api_proto_rawDescGZIP() []byte {
 	return file_message_api_proto_rawDescData
 }
 
-var file_message_api_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_message_api_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_message_api_proto_goTypes = []any{
 	(*Message)(nil),                        // 0: types.Message
 	(*Conversation)(nil),                   // 1: types.Conversation
@@ -813,6 +871,7 @@ var file_message_api_proto_goTypes = []any{
 	(*GetUserConversationsResp)(nil),       // 7: types.GetUserConversationsResp
 	(*GetUserActiveConversationsReq)(nil),  // 8: types.GetUserActiveConversationsReq
 	(*GetUserActiveConversationsResp)(nil), // 9: types.GetUserActiveConversationsResp
+	(*RecallMessageReq)(nil),               // 10: types.RecallMessageReq
 }
 var file_message_api_proto_depIdxs = []int32{
 	0, // 0: types.GetHistoryResp.list:type_name -> types.Message
@@ -836,7 +895,7 @@ func file_message_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_message_api_proto_rawDesc), len(file_message_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -52,3 +52,8 @@ func (s *MessageRpcServer) GetUserActiveConversations(ctx context.Context, in *m
 	l := messagerpclogic.NewGetUserActiveConversationsLogic(ctx, s.svcCtx)
 	return l.GetUserActiveConversations(in)
 }
+
+func (s *MessageRpcServer) RecallMessage(ctx context.Context, in *message.RecallMessageReq) (*message.RecallMessageResp, error) {
+	l := messagerpclogic.NewRecallMessageLogic(ctx, s.svcCtx)
+	return l.RecallMessage(in)
+}

@@ -101,25 +101,38 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 	defer cancel()
 
 	switch wsMsg.Type {
-	case common.MessageType_GROUP_CREATE:
-		var groupCreate common.GroupNotification
-		if err := proto.Unmarshal(wsMsg.Payload, &groupCreate); err != nil {
+	case common.MessageType_GROUP_OP_NOTIFICATION:
+		var notify common.GroupNotification
+		if err := proto.Unmarshal(wsMsg.Payload, &notify); err != nil {
 			return err
 		}
-		session := common.GenerateGroupSessionId(groupCreate.GroupId)
-		userConvs := make([]*model.UserConversation, 0, len(groupCreate.TargetIds))
-		for _, targetID := range groupCreate.TargetIds {
-			userConvs = append(userConvs, &model.UserConversation{
-				UserID:         targetID,
-				ConversationID: session,
-				IsTop:          false,
-				IsDisturb:      false,
-				IsMute:         false,
-				LastReadSeq:    0,
-			})
-		}
-		if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeGroup); err != nil {
-			return err
+		switch notify.OpType {
+		case common.GroupOperationType_GROUP_OP_CREATE:
+			session := common.GenerateGroupSessionId(notify.GroupId)
+			userConvs := make([]*model.UserConversation, 0, len(notify.TargetIds))
+			for _, targetID := range notify.TargetIds {
+				userConvs = append(userConvs, &model.UserConversation{
+					UserID:         targetID,
+					ConversationID: session,
+					IsTop:          false,
+					IsDisturb:      false,
+					IsMute:         false,
+					LastReadSeq:    0,
+				})
+			}
+			if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeGroup); err != nil {
+				return err
+			}
+		case common.GroupOperationType_GROUP_OP_JOIN:
+			session := common.GenerateGroupSessionId(notify.GroupId)
+			if len(notify.TargetIds) == 0 {
+				logger.Error("handleBroadcastMsg: groupJoin.TargetIds is empty")
+				return nil
+			}
+
+			if err := l.conversationDAO.InsertUserConversation(ctx, notify.TargetIds[0], session, model.ConvTypeGroup); err != nil {
+				return err
+			}
 		}
 	case common.MessageType_GROUP_REQUEST:
 		var groupRequest common.GroupApply
@@ -132,21 +145,6 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 				return err
 			}
 		}
-	case common.MessageType_GROUP_JOIN:
-		var groupJoin common.GroupNotification
-		if err := proto.Unmarshal(wsMsg.Payload, &groupJoin); err != nil {
-			return err
-		}
-		session := common.GenerateGroupSessionId(groupJoin.GroupId)
-		if len(groupJoin.TargetIds) == 0 {
-			logger.Error("handleBroadcastMsg: groupJoin.TargetIds is empty")
-			return nil
-		}
-
-		if err := l.conversationDAO.InsertUserConversation(ctx, groupJoin.TargetIds[0], session, model.ConvTypeGroup); err != nil {
-			return err
-		}
-
 	case common.MessageType_FRIEND_REQUEST:
 		var friendApply common.FriendRequest
 		if err := proto.Unmarshal(wsMsg.Payload, &friendApply); err != nil {

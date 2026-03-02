@@ -26,4 +26,7 @@ type MessageService interface {
 	GetConversation(ctx context.Context, conversationIDs []string) ([]*model.Conversation, error)
 	// GetUserConversations 获取用户所有会话（含未读数等用户维度信息）
 	GetUserConversations(ctx context.Context, userID uint64) ([]*model.UserConversation, error)
+
+	// RecallMessage 撤回消息（校验发送者 + 2分钟时间窗口）
+	RecallMessage(ctx context.Context, userID uint64, msgID string, sessionID string) error
 }

@@ -7,6 +7,7 @@ import (
 
 	"IM2/internal/model"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -127,60 +128,21 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, groupID uint64) (*WSM
 	}, nil
 }
 
-func NewGroupCreateNotification(operator uint64, members []*model.GroupMember, group *model.Group) *WSMessage {
-	if len(members) == 0 {
-		return nil
-	}
-	gid := members[0].GroupID
+func NewGroupOperationMsg(opType GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *WSMessage {
 	wmsg := &WSMessage{
-		Type:            MessageType_GROUP_CREATE,
-		RouteTargetType: TargetType_GROUP,
-		Timestamp:       time.Now().UnixMilli(),
-		RouteTarget:     gid,
-	}
-	targets := make([]uint64, 0, len(members))
-	for _, member := range members {
-		targets = append(targets, member.UserID)
-	}
-	notify := &GroupNotification{
-		OpType:     GroupOperationType_GROUP_OP_CREATE,
-		GroupId:    gid,
-		OperatorId: operator,
-		TargetIds:  targets,
-		OpTime:     time.Now().UnixMilli(),
-	}
-	if group != nil {
-		notify.GroupInfo = &GroupInfo{
-			Id:          group.ID,
-			OwnerId:     group.OwnerID,
-			Name:        group.Name,
-			Avatar:      group.Avatar,
-			Notice:      group.Notice,
-			MemberCount: int32(group.MemberCount),
-			CreateTime:  group.CreateTime.UnixMilli(),
-			UpdateTime:  group.UpdateTime.UnixMilli(),
-		}
-	}
-	payload, err := proto.Marshal(notify)
-	if err != nil {
-		return nil
-	}
-	wmsg.Payload = payload
-	return wmsg
-}
-
-func NewGroupOperationMsg(msgType MessageType, groupId uint64, targetID uint64, operator uint64, groupInfo *model.Group) *WSMessage {
-	wmsg := &WSMessage{
-		Type:            msgType,
+		Type:            MessageType_GROUP_OP_NOTIFICATION,
 		RouteTargetType: TargetType_GROUP,
 		Timestamp:       time.Now().UnixMilli(),
 		RouteTarget:     groupId,
 	}
 	notify := &GroupNotification{
+		OpType:     opType,
 		GroupId:    groupId,
 		OperatorId: operator,
-		TargetIds:  []uint64{targetID},
+		TargetIds:  targetIDs,
 		OpTime:     time.Now().UnixMilli(),
+		MsgId:      uuid.New().String(),
+		SessionId:  GenerateGroupSessionId(groupId),
 	}
 
 	if groupInfo != nil {
@@ -194,23 +156,6 @@ func NewGroupOperationMsg(msgType MessageType, groupId uint64, targetID uint64, 
 			CreateTime:  groupInfo.CreateTime.UnixMilli(),
 			UpdateTime:  groupInfo.UpdateTime.UnixMilli(),
 		}
-	}
-
-	switch msgType {
-	case MessageType_GROUP_CREATE:
-		notify.OpType = GroupOperationType_GROUP_OP_CREATE
-	case MessageType_GROUP_DISMISS:
-		notify.OpType = GroupOperationType_GROUP_OP_DISMISS
-	case MessageType_GROUP_JOIN:
-		notify.OpType = GroupOperationType_GROUP_OP_JOIN
-	case MessageType_GROUP_LEAVE:
-		notify.OpType = GroupOperationType_GROUP_OP_LEAVE
-	case MessageType_GROUP_KICK:
-		notify.OpType = GroupOperationType_GROUP_OP_KICK
-	case MessageType_GROUP_INVITE:
-		notify.OpType = GroupOperationType_GROUP_OP_INVITE
-	case MessageType_GROUP_INFO_UPDATE:
-		notify.OpType = GroupOperationType_GROUP_OP_UPDATE_INFO
 	}
 
 	payload, err := proto.Marshal(notify)

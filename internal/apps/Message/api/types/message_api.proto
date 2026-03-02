@@ -111,3 +111,10 @@ message GetUserActiveConversationsResp {
   // @gotags: json:"conversations"
   repeated Conversation conversations = 1;
 }
+
+message RecallMessageReq {
+  // @gotags: json:"msg_id"
+  string msg_id = 1;
+  // @gotags: json:"session_id"
+  string session_id = 2;
+}

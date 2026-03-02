@@ -124,7 +124,9 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 			return conn.Send(msg)
 		}
 	case common.TargetType_GROUP:
-		s.syncGroupMembership(msg)
+		if err := s.syncGroupMembership(msg); err != nil {
+			return err
+		}
 		return s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, msg.RouteTarget, msg)
 	default:
 		return nil
@@ -134,29 +136,30 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 
 // syncGroupMembership 根据群组事件类型同步本地 groupConnections 映射。
 // 在消息发送前调用，确保发送时本地连接状态已是最新。
-func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) {
+func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
 	var notify common.GroupNotification
 	if err := proto.Unmarshal(msg.Payload, &notify); err != nil {
 		logger.Errorf("[syncGroupMembership] unmarshal failed: %v", err)
-		return
+		return err
 	}
 
-	switch msg.Type {
-	case common.MessageType_GROUP_CREATE, common.MessageType_GROUP_JOIN:
+	switch notify.OpType {
+	case common.GroupOperationType_GROUP_OP_CREATE, common.GroupOperationType_GROUP_OP_JOIN:
 		// 将本地在线的新成员加入群连接映射
 		for _, uid := range notify.TargetIds {
 			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
 				s.svcCtx.ConnectionManager.AddGroupConnection(msg.RouteTarget, conn)
 			}
 		}
-	case common.MessageType_GROUP_KICK, common.MessageType_GROUP_LEAVE:
+
+	case common.GroupOperationType_GROUP_OP_KICK, common.GroupOperationType_GROUP_OP_LEAVE:
 		// 将被踢/主动退群的成员从群连接映射中移除
 		for _, uid := range notify.TargetIds {
 			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
 				s.svcCtx.ConnectionManager.RemoveGroupConnection(msg.RouteTarget, conn)
 			}
 		}
-	case common.MessageType_GROUP_DISMISS:
+	case common.GroupOperationType_GROUP_OP_DISMISS:
 		// 群解散：移除所有本地成员的群连接映射（遍历 TargetIds，若为空则无操作）
 		for _, uid := range notify.TargetIds {
 			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
@@ -164,6 +167,7 @@ func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) {
 			}
 		}
 	}
+	return nil
 }
 
 func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
