@@ -30,6 +30,7 @@ func (l *LogoutLogic) Logout(req *types.LogoutReq) error {
 	_, err := l.svcCtx.AuthRpc.Logout(l.ctx, &authrpc.LogoutRequest{
 		UserID:   uid,
 		RemoveRT: req.RemoveRt,
+		Platform: req.Platform,
 	})
 	return err
 }

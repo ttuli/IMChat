@@ -19,6 +19,7 @@ message LoginReply {
 message LogoutRequest {
   uint64 userID = 1;
   bool removeRT = 2;
+  string platform = 3;
 }
 
 message LogoutReply {}

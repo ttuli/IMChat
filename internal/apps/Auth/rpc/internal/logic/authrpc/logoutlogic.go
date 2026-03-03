@@ -28,6 +28,7 @@ func NewLogoutLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LogoutLogi
 func (l *LogoutLogic) Logout(in *auth.LogoutRequest) (*auth.LogoutReply, error) {
 	_, err := l.svcCtx.AuthService.Logout(l.ctx, &service.LogoutRequest{
 		UserID:   in.UserID,
+		Platform: in.Platform,
 		RemoveRT: in.RemoveRT,
 	})
 	if err != nil {
