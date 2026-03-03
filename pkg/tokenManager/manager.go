@@ -62,13 +62,16 @@ const (
 )
 
 // BuildTokenKey 构建 token 的 Redis key
-// 格式: token:{userID}:{tokenType}
-func BuildTokenKey(userID uint64, tokenType TokenType) string {
+// 格式: token:{userID}:{platform}:{tokenType}
+func BuildTokenKey(userID uint64, platform string, tokenType TokenType) string {
 	typeStr := TokenTypeAT
 	if tokenType == RefreshToken {
 		typeStr = TokenTypeRT
 	}
-	return fmt.Sprintf("%s%d:%s", TokenKeyPrefix, userID, typeStr)
+	if platform == "" {
+		platform = "unknown"
+	}
+	return fmt.Sprintf("%s%d:%s:%s", TokenKeyPrefix, userID, platform, typeStr)
 }
 
 // extractToken 从请求中提取 token
@@ -129,7 +132,11 @@ func (t *TokenManager) GenerateJWTToken(userID uint64, tokenType TokenType, clai
 		return "", err
 	}
 
-	if err := t.storeToken(userID, tokenType, tokenString, expireSeconds); err != nil {
+	platform := "unknown"
+	if p, ok := claims[ClaimKeyPlatform].(string); ok {
+		platform = p
+	}
+	if err := t.storeToken(userID, platform, tokenType, tokenString, expireSeconds); err != nil {
 		return "", err
 	}
 
@@ -137,19 +144,19 @@ func (t *TokenManager) GenerateJWTToken(userID uint64, tokenType TokenType, clai
 }
 
 // storeToken 存储 token 到 Redis
-// Key 格式: token:{userID}:{at|rt}
+// Key 格式: token:{userID}:{platform}:{at|rt}
 // Value: token 字符串
-func (t *TokenManager) storeToken(userID uint64, tokenType TokenType, tokenString string, expire int64) error {
-	key := BuildTokenKey(userID, tokenType)
+func (t *TokenManager) storeToken(userID uint64, platform string, tokenType TokenType, tokenString string, expire int64) error {
+	key := BuildTokenKey(userID, platform, tokenType)
 	return t.Setex(key, tokenString, int(expire))
 }
 
-// InvalidateTokenByUserID 根据用户 ID 使 token 失效
+// InvalidateTokenByUserID 根据用户 ID 和 platform 使 token 失效
 // deleteRefreshToken: 是否同时删除 refresh token
-func (t *TokenManager) InvalidateTokenByUserID(userID uint64, deleteRefreshToken bool) error {
-	keys := []string{BuildTokenKey(userID, AccessToken)}
+func (t *TokenManager) InvalidateTokenByUserID(userID uint64, platform string, deleteRefreshToken bool) error {
+	keys := []string{BuildTokenKey(userID, platform, AccessToken)}
 	if deleteRefreshToken {
-		keys = append(keys, BuildTokenKey(userID, RefreshToken))
+		keys = append(keys, BuildTokenKey(userID, platform, RefreshToken))
 	}
 
 	_, err := t.Del(keys...)
@@ -159,18 +166,18 @@ func (t *TokenManager) InvalidateTokenByUserID(userID uint64, deleteRefreshToken
 // InvalidateToken 使指定的 token 失效（兼容旧接口）
 // 会解析 token 获取 userID，然后删除对应的 key
 func (t *TokenManager) InvalidateToken(tokenString string) error {
-	userID, tokenType, err := t.ParseTokenInfo(tokenString)
+	userID, platform, tokenType, err := t.ParseTokenInfo(tokenString)
 	if err != nil {
 		return fmt.Errorf("parse token failed: %w", err)
 	}
 
-	key := BuildTokenKey(userID, tokenType)
+	key := BuildTokenKey(userID, platform, tokenType)
 	_, err = t.Del(key)
 	return err
 }
 
-// ParseTokenInfo 从 token 中解析 userID 和 tokenType
-func (t *TokenManager) ParseTokenInfo(tokenString string) (uint64, TokenType, error) {
+// ParseTokenInfo 从 token 中解析 userID, platform 和 tokenType
+func (t *TokenManager) ParseTokenInfo(tokenString string) (uint64, string, TokenType, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -179,28 +186,34 @@ func (t *TokenManager) ParseTokenInfo(tokenString string) (uint64, TokenType, er
 	})
 
 	if err != nil {
-		return 0, 0, err
+		return 0, "", 0, err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return 0, 0, fmt.Errorf("invalid claims type")
+		return 0, "", 0, fmt.Errorf("invalid claims type")
 	}
 
 	// 解析 userID
 	userIDStr, ok := claims[ContextKeyUserID].(string)
 	if !ok {
-		return 0, 0, fmt.Errorf("user_id not found in claims")
+		return 0, "", 0, fmt.Errorf("user_id not found in claims")
 	}
 	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
-		return 0, 0, fmt.Errorf("invalid user_id format: %w", err)
+		return 0, "", 0, fmt.Errorf("invalid user_id format: %w", err)
 	}
 
 	// 解析 tokenType
 	tokenTypeStr, ok := claims[ClaimKeyType].(string)
 	if !ok {
-		return 0, 0, fmt.Errorf("token_type not found in claims")
+		return 0, "", 0, fmt.Errorf("token_type not found in claims")
+	}
+
+	// 解析 platform
+	platform, _ := claims[ClaimKeyPlatform].(string)
+	if platform == "" {
+		platform = "unknown"
 	}
 
 	var tokenType TokenType
@@ -210,14 +223,14 @@ func (t *TokenManager) ParseTokenInfo(tokenString string) (uint64, TokenType, er
 	case TokenTypeRefresh:
 		tokenType = RefreshToken
 	default:
-		return 0, 0, fmt.Errorf("unknown token type: %s", tokenTypeStr)
+		return 0, "", 0, fmt.Errorf("unknown token type: %s", tokenTypeStr)
 	}
 
-	return userID, tokenType, nil
+	return userID, platform, tokenType, nil
 }
 
 func (t *TokenManager) ParseUserIDFromToken(tokenString string) (uint64, error) {
-	userID, _, err := t.ParseTokenInfo(tokenString)
+	userID, _, _, err := t.ParseTokenInfo(tokenString)
 	return userID, err
 }
 
@@ -275,8 +288,11 @@ func (t *TokenManager) ValidateToken(ctx context.Context, tokenString string) (u
 		return 0, fmt.Errorf("unknown token type: %s", tokenTypeStr)
 	}
 
+	// 4.5 解析 platform
+	platform, _ := claims[ClaimKeyPlatform].(string)
+
 	// 5. 从 Redis 验证 token 是否存在且匹配
-	tokenKey := BuildTokenKey(userID, tokenType)
+	tokenKey := BuildTokenKey(userID, platform, tokenType)
 	storedToken, err := t.GetCtx(ctx, tokenKey)
 	if err != nil {
 		return 0, fmt.Errorf("redis error: %w", err)
