@@ -70,6 +70,52 @@ func (FileType) EnumDescriptor() ([]byte, []int) {
 	return file_file_api_proto_rawDescGZIP(), []int{0}
 }
 
+type GetMethod int32
+
+const (
+	GetMethod_MethodGet  GetMethod = 0
+	GetMethod_MethodHead GetMethod = 1
+)
+
+// Enum value maps for GetMethod.
+var (
+	GetMethod_name = map[int32]string{
+		0: "MethodGet",
+		1: "MethodHead",
+	}
+	GetMethod_value = map[string]int32{
+		"MethodGet":  0,
+		"MethodHead": 1,
+	}
+)
+
+func (x GetMethod) Enum() *GetMethod {
+	p := new(GetMethod)
+	*p = x
+	return p
+}
+
+func (x GetMethod) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (GetMethod) Descriptor() protoreflect.EnumDescriptor {
+	return file_file_api_proto_enumTypes[1].Descriptor()
+}
+
+func (GetMethod) Type() protoreflect.EnumType {
+	return &file_file_api_proto_enumTypes[1]
+}
+
+func (x GetMethod) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use GetMethod.Descriptor instead.
+func (GetMethod) EnumDescriptor() ([]byte, []int) {
+	return file_file_api_proto_rawDescGZIP(), []int{1}
+}
+
 type PolicyToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"policy"
@@ -401,7 +447,9 @@ type GetAccessUrlReq struct {
 	// @gotags: form:"file_type,optional" json:"file_type,optional"
 	FileType FileType `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,optional" form:"file_type,optional"`
 	// @gotags: form:"oss_process,optional" json:"oss_process,optional"
-	OssProcess    string `protobuf:"bytes,3,opt,name=oss_process,json=ossProcess,proto3" json:"oss_process,optional" form:"oss_process,optional"`
+	OssProcess string `protobuf:"bytes,3,opt,name=oss_process,json=ossProcess,proto3" json:"oss_process,optional" form:"oss_process,optional"`
+	// @gotags: form:"method,optional" json:"method,optional"
+	Method        GetMethod `protobuf:"varint,4,opt,name=method,proto3,enum=types.GetMethod" json:"method,optional" form:"method,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -455,6 +503,13 @@ func (x *GetAccessUrlReq) GetOssProcess() string {
 		return x.OssProcess
 	}
 	return ""
+}
+
+func (x *GetAccessUrlReq) GetMethod() GetMethod {
+	if x != nil {
+		return x.Method
+	}
+	return GetMethod_MethodGet
 }
 
 type GetAccessUrlResp struct {
@@ -531,19 +586,24 @@ const file_file_api_proto_rawDesc = "" +
 	"\tfile_name\x18\x06 \x01(\tR\bfileName\x12\x1b\n" +
 	"\tmime_type\x18\a \x01(\tR\bmimeType\"2\n" +
 	"\x13GetPostSignatureReq\x12\x1b\n" +
-	"\tfile_type\x18\x01 \x01(\x05R\bfileType\"{\n" +
+	"\tfile_type\x18\x01 \x01(\x05R\bfileType\"\xa5\x01\n" +
 	"\x0fGetAccessUrlReq\x12\x19\n" +
 	"\bfile_key\x18\x01 \x01(\tR\afileKey\x12,\n" +
 	"\tfile_type\x18\x02 \x01(\x0e2\x0f.types.FileTypeR\bfileType\x12\x1f\n" +
 	"\voss_process\x18\x03 \x01(\tR\n" +
-	"ossProcess\"1\n" +
+	"ossProcess\x12(\n" +
+	"\x06method\x18\x04 \x01(\x0e2\x10.types.GetMethodR\x06method\"1\n" +
 	"\x10GetAccessUrlResp\x12\x1d\n" +
 	"\n" +
 	"access_url\x18\x01 \x01(\tR\taccessUrl*K\n" +
 	"\bFileType\x12\x12\n" +
 	"\x0eFileTypeAvatar\x10\x00\x12\x15\n" +
 	"\x11FileTypeChatImage\x10\x01\x12\x14\n" +
-	"\x10FileTypeChatFile\x10\x02B\n" +
+	"\x10FileTypeChatFile\x10\x02**\n" +
+	"\tGetMethod\x12\r\n" +
+	"\tMethodGet\x10\x00\x12\x0e\n" +
+	"\n" +
+	"MethodHead\x10\x01B\n" +
 	"Z\b./;typesb\x06proto3"
 
 var (
@@ -558,24 +618,26 @@ func file_file_api_proto_rawDescGZIP() []byte {
 	return file_file_api_proto_rawDescData
 }
 
-var file_file_api_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_file_api_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_file_api_proto_goTypes = []any{
 	(FileType)(0),               // 0: types.FileType
-	(*PolicyToken)(nil),         // 1: types.PolicyToken
-	(*CallbackParam)(nil),       // 2: types.CallbackParam
-	(*CallbackData)(nil),        // 3: types.CallbackData
-	(*GetPostSignatureReq)(nil), // 4: types.GetPostSignatureReq
-	(*GetAccessUrlReq)(nil),     // 5: types.GetAccessUrlReq
-	(*GetAccessUrlResp)(nil),    // 6: types.GetAccessUrlResp
+	(GetMethod)(0),              // 1: types.GetMethod
+	(*PolicyToken)(nil),         // 2: types.PolicyToken
+	(*CallbackParam)(nil),       // 3: types.CallbackParam
+	(*CallbackData)(nil),        // 4: types.CallbackData
+	(*GetPostSignatureReq)(nil), // 5: types.GetPostSignatureReq
+	(*GetAccessUrlReq)(nil),     // 6: types.GetAccessUrlReq
+	(*GetAccessUrlResp)(nil),    // 7: types.GetAccessUrlResp
 }
 var file_file_api_proto_depIdxs = []int32{
 	0, // 0: types.GetAccessUrlReq.file_type:type_name -> types.FileType
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 1: types.GetAccessUrlReq.method:type_name -> types.GetMethod
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_file_api_proto_init() }
@@ -588,7 +650,7 @@ func file_file_api_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_api_proto_rawDesc), len(file_file_api_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,

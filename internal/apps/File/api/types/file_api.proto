@@ -63,6 +63,8 @@ message GetAccessUrlReq {
   FileType file_type = 2;
   // @gotags: form:"oss_process,optional" json:"oss_process,optional"
   string oss_process = 3;
+  // @gotags: form:"method,optional" json:"method,optional"
+  GetMethod method = 4;
 }
 
 message GetAccessUrlResp {
@@ -74,4 +76,9 @@ enum FileType {
   FileTypeAvatar    = 0;
 	FileTypeChatImage = 1;
 	FileTypeChatFile  = 2;
+}
+
+enum GetMethod {
+  MethodGet = 0;
+  MethodHead = 1;
 }

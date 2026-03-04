@@ -64,10 +64,19 @@ func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*type
 		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取凭证失败")
 	}
 
+	method:="GET"
+	switch req.Method {
+		case types.GetMethod_MethodHead:
+			method="HEAD"
+		default:
+			method="GET"
+	}
+	fmt.Println(method)
+
 	// 3. 构造目标文件的 GET 请求
 	host := fmt.Sprintf("https://%s.oss-%s.aliyuncs.com", bucketName, region)
 	ossURL := fmt.Sprintf("%s/%s", host, req.FileKey)
-	httpReq, err := http.NewRequest("GET", ossURL, nil)
+	httpReq, err := http.NewRequest(method, ossURL, nil)
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "构造请求失败")
 	}
