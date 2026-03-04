@@ -26,7 +26,8 @@ message WSMessage {
   int64 timestamp = 3;            // 时间戳(毫秒)
   MessageType type = 4;           // 消息类型
   bytes payload = 5;              // 具体消息内容(根据type解析)
-  int32 version = 6;              // 协议版本号
+  uint64 sender_id = 6;           // 发送者ID
+  int32 version = 7;              // 协议版本号
 }
 
 enum TargetType {

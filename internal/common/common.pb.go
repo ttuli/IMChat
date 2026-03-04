@@ -1215,7 +1215,8 @@ type WSMessage struct {
 	Timestamp       int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                                             // 时间戳(毫秒)
 	Type            MessageType            `protobuf:"varint,4,opt,name=type,proto3,enum=common.MessageType" json:"type,omitempty"`                                               // 消息类型
 	Payload         []byte                 `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                                                  // 具体消息内容(根据type解析)
-	Version         int32                  `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`                                                                 // 协议版本号
+	SenderId        uint64                 `protobuf:"varint,6,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`                                               // 发送者ID
+	Version         int32                  `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`                                                                 // 协议版本号
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1283,6 +1284,13 @@ func (x *WSMessage) GetPayload() []byte {
 		return x.Payload
 	}
 	return nil
+}
+
+func (x *WSMessage) GetSenderId() uint64 {
+	if x != nil {
+		return x.SenderId
+	}
+	return 0
 }
 
 func (x *WSMessage) GetVersion() int32 {
@@ -3439,14 +3447,15 @@ const file_common_proto_rawDesc = "" +
 	"\vApiResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\fR\x04data\"\xe9\x01\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\"\x86\x02\n" +
 	"\tWSMessage\x12!\n" +
 	"\froute_target\x18\x01 \x01(\x04R\vrouteTarget\x12>\n" +
 	"\x11route_target_type\x18\x02 \x01(\x0e2\x12.common.TargetTypeR\x0frouteTargetType\x12\x1c\n" +
 	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\x12'\n" +
 	"\x04type\x18\x04 \x01(\x0e2\x13.common.MessageTypeR\x04type\x12\x18\n" +
-	"\apayload\x18\x05 \x01(\fR\apayload\x12\x18\n" +
-	"\aversion\x18\x06 \x01(\x05R\aversion\"\xed\x02\n" +
+	"\apayload\x18\x05 \x01(\fR\apayload\x12\x1b\n" +
+	"\tsender_id\x18\x06 \x01(\x04R\bsenderId\x12\x18\n" +
+	"\aversion\x18\a \x01(\x05R\aversion\"\xed\x02\n" +
 	"\vBaseMessage\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +

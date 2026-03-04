@@ -157,11 +157,6 @@ func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *com
 }
 
 func (m *DefaultManager) SendToGroup(ctx context.Context, groupID uint64, msg *common.WSMessage) error {
-	// 先发送给本地群组成员
-	if err := m.SendToGroupLocal(ctx, groupID, msg); err != nil {
-		logx.Errorf("[ConnectionManager] SendToGroupLocal failed: %v", err)
-	}
-
 	// 总是广播群消息到其他节点
 	if m.router != nil {
 		return m.router.RouteGroupMessage(ctx, groupID, msg)
@@ -177,6 +172,9 @@ func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, m
 
 	if ok {
 		for _, c := range conns {
+			if c.UserID == msg.SenderId {
+				continue
+			}
 			if err := c.Send(msg); err != nil {
 				logx.Errorf("[ConnectionManager] SendToGroupLocal to conn failed: %v", err)
 			}

@@ -18,6 +18,7 @@ import (
 func (h *MessageHandler) processMessage(ctx context.Context, msg *common.WSMessage) (*common.BaseMessage, error) {
 	timeStamp := time.Now().UnixMilli()
 	msg.Timestamp = timeStamp
+	msg.SenderId = h.conn.UserID
 	base, repack, err := h.prepareMessage(ctx, msg)
 	if err != nil {
 		logger.Errorf("[MessageHandler] prepare message failed: %v", err)
@@ -198,11 +199,4 @@ func (h *MessageHandler) prepareMessage(ctx context.Context, msg *common.WSMessa
 	default:
 		return nil, nil, fmt.Errorf("unsupported message type: %v", msg.Type)
 	}
-}
-
-
-func (h *MessageHandler) handleGetSessionInfoReq(ctx context.Context, msg *common.WSMessage) error {
-	
-	
-	return nil
 }
