@@ -33,7 +33,6 @@ type ServiceContext struct {
 	Js                nats.JetStreamContext
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
-	MessageDao        *dao.MessageDAO
 	ConversationDao   *dao.ConversationDAO
 
 	GroupRpc grouprpc.GroupRpc
@@ -80,8 +79,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 	// 创建路由器
 	r := router.NewRouter(redisClient, js, codec, nodeID, bus, pubsub.SubjectConfig{
-		NodeSubjectPrefix: c.Nats.NodeSubjectPrefix,
-		DBSubject:         c.Nats.DBSubject,
+		NodeSubjectPrefix:     c.Nats.NodeSubjectPrefix,
+		DBSubject:             c.Nats.DBSubject,
+		BroadcastSubject:      c.Nats.BroadcastSubject,
+		QueueBroadcastSubject: c.Nats.QueueBroadcastSubject,
 	})
 
 	// 创建连接管理器
@@ -100,7 +101,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Js:                js,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
-		MessageDao:        dao.NewMessageDAO(c.DAO.MysqlSource, c.DAO.CacheSource),
 		ConversationDao:   dao.NewConversationDAO(c.DAO.MysqlSource, c.DAO.CacheSource),
 
 		GroupRpc: grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,

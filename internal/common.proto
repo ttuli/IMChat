@@ -30,6 +30,16 @@ message WSMessage {
   int32 version = 7;              // 协议版本号
 }
 
+message UpdateSession {
+  TargetType target_type = 1;
+  uint64 target_id = 2;
+  string session_id = 3;
+  int64 max_seq = 4;
+  int64 update_time = 5;
+  uint64 sender = 6;
+  string last_content = 7;
+}
+
 enum TargetType {
     USER = 0;
     GROUP = 1;
@@ -76,6 +86,7 @@ enum MessageType {
   USER_OFFLINE = 401;             // 用户下线
   USER_TYPING = 402;              // 正在输入
   USER_STATUS_CHANGE = 403;       // 状态变更
+  USER_KICKOFF = 404;             // 用户被踢
   
   // 群组操作
   GROUP_OP_NOTIFICATION = 500;    // 群操作通知
@@ -85,8 +96,9 @@ enum MessageType {
   FRIEND_REQUEST = 601;           // 好友请求
   FRIEND_ADD = 602;               // 添加好友
   GROUP_REQUEST = 603;            // 群请求
-  APPLY_ACCEPT = 604;             // 接受申请
-  APPLY_REJECT = 605;             // 拒绝申请
+  
+  // 内部消费消息
+  UPDATE_SESSION = 700;           // 更新会话
   
   // 错误响应 900-999
   ERROR = 900;                    // 错误消息
@@ -251,6 +263,12 @@ message TypingStatus {
   string conversation_id = 2;     // 会话ID
   bool is_typing = 3;             // 是否正在输入
   int64 timestamp = 4;            // 时间戳
+}
+
+message UserKickoff {
+  uint64 user_id = 1;             // 用户ID
+  string reason = 2;              // 踢出原因
+  int64 timestamp = 3;            // 时间戳
 }
 
 // ==================== 群组操作 ====================

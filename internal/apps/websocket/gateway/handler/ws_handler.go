@@ -71,7 +71,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go h.storeUserJoinedGroup(ctx, userID)
+	gids := h.storeUserJoinedGroup(ctx, userID)
 
 	// 注册路由
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
@@ -86,6 +86,9 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID)
+		for _, gid := range gids {
+			h.svcCtx.ConnectionManager.RemoveGroupConnection(gid, conn)
+		}
 		h.svcCtx.Router.UnregisterUser(context.Background(), conn.UserID)
 	}()
 
@@ -104,7 +107,7 @@ func (h *WSHandler) createMessageHandler(ctx context.Context, conn *connection.C
 	}
 }
 
-func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) {
+func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) []uint64 {
 	// 获取用户的群列表
 	resp, err := h.svcCtx.GroupRpc.GetUserGroups(ctx, &group.GetUserGroupsReq{
 		UserId: userID,
@@ -119,13 +122,13 @@ func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) {
 			})
 			conn.Close()
 		}
-		return
+		return nil
 	}
 
 	// 获取当前连接
 	conn, ok := h.svcCtx.ConnectionManager.GetLocalConnection(userID)
 	if !ok {
-		return
+		return nil
 	}
 
 	// 将连接加入到所有群组
@@ -135,6 +138,7 @@ func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) {
 		}
 	}
 	logger.Infof("added user %d to %d groups", userID, len(resp.Data))
+	return resp.Data
 }
 
 // ConfigureUpgrader 配置升级器

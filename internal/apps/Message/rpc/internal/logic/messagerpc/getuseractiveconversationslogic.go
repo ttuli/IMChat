@@ -3,8 +3,8 @@ package messagerpclogic
 import (
 	"context"
 
-	"IM2/internal/apps/Message/rpc/svc"
 	"IM2/internal/apps/Message/rpc/message"
+	"IM2/internal/apps/Message/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -24,7 +24,21 @@ func NewGetUserActiveConversationsLogic(ctx context.Context, svcCtx *svc.Service
 }
 
 func (l *GetUserActiveConversationsLogic) GetUserActiveConversations(in *message.GetUserActiveConversationsReq) (*message.GetUserActiveConversationsResp, error) {
-	// todo: add your logic here and delete this line
+	convs, err := l.svcCtx.MessageService.GetUserActiveConversations(l.ctx, in.UserId, in.Timestamp)
+	if err != nil {
+		return nil, err
+	}
 
-	return &message.GetUserActiveConversationsResp{}, nil
+	var list []*message.Conversation
+	for _, c := range convs {
+		list = append(list, &message.Conversation{
+			ConversationId: c.ConversationID,
+			Type:           int32(c.Type),
+			MaxSeq:         c.MaxSeq,
+			CreateTime:     c.CreateTime.UnixMilli(),
+			UpdateTime:     c.UpdateTime.UnixMilli(),
+		})
+	}
+
+	return &message.GetUserActiveConversationsResp{Conversations: list}, nil
 }

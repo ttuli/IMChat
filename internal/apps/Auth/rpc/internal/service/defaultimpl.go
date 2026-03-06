@@ -234,7 +234,10 @@ func (s *AuthServiceImpl) Refresh(ctx context.Context, req *RefreshReq) (*Refres
 	}
 
 	// 2. 生成新的tokenid
-	accessToken, err := s.TokenManager.GenerateJWTToken(id, tokenmanager.AccessToken, nil)
+	accessToken, err := s.TokenManager.GenerateJWTToken(id, tokenmanager.AccessToken, jwt.MapClaims{
+		tokenmanager.ClaimKeyPlatform: req.Platform,
+		tokenmanager.ClaimKeyDeviceID: req.DeviceId,
+	})
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrTokenGenerate, "刷新token失败")
 	}

@@ -43,7 +43,7 @@ func IsChatMessage(t MessageType) bool {
 }
 
 func IsNotifyMessage(t MessageType) bool {
-	return t >= MessageType_NOTIFICATION && t <= MessageType_APPLY_REJECT
+	return t >= MessageType_NOTIFICATION && t <= MessageType_GROUP_REQUEST
 }
 
 // ConvertFriendToWSMessage converts a model.UserFriend to a WSMessage

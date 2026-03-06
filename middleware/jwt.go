@@ -34,10 +34,10 @@ func WithRedisJwtAuth(validator TokenValidator) rest.Middleware {
 			userID, err := validator.ValidateToken(ctx, tokenString)
 			if err != nil {
 				if v, ok := err.(*xerr.Error); ok {
-					resultx.ErrorCtx(ctx, w, v)
+					resultx.ErrorProtoCtx(ctx, w, r, v)
 					return
 				}
-				resultx.ErrorCtx(ctx, w, xerr.Wrap(err, xerr.ErrUnauthorized, "身份已过期"))
+				resultx.ErrorProtoCtx(ctx, w, r, xerr.Wrap(err, xerr.ErrUnauthorized, "身份已过期"))
 				return
 			}
 

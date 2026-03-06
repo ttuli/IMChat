@@ -2,38 +2,40 @@ package dao
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
+	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/logx"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
 	// Redis Hash Key: conv:info:{conversationID}
-	convInfoPrefix   = "conv:info:"
-	convInfoExpire   = 7 * 24 * time.Hour
-	fieldLastContent = "last_content"
+	convInfoPrefix = "conv:info:"
+	convInfoExpire = 7 * 24 * time.Hour
+	convSeqPrefix  = "conv:seq:"
+	convSeqExpire  = 24 * time.Hour
 )
 
 // syncItem 代表一条需要刷入 DB 的会话更新记录
 type syncItem struct {
 	ConversationID string
+	MaxSeq         uint64
 	LastContentStr string
+	UpdateTime     int64
 }
 
 // ConversationDAO 会话数据访问对象
 type ConversationDAO struct {
 	db      *gorm.DB
-	redis   *redis.Client
-	log     logx.Logger
+	redis   *zeroredis.Redis
 	syncCh  chan *syncItem
 	closeCh chan struct{}
 	wg      sync.WaitGroup
@@ -46,94 +48,59 @@ func NewConversationDAO(mysqlDSN string, redisConf zeroredis.RedisConf) *Convers
 		panic(err)
 	}
 
-	rds := redis.NewClient(&redis.Options{
-		Addr:     redisConf.Host,
-		Password: redisConf.Pass,
-	})
+	rds := zeroredis.MustNewRedis(redisConf)
 
 	dao := &ConversationDAO{
 		db:    db,
 		redis: rds,
-		log:   logx.WithContext(context.Background()),
 		// 缓冲大小可根据业务并发量调整，这里给个1000作为例子
 		syncCh:  make(chan *syncItem, 1000),
 		closeCh: make(chan struct{}),
 	}
-
-	// 初始化并启动后台刷盘协程
-	// go dao.startSyncWorker()
-
 	return dao
 }
 
-// LastMessageContent 存储会话的最后一条消息内容
-type LastMessageContent struct {
-	Sender  uint64 `json:"sender"`
-	Content string `json:"content"`
-}
-
-// UpdateLastContent 更新会话的最后一条消息 (写 Redis + 丢进 Channel 交给后台异步刷盘)
-func (c *ConversationDAO) UpdateLastContent(ctx context.Context, conversationID string, sender uint64, content string) error {
-	lastMsg := LastMessageContent{
-		Sender:  sender,
-		Content: content,
-	}
-
-	lastMsgBytes, err := json.Marshal(lastMsg)
-	if err != nil {
-		return fmt.Errorf("marshal last content failed: %w", err)
-	}
-	contentStr := string(lastMsgBytes)
-	cacheKey := convInfoPrefix + conversationID
-
-	// 1. 同步写 Redis (保证客户端读取时实时最新)
-	pipe := c.redis.Pipeline()
-	pipe.HSet(ctx, cacheKey, fieldLastContent, contentStr)
-	pipe.Expire(ctx, cacheKey, convInfoExpire)
-	if _, err := pipe.Exec(ctx); err != nil {
-		return fmt.Errorf("redis update conversation last_content failed: %w", err)
-	}
-
-	// 2. 将数据交给 Channel 进行异步合并写库
-	select {
-	case c.syncCh <- &syncItem{
+// SyncConversationToDB 异步收集待保存进数据库的记录，供MQ消费者调用
+func (c *ConversationDAO) SyncConversationToDB(conversationID string, maxSeq uint64, lastContentStr string, updateTime int64) {
+	item := &syncItem{
 		ConversationID: conversationID,
-		LastContentStr: contentStr,
-	}:
+		MaxSeq:         maxSeq,
+		LastContentStr: lastContentStr,
+		UpdateTime:     updateTime,
+	}
+	select {
+	case c.syncCh <- item:
 		// 成功放入 channel
 	default:
-		// 通道满了，通常说明 DB 写入非常慢导致积压
-		// 这个时候你可以选择扔掉（只要 Redis 有数据且不丢就行），或者在这里阻塞/写日志报警
-		c.log.Errorf("DB sync channel is full for conversationID: %s, dropping DB update request", conversationID)
+		logger.Errorf("DB sync channel is full for conversationID: %s, dropping DB update request", item.ConversationID)
 	}
-
-	return nil
 }
 
-// startSyncWorker 后台持续运行，消费 channel 中的数据写 MySQL
+// StartSyncWorker 后台持续运行，消费 channel 中的数据写 MySQL
 func (c *ConversationDAO) StartSyncWorker() {
 	c.wg.Add(1)
 	defer c.wg.Done()
 
-	// 使用 map 去重合并
-	batchMap := make(map[string]string)
+	batchMap := make(map[string]*syncItem)
+	// 定期 1 秒触发或满 100 条触发，确保写入性能与持久化时效平衡
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {
 		case item := <-c.syncCh:
-			// 累积到 map
-			batchMap[item.ConversationID] = item.LastContentStr
-
-			// 如果瞬时积压过多（如满 100 条了），直接触发一次写入
+			batchMap[item.ConversationID] = item
 			if len(batchMap) >= 100 {
 				c.flushToDB(batchMap)
-				// 清空 map 以便下一轮收集
-				batchMap = make(map[string]string)
+				batchMap = make(map[string]*syncItem)
 			}
-
+		case <-ticker.C:
+			if len(batchMap) > 0 {
+				c.flushToDB(batchMap)
+				batchMap = make(map[string]*syncItem)
+			}
 		case <-c.closeCh:
-			// DAO 被关闭时退出
-			c.log.Info("sync worker is closing, flushing remaining items...")
+			logger.Info("sync worker is closing, flushing remaining items...")
 			if len(batchMap) > 0 {
 				c.flushToDB(batchMap)
 			}
@@ -143,27 +110,28 @@ func (c *ConversationDAO) StartSyncWorker() {
 }
 
 // flushToDB 将 map 里积累的数据批量执行 MySQL 更新
-func (c *ConversationDAO) flushToDB(items map[string]string) {
+func (c *ConversationDAO) flushToDB(items map[string]*syncItem) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// GORM 暂不支持原生的一维 Map 批量 Update 不同列的值
-	// 简单的处理方式是启事务 + for 循环，或者依靠 database/sql 直接拼写原生 SQL CASE WHEN 语句
-	// 在这里为了简单且性能比单个 Goroutine 去 Update 要好，采用事务方式包起来：
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for convID, contentStr := range items {
+		for convID, item := range items {
 			res := tx.Model(&model.Conversation{}).
 				Where("conversation_id = ?", convID).
-				Update("last_content", contentStr)
+				Updates(map[string]interface{}{
+					"last_content": item.LastContentStr,
+					"max_seq":      item.MaxSeq,
+					"update_time":  time.UnixMilli(item.UpdateTime),
+				})
 			if res.Error != nil {
-				c.log.Errorf("failed to bulk update db last_content for conv %s: %v", convID, res.Error)
+				logger.Errorf("failed to bulk update db last_content and max_seq for conv %s: %v", convID, res.Error)
 			}
 		}
 		return nil // 遇到单条出错也不回滚整个事务
 	})
 
 	if err != nil {
-		c.log.Errorf("flushToDB transaction failed: %v", err)
+		logger.Errorf("flushToDB transaction failed: %v", err)
 	}
 }
 
@@ -173,117 +141,113 @@ func (c *ConversationDAO) CloseDAO() {
 	c.wg.Wait()
 }
 
-// GetLastContent 获取会话的最后一条消息 (先查 Redis，Miss 则查 MySQL 并回填)
-func (c *ConversationDAO) GetLastContent(ctx context.Context, conversationID string) (*LastMessageContent, error) {
+// IncrSeq 仅递增会话的序号 (基于 Redis Hash 进行递增，保证整个 conversation 存储在 hset 里以便后续缓存查询)
+func (c *ConversationDAO) IncrSeq(ctx context.Context, conversationID string) (uint64, error) {
 	cacheKey := convInfoPrefix + conversationID
 
-	// 1. 查 Redis
-	val, err := c.redis.HGet(ctx, cacheKey, fieldLastContent).Result()
-	if err == nil && val != "" {
-		// 缓存命中
-		return c.parseContent([]byte(val))
+	// 1. 同步写 Redis (使用 Lua 脚本保证 HINCRBY, HSET 和 EXPIRE 的原子性)
+	script := `
+		local seq = redis.call("HINCRBY", KEYS[1], "max_seq", 1)
+		redis.call("HSET", KEYS[1], "update_time", ARGV[1])
+		redis.call("EXPIRE", KEYS[1], ARGV[2])
+		return seq
+	`
+	updateTime := fmt.Sprintf("%d", time.Now().UnixMilli())
+	expireSecs := int(convInfoExpire.Seconds())
+
+	val, err := c.redis.EvalCtx(ctx, script, []string{cacheKey}, updateTime, expireSecs)
+	if err != nil {
+		return 0, fmt.Errorf("redis eval lua script for incr max_seq failed: %w", err)
 	}
 
-	if err != nil && err != redis.Nil {
-		c.log.Errorf("redis hget error: %v", err)
+	var seq int64
+	switch v := val.(type) {
+	case int64:
+		seq = v
+	case int:
+		seq = int64(v)
+	default:
+		return 0, fmt.Errorf("unexpected return type from redis lua script: %T", val)
 	}
 
-	// 2. 缓存未命中，查 MySQL
+	// 如果 seq == 1说明原来缓存里没有，必须从DB加载正确的seq
+	if seq == 1 {
+		c.redis.HdelCtx(ctx, cacheKey, "max_seq")
+		dbSeq, err := c.incrSeqFromDB(ctx, conversationID, cacheKey)
+		if err != nil {
+			return 0, err
+		}
+		return uint64(dbSeq), nil
+	}
+
+	return uint64(seq), nil
+}
+
+// incrSeqFromDB 从 MySQL 递增 max_seq 并回填 Redis 缓存
+func (c *ConversationDAO) incrSeqFromDB(ctx context.Context, conversationID, cacheKey string) (int, error) {
 	var conv model.Conversation
-	if err := c.db.WithContext(ctx).
-		Select("last_content").
+	err := c.db.WithContext(ctx).
 		Where("conversation_id = ?", conversationID).
-		First(&conv).Error; err != nil {
+		First(&conv).Error
+
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("query db last_content failed: %w", err)
-	}
-
-	if conv.LastContent == "" {
-		return nil, nil // 无内容
-	}
-
-	// 3. MySQL 查到后，回填 Redis
-	c.redis.HSet(ctx, cacheKey, fieldLastContent, conv.LastContent)
-	c.redis.Expire(ctx, cacheKey, convInfoExpire)
-
-	return c.parseContent([]byte(conv.LastContent))
-}
-
-// BatchGetLastContent 批量获取会话的最后一条消息
-func (c *ConversationDAO) BatchGetLastContent(ctx context.Context, conversationIDs []string) (map[string]*LastMessageContent, error) {
-	if len(conversationIDs) == 0 {
-		return make(map[string]*LastMessageContent), nil
-	}
-
-	result := make(map[string]*LastMessageContent, len(conversationIDs))
-	missedIDs := make([]string, 0)
-
-	// 1. 走 Pipeline 批量查 Redis
-	cmds, err := c.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		for _, id := range conversationIDs {
-			pipe.HGet(ctx, convInfoPrefix+id, fieldLastContent)
-		}
-		return nil
-	})
-
-	if err != nil && err != redis.Nil {
-		missedIDs = conversationIDs
-	} else {
-		for i, cmd := range cmds {
-			convID := conversationIDs[i]
-			val, cmdErr := cmd.(*redis.StringCmd).Result()
-			if cmdErr == redis.Nil || val == "" {
-				missedIDs = append(missedIDs, convID)
-			} else if cmdErr == nil {
-				if parsed, pErr := c.parseContent([]byte(val)); pErr == nil {
-					result[convID] = parsed
-				}
-			} else {
-				missedIDs = append(missedIDs, convID)
+			// 会话不存在，自动创建，max_seq 初始化为 1
+			now := time.Now()
+			newConv := model.Conversation{
+				ConversationID: conversationID,
+				Type:           int8(common.GetConversationType(conversationID)),
+				MaxSeq:         1,
+				CreateTime:     now,
+				UpdateTime:     now,
 			}
-		}
-	}
-
-	// 2. 全部命中
-	if len(missedIDs) == 0 {
-		return result, nil
-	}
-
-	// 3. 将 Miss 的 ID 批量查 MySQL
-	var convs []model.Conversation
-	if err := c.db.WithContext(ctx).
-		Select("conversation_id, last_content").
-		Where("conversation_id IN ?", missedIDs).
-		Find(&convs).Error; err != nil {
-		return nil, fmt.Errorf("batch query db last_content failed: %w", err)
-	}
-
-	// 4. 解析结果并用 Pipeline 批量回填 Redis
-	if len(convs) > 0 {
-		pipe := c.redis.Pipeline()
-		for _, conv := range convs {
-			if conv.LastContent != "" {
-				if parsed, pErr := c.parseContent([]byte(conv.LastContent)); pErr == nil {
-					result[conv.ConversationID] = parsed
-				}
-				cacheKey := convInfoPrefix + conv.ConversationID
-				pipe.HSet(ctx, cacheKey, fieldLastContent, conv.LastContent)
-				pipe.Expire(ctx, cacheKey, convInfoExpire)
+			if createErr := c.db.WithContext(ctx).Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "conversation_id"}},
+				DoUpdates: clause.Assignments(map[string]interface{}{"max_seq": gorm.Expr("max_seq + 1")}),
+			}).Create(&newConv).Error; createErr != nil {
+				return 0, fmt.Errorf("auto create conversation failed: %w", createErr)
 			}
+			// 回填 Redis，将该Conversation的每一个字段都设置进去
+			fields := map[string]string{
+				"conversation_id": newConv.ConversationID,
+				"type":            fmt.Sprintf("%d", newConv.Type),
+				"last_content":    newConv.LastContent,
+				"max_seq":         fmt.Sprintf("%d", newConv.MaxSeq),
+				"create_time":     fmt.Sprintf("%d", newConv.CreateTime.UnixMilli()),
+				"update_time":     fmt.Sprintf("%d", newConv.UpdateTime.UnixMilli()),
+			}
+			err = c.redis.HmsetCtx(ctx, cacheKey, fields)
+			if err != nil {
+				logger.Errorf("redis hmset failed: %v", err)
+			}
+			c.redis.ExpireCtx(ctx, cacheKey, int(convInfoExpire.Seconds()))
+			return int(newConv.MaxSeq), nil
 		}
-		pipe.Exec(ctx)
+		return 0, fmt.Errorf("query conversation max_seq failed: %w", err)
 	}
 
-	return result, nil
-}
-
-// 辅助方法：解析 JSON 内容
-func (c *ConversationDAO) parseContent(data []byte) (*LastMessageContent, error) {
-	var lastMsg LastMessageContent
-	if err := json.Unmarshal(data, &lastMsg); err != nil {
-		return nil, err
+	// 递增 DB
+	newSeq := conv.MaxSeq + 1
+	if updateErr := c.db.WithContext(ctx).
+		Model(&model.Conversation{}).
+		Where("conversation_id = ?", conversationID).
+		Update("max_seq", newSeq).Error; updateErr != nil {
+		return 0, fmt.Errorf("update conversation max_seq failed: %w", updateErr)
 	}
-	return &lastMsg, nil
+
+	// 回填 Redis，将该Conversation的每一个字段都设置进去
+	fields := map[string]string{
+		"conversation_id": conv.ConversationID,
+		"type":            fmt.Sprintf("%d", conv.Type),
+		"last_content":    conv.LastContent,
+		"max_seq":         fmt.Sprintf("%d", newSeq),
+		"create_time":     fmt.Sprintf("%d", conv.CreateTime.UnixMilli()),
+		"update_time":     fmt.Sprintf("%d", time.Now().UnixMilli()),
+	}
+	err = c.redis.HmsetCtx(ctx, cacheKey, fields)
+	if err != nil {
+		logger.Errorf("redis hmset failed: %v", err)
+	}
+	c.redis.ExpireCtx(ctx, cacheKey, int(convInfoExpire.Seconds()))
+	return int(newSeq), nil
 }

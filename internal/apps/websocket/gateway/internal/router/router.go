@@ -122,6 +122,11 @@ func (r *Router) RouteGroupMessage(ctx context.Context, targetGroupID uint64, ms
 	return r.publisher.BroadcastToAllNodes(ctx, msg)
 }
 
+// BroadcastToAllNodes 广播消息到所有节点
+func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessage) error {
+	return r.publisher.BroadcastToAllNodes(ctx, msg)
+}
+
 func (r *Router) RouteMsgToDB(ctx context.Context, msg *common.WSMessage) error {
 	return r.publisher.PublishToDB(ctx, msg)
 }

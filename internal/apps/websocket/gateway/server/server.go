@@ -101,14 +101,16 @@ func (s *GatewayServer) Stop() error {
 
 	// 4. 关闭 NATS
 	s.svcCtx.NatsConn.Close()
+
+	// 5. 关闭 Conversation DAO
 	s.svcCtx.ConversationDao.CloseDAO()
 
-	// 5. 关闭 Redis (路由 KV)
+	// 6. 关闭 Redis (路由 KV)
 	if err := s.svcCtx.RedisClient.Close(); err != nil {
 		logger.Errorf("close redis client failed: %v", err)
 	}
 
-	// 6. 停止遥测总线
+	// 7. 停止遥测总线
 	s.svcCtx.TelemetryBus.Stop()
 
 	fmt.Println("WebSocket Gateway Server logic stopped")
@@ -116,6 +118,26 @@ func (s *GatewayServer) Stop() error {
 }
 
 func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
+	if msg.Type == common.MessageType_UPDATE_SESSION {
+		var updateSession common.UpdateSession
+		if err := proto.Unmarshal(msg.Payload, &updateSession); err != nil {
+			s.svcCtx.TelemetryBus.Publish(err)
+			return nil
+		}
+		var userIDs []uint64
+		if updateSession.TargetType == common.TargetType_GROUP {
+			userIDs = s.svcCtx.ConnectionManager.GetLocalGroupMembers(updateSession.TargetId)
+		} else {
+			userIDs = append(userIDs, updateSession.TargetId)
+		}
+		fmt.Println("")
+		fmt.Println("handleSubscribeMessage updateSession: ", updateSession)
+		fmt.Println("")
+		// 异步收集待保存进数据库的记录
+		s.svcCtx.ConversationDao.SyncConversationToDB(updateSession.SessionId, uint64(updateSession.MaxSeq), updateSession.LastContent, updateSession.UpdateTime)
+
+		return s.svcCtx.ConversationDao.UpdateUsersConversationTimeline(ctx, userIDs, updateSession.SessionId, updateSession.UpdateTime)
+	}
 	// 获取本地连接
 	switch msg.RouteTargetType {
 	case common.TargetType_USER:

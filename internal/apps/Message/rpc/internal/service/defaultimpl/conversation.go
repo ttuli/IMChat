@@ -71,3 +71,27 @@ func (s *messageService) GetUserConversations(ctx context.Context, userID uint64
 	}
 	return convs, nil
 }
+
+// GetUserActiveConversations 获取用户活跃的会话列表，基于时间戳增量获取
+func (s *messageService) GetUserActiveConversations(ctx context.Context, userID uint64, sinceTimestamp int64) ([]*model.Conversation, error) {
+	// 1. 从 Redis ZSet 获取活跃会话 IDs (score > sinceTimestamp)
+	activeIDs, err := s.conversationDAO.GetActiveConversationIDs(ctx, userID, sinceTimestamp)
+	if err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "获取活跃会话列表失败")
+	}
+
+	if len(activeIDs) == 0 {
+		return []*model.Conversation{}, nil
+	}
+
+	// 2. 批量查询会话详情
+	convs, err := s.GetConversation(ctx, activeIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 此时 MySQL IN 查询出来的结果可能顺序乱了，但我们在 DAO 层提取出的 activeIDs 是按时间倒（或者我们想要的正序）
+	// 为保持时间线特征，我们可以按 activeIDs 的顺序对结果进行排序，但协议端可能不在乎，客户端会根据 message 的拉取自行处理排序。
+	// 这里直接返回查询到的结果即可。
+	return convs, nil
+}

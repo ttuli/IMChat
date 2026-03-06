@@ -35,6 +35,7 @@ func (l *GetUserActiveConversationsLogic) GetUserActiveConversations(req *types.
 	if err != nil {
 		return nil, err
 	}
+
 	var conversations []*types.Conversation
 	for _, c := range res.Conversations {
 		conversations = append(conversations, &types.Conversation{

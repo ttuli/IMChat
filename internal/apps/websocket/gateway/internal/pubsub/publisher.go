@@ -12,8 +12,10 @@ import (
 )
 
 type SubjectConfig struct {
-	NodeSubjectPrefix string
-	DBSubject         string
+	NodeSubjectPrefix     string
+	DBSubject             string
+	BroadcastSubject      string
+	QueueBroadcastSubject string
 }
 
 // Publisher NATS 消息发布者
@@ -95,5 +97,5 @@ func (p *Publisher) getDBSubject() string {
 
 // getBroadcastSubject 获取广播消息 subject
 func (p *Publisher) getBroadcastSubject() string {
-	return fmt.Sprintf("%sbroadcast", p.subjectConfig.NodeSubjectPrefix)
+	return p.subjectConfig.BroadcastSubject
 }

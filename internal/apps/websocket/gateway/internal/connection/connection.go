@@ -9,6 +9,7 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/common"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -80,6 +81,23 @@ func (c *Connection) SendRaw(data []byte) error {
 func (c *Connection) SendError(msg *common.ErrorMessage) error {
 	wsMsg, _ := protocol.NewWSMessage(common.MessageType_ERROR, msg)
 	return c.Send(wsMsg)
+}
+
+func (c *Connection) Kick(reason string) {
+	now := time.Now().UnixMilli()
+	kick := &common.UserKickoff{
+		UserId:    c.UserID,
+		Reason:    reason,
+		Timestamp: now,
+	}
+	data, _ := proto.Marshal(kick)
+	ws := &common.WSMessage{
+		Type:      common.MessageType_USER_KICKOFF,
+		Timestamp: now,
+		Payload:   data,
+	}
+	c.Send(ws)
+	time.AfterFunc(time.Second, c.Close)
 }
 
 // Close 关闭连接

@@ -38,7 +38,7 @@ func (h *MessageHandler) Handle(ctx context.Context, msg *common.WSMessage) erro
 func (h *MessageHandler) handleChatMessage(ctx context.Context, msg *common.WSMessage) error {
 	base, err := h.processMessage(ctx, msg)
 	if err != nil {
-		return nil
+		return err
 	}
 	switch msg.RouteTargetType {
 	case common.TargetType_USER:
@@ -55,12 +55,4 @@ func (h *MessageHandler) handleChatMessage(ctx context.Context, msg *common.WSMe
 
 	// 发送 ACK
 	return h.conn.Send(protocol.NewAckMessage(base, common.AckStatus_ACK_STATUS_SUCCESS))
-}
-
-func (h *MessageHandler) sendError(err *common.ErrorMessage) {
-	if err == nil {
-		return
-	}
-	resp, _ := protocol.NewWSMessage(common.MessageType_ERROR, err)
-	h.conn.Send(resp)
 }

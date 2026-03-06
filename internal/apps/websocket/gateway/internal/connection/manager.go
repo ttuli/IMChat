@@ -24,6 +24,8 @@ type Manager interface {
 	SendToGroup(ctx context.Context, groupID uint64, msg *common.WSMessage) error
 	// SendToGroupLocal 仅发送给本地群组成员
 	SendToGroupLocal(ctx context.Context, groupID uint64, msg *common.WSMessage) error
+	// GetLocalGroupMembers 获取本地群组成员
+	GetLocalGroupMembers(groupId uint64) []uint64
 	// Broadcast 广播消息给多个用户
 	Broadcast(ctx context.Context, userIDs []uint64, msg *common.WSMessage) error
 	// LocalUserCount 本地用户数量
@@ -107,6 +109,7 @@ func (m *DefaultManager) AddConnection(userID uint64, conn *Connection) error {
 	// 如果已存在旧连接，先关闭
 	if old, loaded := m.connections.LoadAndDelete(userID); loaded {
 		if oldConn, ok := old.(*Connection); ok {
+			oldConn.Kick("账号在其他设备登录")
 			oldConn.Close()
 		}
 	}
@@ -181,6 +184,17 @@ func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, m
 		}
 	}
 	return nil
+}
+
+// GetLocalGroupMembers 获取本地群组成员
+func (m *DefaultManager) GetLocalGroupMembers(groupId uint64) []uint64 {
+	var userIDs []uint64
+	m.groupLock.RLock()
+	defer m.groupLock.RUnlock()
+	for _, conn := range m.groupConnections[groupId] {
+		userIDs = append(userIDs, conn.UserID)
+	}
+	return userIDs
 }
 
 // Broadcast 广播消息给多个用户

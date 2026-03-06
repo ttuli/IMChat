@@ -62,16 +62,13 @@ const (
 )
 
 // BuildTokenKey 构建 token 的 Redis key
-// 格式: token:{userID}:{platform}:{tokenType}
-func BuildTokenKey(userID uint64, platform string, tokenType TokenType) string {
+// 格式: token:{userID}:{deviceId}:{tokenType}
+func BuildTokenKey(userID uint64, deviceId string, tokenType TokenType) string {
 	typeStr := TokenTypeAT
 	if tokenType == RefreshToken {
 		typeStr = TokenTypeRT
 	}
-	if platform == "" {
-		platform = "unknown"
-	}
-	return fmt.Sprintf("%s%d:%s:%s", TokenKeyPrefix, userID, platform, typeStr)
+	return fmt.Sprintf("%s%d:%s:%s", TokenKeyPrefix, userID, deviceId, typeStr)
 }
 
 // extractToken 从请求中提取 token
@@ -132,11 +129,11 @@ func (t *TokenManager) GenerateJWTToken(userID uint64, tokenType TokenType, clai
 		return "", err
 	}
 
-	platform := "unknown"
-	if p, ok := claims[ClaimKeyPlatform].(string); ok {
-		platform = p
+	deviceId := ""
+	if d, ok := claims[ClaimKeyDeviceID].(string); ok {
+		deviceId = d
 	}
-	if err := t.storeToken(userID, platform, tokenType, tokenString, expireSeconds); err != nil {
+	if err := t.storeToken(userID, deviceId, tokenType, tokenString, expireSeconds); err != nil {
 		return "", err
 	}
 
@@ -144,10 +141,10 @@ func (t *TokenManager) GenerateJWTToken(userID uint64, tokenType TokenType, clai
 }
 
 // storeToken 存储 token 到 Redis
-// Key 格式: token:{userID}:{platform}:{at|rt}
+// Key 格式: token:{userID}:{deviceId}:{at|rt}
 // Value: token 字符串
-func (t *TokenManager) storeToken(userID uint64, platform string, tokenType TokenType, tokenString string, expire int64) error {
-	key := BuildTokenKey(userID, platform, tokenType)
+func (t *TokenManager) storeToken(userID uint64, deviceId string, tokenType TokenType, tokenString string, expire int64) error {
+	key := BuildTokenKey(userID, deviceId, tokenType)
 	return t.Setex(key, tokenString, int(expire))
 }
 
