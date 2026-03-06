@@ -154,8 +154,8 @@ type LogoutReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"remove_rt"
 	RemoveRt bool `protobuf:"varint,1,opt,name=remove_rt,json=removeRt,proto3" json:"remove_rt"`
-	// @gotags: json:"platform"
-	Platform      string `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform"`
+	// @gotags: json:"device_id"
+	DeviceId      string `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -197,9 +197,9 @@ func (x *LogoutReq) GetRemoveRt() bool {
 	return false
 }
 
-func (x *LogoutReq) GetPlatform() string {
+func (x *LogoutReq) GetDeviceId() string {
 	if x != nil {
-		return x.Platform
+		return x.DeviceId
 	}
 	return ""
 }
@@ -537,10 +537,10 @@ const file_auth_api_proto_rawDesc = "" +
 	"\bplatform\x18\x04 \x01(\tR\bplatform\"F\n" +
 	"\tLoginResp\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"D\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"E\n" +
 	"\tLogoutReq\x12\x1b\n" +
-	"\tremove_rt\x18\x01 \x01(\bR\bremoveRt\x12\x1a\n" +
-	"\bplatform\x18\x02 \x01(\tR\bplatform\"p\n" +
+	"\tremove_rt\x18\x01 \x01(\bR\bremoveRt\x12\x1b\n" +
+	"\tdevice_id\x18\x02 \x01(\tR\bdeviceId\"p\n" +
 	"\vRegisterReq\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x14\n" +

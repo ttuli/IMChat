@@ -29,6 +29,7 @@ type syncItem struct {
 	ConversationID string
 	MaxSeq         uint64
 	LastContentStr string
+	LastSender     uint64
 	UpdateTime     int64
 }
 
@@ -61,11 +62,12 @@ func NewConversationDAO(mysqlDSN string, redisConf zeroredis.RedisConf) *Convers
 }
 
 // SyncConversationToDB 异步收集待保存进数据库的记录，供MQ消费者调用
-func (c *ConversationDAO) SyncConversationToDB(conversationID string, maxSeq uint64, lastContentStr string, updateTime int64) {
+func (c *ConversationDAO) SyncConversationToDB(conversationID string, maxSeq uint64, lastContentStr string, lastSender uint64, updateTime int64) {
 	item := &syncItem{
 		ConversationID: conversationID,
 		MaxSeq:         maxSeq,
 		LastContentStr: lastContentStr,
+		LastSender:     lastSender,
 		UpdateTime:     updateTime,
 	}
 	select {
@@ -120,6 +122,7 @@ func (c *ConversationDAO) flushToDB(items map[string]*syncItem) {
 				Where("conversation_id = ?", convID).
 				Updates(map[string]interface{}{
 					"last_content": item.LastContentStr,
+					"last_sender":  item.LastSender,
 					"max_seq":      item.MaxSeq,
 					"update_time":  time.UnixMilli(item.UpdateTime),
 				})
@@ -212,6 +215,7 @@ func (c *ConversationDAO) incrSeqFromDB(ctx context.Context, conversationID, cac
 				"conversation_id": newConv.ConversationID,
 				"type":            fmt.Sprintf("%d", newConv.Type),
 				"last_content":    newConv.LastContent,
+				"last_sender":     fmt.Sprintf("%d", newConv.LastSender),
 				"max_seq":         fmt.Sprintf("%d", newConv.MaxSeq),
 				"create_time":     fmt.Sprintf("%d", newConv.CreateTime.UnixMilli()),
 				"update_time":     fmt.Sprintf("%d", newConv.UpdateTime.UnixMilli()),
@@ -240,6 +244,7 @@ func (c *ConversationDAO) incrSeqFromDB(ctx context.Context, conversationID, cac
 		"conversation_id": conv.ConversationID,
 		"type":            fmt.Sprintf("%d", conv.Type),
 		"last_content":    conv.LastContent,
+		"last_sender":     fmt.Sprintf("%d", conv.LastSender),
 		"max_seq":         fmt.Sprintf("%d", newSeq),
 		"create_time":     fmt.Sprintf("%d", conv.CreateTime.UnixMilli()),
 		"update_time":     fmt.Sprintf("%d", time.Now().UnixMilli()),

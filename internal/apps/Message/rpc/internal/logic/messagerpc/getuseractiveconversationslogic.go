@@ -37,6 +37,8 @@ func (l *GetUserActiveConversationsLogic) GetUserActiveConversations(in *message
 			MaxSeq:         c.MaxSeq,
 			CreateTime:     c.CreateTime.UnixMilli(),
 			UpdateTime:     c.UpdateTime.UnixMilli(),
+			LastContent:    c.LastContent,
+			LastSender:     c.LastSender,
 		})
 	}
 

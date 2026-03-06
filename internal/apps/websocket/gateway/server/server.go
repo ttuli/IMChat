@@ -130,11 +130,8 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 		} else {
 			userIDs = append(userIDs, updateSession.TargetId)
 		}
-		fmt.Println("")
-		fmt.Println("handleSubscribeMessage updateSession: ", updateSession)
-		fmt.Println("")
 		// 异步收集待保存进数据库的记录
-		s.svcCtx.ConversationDao.SyncConversationToDB(updateSession.SessionId, uint64(updateSession.MaxSeq), updateSession.LastContent, updateSession.UpdateTime)
+		s.svcCtx.ConversationDao.SyncConversationToDB(updateSession.SessionId, uint64(updateSession.MaxSeq), updateSession.LastContent, updateSession.Sender, updateSession.UpdateTime)
 
 		return s.svcCtx.ConversationDao.UpdateUsersConversationTimeline(ctx, userIDs, updateSession.SessionId, updateSession.UpdateTime)
 	}

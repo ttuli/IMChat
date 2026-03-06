@@ -145,7 +145,7 @@ type LogoutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserID        uint64                 `protobuf:"varint,1,opt,name=userID,proto3" json:"userID,omitempty"`
 	RemoveRT      bool                   `protobuf:"varint,2,opt,name=removeRT,proto3" json:"removeRT,omitempty"`
-	Platform      string                 `protobuf:"bytes,3,opt,name=platform,proto3" json:"platform,omitempty"`
+	DeviceId      string                 `protobuf:"bytes,3,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -194,9 +194,9 @@ func (x *LogoutRequest) GetRemoveRT() bool {
 	return false
 }
 
-func (x *LogoutRequest) GetPlatform() string {
+func (x *LogoutRequest) GetDeviceId() string {
 	if x != nil {
-		return x.Platform
+		return x.DeviceId
 	}
 	return ""
 }
@@ -554,11 +554,11 @@ const file_rpc_auth_proto_rawDesc = "" +
 	"\n" +
 	"LoginReply\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\"\n" +
-	"\frefreshToken\x18\x02 \x01(\tR\frefreshToken\"_\n" +
+	"\frefreshToken\x18\x02 \x01(\tR\frefreshToken\"`\n" +
 	"\rLogoutRequest\x12\x16\n" +
 	"\x06userID\x18\x01 \x01(\x04R\x06userID\x12\x1a\n" +
-	"\bremoveRT\x18\x02 \x01(\bR\bremoveRT\x12\x1a\n" +
-	"\bplatform\x18\x03 \x01(\tR\bplatform\"\r\n" +
+	"\bremoveRT\x18\x02 \x01(\bR\bremoveRT\x12\x1b\n" +
+	"\tdevice_id\x18\x03 \x01(\tR\bdeviceId\"\r\n" +
 	"\vLogoutReply\"o\n" +
 	"\vRegisterReq\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +

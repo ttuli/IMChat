@@ -37,6 +37,8 @@ func (l *GetConversationListLogic) GetConversationList(in *message.GetConversati
 			MaxSeq:         c.MaxSeq,
 			CreateTime:     c.CreateTime.UnixMilli(),
 			UpdateTime:     c.UpdateTime.UnixMilli(),
+			LastContent:    c.LastContent,
+			LastSender:     c.LastSender,
 		})
 	}
 

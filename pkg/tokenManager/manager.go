@@ -150,10 +150,10 @@ func (t *TokenManager) storeToken(userID uint64, deviceId string, tokenType Toke
 
 // InvalidateTokenByUserID 根据用户 ID 和 platform 使 token 失效
 // deleteRefreshToken: 是否同时删除 refresh token
-func (t *TokenManager) InvalidateTokenByUserID(userID uint64, platform string, deleteRefreshToken bool) error {
-	keys := []string{BuildTokenKey(userID, platform, AccessToken)}
+func (t *TokenManager) InvalidateTokenByUserID(userID uint64, deviceId string, deleteRefreshToken bool) error {
+	keys := []string{BuildTokenKey(userID, deviceId, AccessToken)}
 	if deleteRefreshToken {
-		keys = append(keys, BuildTokenKey(userID, platform, RefreshToken))
+		keys = append(keys, BuildTokenKey(userID, deviceId, RefreshToken))
 	}
 
 	_, err := t.Del(keys...)

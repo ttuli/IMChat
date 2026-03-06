@@ -21,7 +21,7 @@ type LoginResponse struct {
 
 type LogoutRequest struct {
 	UserID   uint64
-	Platform string
+	DeviceID string
 	RemoveRT bool
 }
 

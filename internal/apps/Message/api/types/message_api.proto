@@ -36,6 +36,8 @@ message Conversation {
     int64 max_seq = 3;
     int64 create_time = 4;
     int64 update_time = 5;
+    string last_content = 6;
+    uint64 last_sender = 7;
 }
 
 // UserConversation

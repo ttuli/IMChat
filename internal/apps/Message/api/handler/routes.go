@@ -16,7 +16,9 @@ import (
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.Use(middleware.WithRedisJwtAuth(serverCtx.TokenManager))
 	server.AddRoutes(
-		[]rest.Route{
+		rest.WithMiddlewares([]rest.Middleware{
+			middleware.WithRedisJwtAuth(serverCtx.TokenManager),
+		}, []rest.Route{
 			{
 				// 更新会话设置
 				Method:  http.MethodPut,
@@ -53,7 +55,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/recall",
 				Handler: message.RecallMessageHandler(serverCtx),
 			},
-		},
+		}...),
 		rest.WithPrefix("/message"),
 	)
 }

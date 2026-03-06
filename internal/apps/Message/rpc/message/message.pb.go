@@ -152,6 +152,8 @@ type Conversation struct {
 	MaxSeq         uint64                 `protobuf:"varint,3,opt,name=max_seq,json=maxSeq,proto3" json:"max_seq,omitempty"`
 	CreateTime     int64                  `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime     int64                  `protobuf:"varint,5,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	LastContent    string                 `protobuf:"bytes,6,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"`
+	LastSender     uint64                 `protobuf:"varint,7,opt,name=last_sender,json=lastSender,proto3" json:"last_sender,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -217,6 +219,20 @@ func (x *Conversation) GetCreateTime() int64 {
 func (x *Conversation) GetUpdateTime() int64 {
 	if x != nil {
 		return x.UpdateTime
+	}
+	return 0
+}
+
+func (x *Conversation) GetLastContent() string {
+	if x != nil {
+		return x.LastContent
+	}
+	return ""
+}
+
+func (x *Conversation) GetLastSender() uint64 {
+	if x != nil {
+		return x.LastSender
 	}
 	return 0
 }
@@ -1028,7 +1044,7 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\x06status\x18\n" +
 	" \x01(\x05R\x06status\x12\x1f\n" +
 	"\vcreate_time\x18\v \x01(\x03R\n" +
-	"createTime\"\xa6\x01\n" +
+	"createTime\"\xea\x01\n" +
 	"\fConversation\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\x05R\x04type\x12\x17\n" +
@@ -1036,7 +1052,10 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\vcreate_time\x18\x04 \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
 	"\vupdate_time\x18\x05 \x01(\x03R\n" +
-	"updateTime\"\x89\x02\n" +
+	"updateTime\x12!\n" +
+	"\flast_content\x18\x06 \x01(\tR\vlastContent\x12\x1f\n" +
+	"\vlast_sender\x18\a \x01(\x04R\n" +
+	"lastSender\"\x89\x02\n" +
 	"\x10UserConversation\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x15\n" +

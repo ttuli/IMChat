@@ -42,6 +42,8 @@ func (l *GetUserActiveConversationsLogic) GetUserActiveConversations(req *types.
 			ConversationId:   c.ConversationId,
 			ConversationType: int32(c.Type),
 			MaxSeq:           int64(c.MaxSeq),
+			LastContent:      c.LastContent,
+			LastSender:       c.LastSender,
 			CreateTime:       c.CreateTime,
 			UpdateTime:       c.UpdateTime,
 		})

@@ -17,10 +17,6 @@ import (
 )
 
 const (
-	redisConvIdPrefix = "conv:id:"
-
-	// 缓存过期时间
-	cacheExpireSeconds = 3600 // 1小时
 
 	convTimelinePrefix = "user:conv:timeline:"
 )
