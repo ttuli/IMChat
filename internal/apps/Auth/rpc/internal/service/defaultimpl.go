@@ -194,7 +194,10 @@ func (s *AuthServiceImpl) Login(ctx context.Context, req *LoginRequest) (*LoginR
 	}
 
 	// 3. 生成token
-	accessToken, err := s.TokenManager.GenerateJWTToken(req.Account, tokenmanager.AccessToken, nil)
+	accessToken, err := s.TokenManager.GenerateJWTToken(req.Account, tokenmanager.AccessToken, jwt.MapClaims{
+		tokenmanager.ClaimKeyPlatform: req.Platform,
+		tokenmanager.ClaimKeyDeviceID: req.DeviceID,
+	})
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrTokenGenerate, "登录失败")
 	}
