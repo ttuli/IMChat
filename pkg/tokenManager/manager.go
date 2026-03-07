@@ -286,10 +286,10 @@ func (t *TokenManager) ValidateToken(ctx context.Context, tokenString string) (u
 	}
 
 	// 4.5 解析 platform
-	platform, _ := claims[ClaimKeyPlatform].(string)
+	deviceID, _ := claims[ClaimKeyDeviceID].(string)
 
 	// 5. 从 Redis 验证 token 是否存在且匹配
-	tokenKey := BuildTokenKey(userID, platform, tokenType)
+	tokenKey := BuildTokenKey(userID, deviceID, tokenType)
 	storedToken, err := t.GetCtx(ctx, tokenKey)
 	if err != nil {
 		return 0, fmt.Errorf("redis error: %w", err)
