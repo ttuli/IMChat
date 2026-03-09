@@ -4,9 +4,12 @@ import (
 	"context"
 	"time"
 
+	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
+	"github.com/gogo/protobuf/proto"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -59,6 +62,20 @@ func (s *messageService) RecallMessage(ctx context.Context, userID uint64, msgID
 	// 5. 更新消息状态为已撤回 (status=1)
 	if err := s.messageDAO.UpdateMessageStatus(ctx, msgID, 1); err != nil {
 		return xerr.Wrap(err, xerr.ErrDatabase, "撤回消息失败")
+	}
+
+	ws, err := common.NewMessageOperationMsg(common.MessageType_MSG_OP_RECALL, userID, msg)
+	if err != nil {
+		logger.Errorf("Failed to create WSMessage: %v", err)
+		return nil
+	}
+	payload, err := proto.Marshal(ws)
+	if err != nil {
+		logger.Errorf("Failed to marshal WSMessage: %v", err)
+		return nil
+	}
+	if _, err := s.js.Publish(s.Config.Listener.BroadcastSubject, payload); err != nil {
+		logger.Errorf("Failed to publish NATS message: %v", err)
 	}
 
 	return nil

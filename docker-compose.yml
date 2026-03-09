@@ -1,0 +1,239 @@
+version: '3.8'
+
+services:
+  # ---------------
+  # 基础设施 (Infrastructure)
+  # ---------------
+  mysql:
+    image: mysql:8.0
+    container_name: im2_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: im
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 挂载初始化脚本目录：MySQL 首次启动时会自动执行该目录下的所有 .sql 文件
+      - ./docker/mysql:/docker-entrypoint-initdb.d
+    restart: always
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: im2_redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./docker/redis:/usr/local/etc/redis
+    restart: always
+
+  mongodb:
+    image: mongo:6.0
+    container_name: im2_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+  etcd:
+    image: bitnami/etcd:3.5
+    container_name: im2_etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - etcd_data:/bitnami/etcd/data
+    restart: always
+
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: im2_nacos
+    environment:
+      - PREFER_HOST_MODE=hostname
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=root
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    depends_on:
+      - mysql
+    restart: always
+
+  nats:
+    image: nats:2.9-alpine
+    container_name: im2_nats
+    ports:
+      - "4222:4222"
+      - "8222:8222" # monitoring interface
+    restart: always
+
+  # ---------------
+  # IM2 RPC 服务层（按依赖顺序启动）
+  # ---------------
+  idgen-rpc:
+    build:
+      context: .
+      dockerfile: cmd/Idgen/rpc/Dockerfile
+    container_name: im2_idgen_rpc
+    env_file: .env
+    ports:
+      - "9001:9001"
+    depends_on:
+      - nacos
+      - etcd
+    restart: on-failure
+
+  user-rpc:
+    build:
+      context: .
+      dockerfile: cmd/User/rpc/Dockerfile
+    container_name: im2_user_rpc
+    env_file: .env
+    ports:
+      - "9002:9002"
+    depends_on:
+      - idgen-rpc
+      - mysql
+      - redis
+    restart: on-failure
+
+  auth-rpc:
+    build:
+      context: .
+      dockerfile: cmd/Auth/rpc/Dockerfile
+    container_name: im2_auth_rpc
+    env_file: .env
+    ports:
+      - "9003:9003"
+    depends_on:
+      - user-rpc
+      - redis
+    restart: on-failure
+
+  group-rpc:
+    build:
+      context: .
+      dockerfile: cmd/Group/rpc/Dockerfile
+    container_name: im2_group_rpc
+    env_file: .env
+    ports:
+      - "9004:9004"
+    depends_on:
+      - user-rpc
+      - mysql
+      - redis
+    restart: on-failure
+
+  message-rpc:
+    build:
+      context: .
+      dockerfile: cmd/Message/rpc/Dockerfile
+    container_name: im2_message_rpc
+    env_file: .env
+    ports:
+      - "9005:9005"
+    depends_on:
+      - user-rpc
+      - mysql
+      - redis
+      - mongodb
+      - nats
+    restart: on-failure
+
+  # ---------------
+  # IM2 API 服务层
+  # ---------------
+  user-api:
+    build:
+      context: .
+      dockerfile: cmd/User/api/Dockerfile
+    container_name: im2_user_api
+    env_file: .env
+    ports:
+      - "8001:8001"
+    depends_on:
+      - user-rpc
+    restart: on-failure
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: cmd/Auth/api/Dockerfile
+    container_name: im2_auth_api
+    env_file: .env
+    ports:
+      - "8002:8002"
+    depends_on:
+      - auth-rpc
+    restart: on-failure
+
+  group-api:
+    build:
+      context: .
+      dockerfile: cmd/Group/api/Dockerfile
+    container_name: im2_group_api
+    env_file: .env
+    ports:
+      - "8003:8003"
+    depends_on:
+      - group-rpc
+    restart: on-failure
+
+  message-api:
+    build:
+      context: .
+      dockerfile: cmd/Message/api/Dockerfile
+    container_name: im2_message_api
+    env_file: .env
+    ports:
+      - "8004:8004"
+    depends_on:
+      - message-rpc
+    restart: on-failure
+
+  file-api:
+    build:
+      context: .
+      dockerfile: cmd/File/api/Dockerfile
+    container_name: im2_file_api
+    env_file: .env
+    ports:
+      - "8005:8005"
+    restart: on-failure
+
+  # ---------------
+  # IM2 WebSocket Gateway
+  # ---------------
+  websocket:
+    build:
+      context: .
+      dockerfile: cmd/websocket/Dockerfile
+    container_name: im2_websocket
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - message-rpc
+      - redis
+      - nats
+    restart: on-failure
+
+volumes:
+  mysql_data:
+  redis_data:
+  mongo_data:
+  etcd_data:

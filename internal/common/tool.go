@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,35 @@ func IsGroupSession(sessionId string) bool {
 
 func IsPrivateSession(sessionId string) bool {
 	return strings.HasPrefix(sessionId, "private")
+}
+
+// GetTargetIdFromSessionId 从会话ID中解析出目标ID（群ID或对方用户ID）
+func GetTargetIdFromSessionId(sessionId string, currentUserId uint64) (uint64, error) {
+	if IsGroupSession(sessionId) {
+		parts := strings.Split(sessionId, "_")
+		if len(parts) != 2 {
+			return 0, errors.New("invalid group session id")
+		}
+		return strconv.ParseUint(parts[1], 10, 64)
+	} else if IsPrivateSession(sessionId) {
+		parts := strings.Split(sessionId, "_")
+		if len(parts) != 3 {
+			return 0, errors.New("invalid private session id")
+		}
+		id1, err := strconv.ParseUint(parts[1], 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		id2, err := strconv.ParseUint(parts[2], 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		if id1 == currentUserId {
+			return id2, nil
+		}
+		return id1, nil
+	}
+	return 0, errors.New("invalid session id")
 }
 
 func IsChatMessage(t MessageType) bool {
@@ -126,6 +156,43 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, groupID uint64) (*WSM
 		Type:            MessageType_GROUP_REQUEST,
 		Payload:         payload,
 	}, nil
+}
+
+func NewMessageOperationMsg(opType MessageType, operator uint64, msg *model.Message) (*WSMessage, error) {
+	if msg == nil {
+		return nil, errors.New("message is nil")
+	}
+
+	targetId, err := GetTargetIdFromSessionId(msg.ConversationID, operator)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UnixMilli()
+
+	ws := &WSMessage{
+		Type:        opType,
+		RouteTarget: targetId,
+		Timestamp:   now,
+	}
+	if IsGroupSession(msg.ConversationID) {
+		ws.RouteTargetType = TargetType_GROUP
+	} else {
+		ws.RouteTargetType = TargetType_USER
+	}
+
+	recall := &MessageRecall{
+		MsgId:          msg.MsgID,
+		ConversationId: msg.ConversationID,
+		UserId:         operator,
+		RecallTime:     now,
+	}
+
+	payload, err := proto.Marshal(recall)
+	if err != nil {
+		return nil, err
+	}
+	ws.Payload = payload
+	return ws, nil
 }
 
 func NewGroupOperationMsg(opType GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *WSMessage {

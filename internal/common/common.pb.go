@@ -154,6 +154,8 @@ const (
 	MessageType_USER_KICKOFF       MessageType = 404 // 用户被踢
 	// 群组操作
 	MessageType_GROUP_OP_NOTIFICATION MessageType = 500 // 群操作通知
+	// 消息操作
+	MessageType_MSG_OP_RECALL MessageType = 501 // 消息撤回
 	// 通知类 600-699
 	MessageType_NOTIFICATION   MessageType = 600 // 系统通知
 	MessageType_FRIEND_REQUEST MessageType = 601 // 好友请求
@@ -193,6 +195,7 @@ var (
 		403: "USER_STATUS_CHANGE",
 		404: "USER_KICKOFF",
 		500: "GROUP_OP_NOTIFICATION",
+		501: "MSG_OP_RECALL",
 		600: "NOTIFICATION",
 		601: "FRIEND_REQUEST",
 		602: "FRIEND_ADD",
@@ -226,6 +229,7 @@ var (
 		"USER_STATUS_CHANGE":    403,
 		"USER_KICKOFF":          404,
 		"GROUP_OP_NOTIFICATION": 500,
+		"MSG_OP_RECALL":         501,
 		"NOTIFICATION":          600,
 		"FRIEND_REQUEST":        601,
 		"FRIEND_ADD":            602,
@@ -2283,7 +2287,7 @@ func (x *MessageRead) GetReadTime() int64 {
 // 消息撤回
 type MessageRecall struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	MsgId          int64                  `protobuf:"varint,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`                           // 消息ID
+	MsgId          string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`                            // 消息ID
 	UserId         uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                        // 撤回者ID
 	ConversationId string                 `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 会话ID
 	RecallTime     int64                  `protobuf:"varint,4,opt,name=recall_time,json=recallTime,proto3" json:"recall_time,omitempty"`            // 撤回时间
@@ -2322,11 +2326,11 @@ func (*MessageRecall) Descriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *MessageRecall) GetMsgId() int64 {
+func (x *MessageRecall) GetMsgId() string {
 	if x != nil {
 		return x.MsgId
 	}
-	return 0
+	return ""
 }
 
 func (x *MessageRecall) GetUserId() uint64 {
@@ -3701,7 +3705,7 @@ const file_common_proto_rawDesc = "" +
 	"\amsg_ids\x18\x03 \x03(\x03R\x06msgIds\x12\x1b\n" +
 	"\tread_time\x18\x04 \x01(\x03R\breadTime\"\xa1\x01\n" +
 	"\rMessageRecall\x12\x15\n" +
-	"\x06msg_id\x18\x01 \x01(\x03R\x05msgId\x12\x17\n" +
+	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x03 \x01(\tR\x0econversationId\x12\x1f\n" +
 	"\vrecall_time\x18\x04 \x01(\x03R\n" +
@@ -3856,7 +3860,7 @@ const file_common_proto_rawDesc = "" +
 	"\n" +
 	"CONNECTING\x10\x01\x12\r\n" +
 	"\tCONNECTED\x10\x02\x12\x10\n" +
-	"\fRECONNECTING\x10\x03*\xb7\x04\n" +
+	"\fRECONNECTING\x10\x03*\xcb\x04\n" +
 	"\vMessageType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tCHAT_TEXT\x10d\x12\x0e\n" +
@@ -3889,7 +3893,8 @@ const file_common_proto_rawDesc = "" +
 	"\vUSER_TYPING\x10\x92\x03\x12\x17\n" +
 	"\x12USER_STATUS_CHANGE\x10\x93\x03\x12\x11\n" +
 	"\fUSER_KICKOFF\x10\x94\x03\x12\x1a\n" +
-	"\x15GROUP_OP_NOTIFICATION\x10\xf4\x03\x12\x11\n" +
+	"\x15GROUP_OP_NOTIFICATION\x10\xf4\x03\x12\x12\n" +
+	"\rMSG_OP_RECALL\x10\xf5\x03\x12\x11\n" +
 	"\fNOTIFICATION\x10\xd8\x04\x12\x13\n" +
 	"\x0eFRIEND_REQUEST\x10\xd9\x04\x12\x0f\n" +
 	"\n" +

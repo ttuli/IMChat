@@ -27,16 +27,7 @@ type NatsListener struct {
 	cancel          context.CancelFunc
 }
 
-func NewNatsListener(c config.Config) *NatsListener {
-	conn, err := nats.Connect(c.Listener.Url)
-	if err != nil {
-		panic(err)
-	}
-	js, err := conn.JetStream()
-	if err != nil {
-		panic(err)
-	}
-
+func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext) *NatsListener {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &NatsListener{

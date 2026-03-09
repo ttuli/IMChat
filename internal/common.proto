@@ -90,6 +90,9 @@ enum MessageType {
   
   // 群组操作
   GROUP_OP_NOTIFICATION = 500;    // 群操作通知
+
+  // 消息操作
+  MSG_OP_RECALL = 501;      // 消息撤回
   
   // 通知类 600-699
   NOTIFICATION = 600;             // 系统通知
@@ -233,7 +236,7 @@ message MessageRead {
 
 // 消息撤回
 message MessageRecall {
-  int64 msg_id = 1;               // 消息ID
+  string msg_id = 1;               // 消息ID
   uint64 user_id = 2;             // 撤回者ID
   string conversation_id = 3;     // 会话ID
   int64 recall_time = 4;          // 撤回时间

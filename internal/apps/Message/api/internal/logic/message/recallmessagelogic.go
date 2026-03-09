@@ -5,6 +5,8 @@ import (
 
 	"IM2/internal/apps/Message/api/svc"
 	"IM2/internal/apps/Message/api/types"
+	"IM2/internal/apps/Message/rpc/client/messagerpc"
+	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -15,7 +17,7 @@ type RecallMessageLogic struct {
 	svcCtx *svc.ServiceContext
 }
 
-// 消息已读上报
+// 消息撤回
 func NewRecallMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RecallMessageLogic {
 	return &RecallMessageLogic{
 		Logger: logx.WithContext(ctx),
@@ -25,13 +27,12 @@ func NewRecallMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Rec
 }
 
 func (l *RecallMessageLogic) RecallMessage(req *types.RecallMessageReq) error {
-	// userID := tokenmanager.ExtractIDFromCtx(l.ctx)
+	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
-	// _, err := l.svcCtx.MessageRpc.RecallMessage(l.ctx, &messagerpc.RecallMessageReq{
-	// 	UserId:         userID,
-	// 	ConversationId: req.ConversationId,
-	// 	Seq:            req.Seq,
-	// })
-	// return err
-	return nil
+	_, err := l.svcCtx.MessageRpc.RecallMessage(l.ctx, &messagerpc.RecallMessageReq{
+		UserId:    userID,
+		SessionId: req.SessionId,
+		MsgId:     req.MsgId,
+	})
+	return err
 }
