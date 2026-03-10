@@ -10,8 +10,8 @@ import (
 	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/zeromicro/go-zero/rest/httpx"
+	"google.golang.org/protobuf/proto"
 )
 
 // Response HTTP 统一响应结构

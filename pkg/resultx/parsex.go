@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/zeromicro/go-zero/rest/httpx"
+	"google.golang.org/protobuf/proto"
 )
 
 // ParseProto 通用请求解析器
