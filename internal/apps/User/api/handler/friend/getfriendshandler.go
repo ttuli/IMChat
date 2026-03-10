@@ -3,8 +3,6 @@ package friend
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
-
 	"IM2/internal/apps/User/api/internal/logic/friend"
 	"IM2/internal/apps/User/api/svc"
 	"IM2/internal/apps/User/api/types"
@@ -15,7 +13,7 @@ import (
 func GetFriendsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.GetFriendsReq
-		if err := httpx.Parse(r, &req); err != nil {
+		if err := resultx.ParseProto(r, &req); err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 			return
 		}

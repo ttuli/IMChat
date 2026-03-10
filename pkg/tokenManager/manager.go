@@ -43,11 +43,14 @@ type TokenManager struct {
 const (
 	ContextKeyUserID = "user_id"
 
-	// Token key 前缀格式: token:{userID}:{tokenType}
-	// 例如: token:1000001:at, token:1000001:rt
+	// Token key 前缀格式: token:{userID}:{deviceId}:{tokenType}
+	// 例如: token:1000001:deviceA:at, token:1000001:deviceA:rt
 	TokenKeyPrefix = "token:"
 	TokenTypeAT    = "at" // Access Token
 	TokenTypeRT    = "rt" // Refresh Token
+
+	// 在线设备列表 key 前缀: user_active_devices:{userID}
+	UserDevicesKeyPrefix = "user_active_devices:"
 
 	// Claim Keys
 	ClaimKeyExp      = "exp"
@@ -69,6 +72,11 @@ func BuildTokenKey(userID uint64, deviceId string, tokenType TokenType) string {
 		typeStr = TokenTypeRT
 	}
 	return fmt.Sprintf("%s%d:%s:%s", TokenKeyPrefix, userID, deviceId, typeStr)
+}
+
+// BuildUserDevicesKey 构建用户在线设备列表的 Redis key
+func BuildUserDevicesKey(userID uint64) string {
+	return fmt.Sprintf("%s%d", UserDevicesKeyPrefix, userID)
 }
 
 // extractToken 从请求中提取 token
@@ -137,6 +145,17 @@ func (t *TokenManager) GenerateJWTToken(userID uint64, tokenType TokenType, clai
 		return "", err
 	}
 
+	// 仅在生成 AccessToken 时触发设备管理逻辑，避免重复踢出
+	if tokenType == AccessToken {
+		// 将当前设备加入该用户的在线设备集合
+		devicesKey := BuildUserDevicesKey(userID)
+		_, _ = t.Sadd(devicesKey, deviceId)
+		// 为设备集合设置过期时间（与 RT 保持一致，防止长期僵尸数据）
+		_ = t.Expire(devicesKey, int(t.c.JWTConfig.RefreshExpire))
+		// 踢出该用户所有其他设备的 Token
+		_ = t.KickOutOtherDevices(userID, deviceId)
+	}
+
 	return tokenString, nil
 }
 
@@ -148,13 +167,38 @@ func (t *TokenManager) storeToken(userID uint64, deviceId string, tokenType Toke
 	return t.Setex(key, tokenString, int(expire))
 }
 
-// InvalidateTokenByUserID 根据用户 ID 和 platform 使 token 失效
+// KickOutOtherDevices 踢出该用户除 currentDevice 以外的所有其他设备的 Token
+func (t *TokenManager) KickOutOtherDevices(userID uint64, currentDevice string) error {
+	devicesKey := BuildUserDevicesKey(userID)
+
+	// 获取所有在线设备
+	devices, err := t.Smembers(devicesKey)
+	if err != nil {
+		return err
+	}
+
+	// 遍历旧设备，删除其 Token 并从集合中移除
+	for _, dev := range devices {
+		if dev != currentDevice && dev != "" {
+			// 删除旧设备的 AT
+			_, _ = t.Del(BuildTokenKey(userID, dev, AccessToken))
+			// 从在线设备集合中移除
+			_, _ = t.Srem(devicesKey, dev)
+		}
+	}
+	return nil
+}
+
+// InvalidateTokenByUserID 根据用户 ID 和 deviceId 使 token 失效
 // deleteRefreshToken: 是否同时删除 refresh token
 func (t *TokenManager) InvalidateTokenByUserID(userID uint64, deviceId string, deleteRefreshToken bool) error {
 	keys := []string{BuildTokenKey(userID, deviceId, AccessToken)}
 	if deleteRefreshToken {
 		keys = append(keys, BuildTokenKey(userID, deviceId, RefreshToken))
 	}
+
+	// 同时从在线设备集合中移除
+	_, _ = t.Srem(BuildUserDevicesKey(userID), deviceId)
 
 	_, err := t.Del(keys...)
 	return err
@@ -295,7 +339,8 @@ func (t *TokenManager) ValidateToken(ctx context.Context, tokenString string) (u
 		return 0, fmt.Errorf("redis error: %w", err)
 	}
 	if storedToken == "" || storedToken != tokenString {
-		return 0, xerr.New(xerr.ErrForbidden, "forbidden")
+		// token 未过期但不在 Redis 中（或不匹配），说明该设备已被踢出或顶号
+		return 0, xerr.New(xerr.ErrKickedOut, "账号已在其他设备登录，您已被强制下线")
 	}
 
 	return userID, nil

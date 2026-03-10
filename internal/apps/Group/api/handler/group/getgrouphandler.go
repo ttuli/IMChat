@@ -3,8 +3,6 @@ package group
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
-
 	"IM2/internal/apps/Group/api/internal/logic/group"
 	"IM2/internal/apps/Group/api/svc"
 	"IM2/internal/apps/Group/api/types"
@@ -15,7 +13,7 @@ import (
 func GetGroupHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.GetGroupReq
-		if err := httpx.Parse(r, &req); err != nil {
+		if err := resultx.ParseProto(r, &req); err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 			return
 		}

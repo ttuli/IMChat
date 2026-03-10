@@ -85,82 +85,44 @@ services:
   # IM2 RPC 服务层（按依赖顺序启动）
   # ---------------
   idgen-rpc:
-    build:
-      context: .
-      dockerfile: cmd/Idgen/rpc/Dockerfile
     container_name: im2_idgen_rpc
     env_file: .env
     ports:
       - "9001:9001"
-    depends_on:
-      - nacos
-      - etcd
     restart: on-failure
 
   user-rpc:
-    build:
-      context: .
-      dockerfile: cmd/User/rpc/Dockerfile
     container_name: im2_user_rpc
     env_file: .env
     ports:
       - "9002:9002"
-    depends_on:
-      - idgen-rpc
-      - mysql
-      - redis
     restart: on-failure
 
   auth-rpc:
-    build:
-      context: .
-      dockerfile: cmd/Auth/rpc/Dockerfile
     container_name: im2_auth_rpc
     env_file: .env
     ports:
       - "9003:9003"
-    depends_on:
-      - user-rpc
-      - redis
     restart: on-failure
 
   group-rpc:
-    build:
-      context: .
-      dockerfile: cmd/Group/rpc/Dockerfile
     container_name: im2_group_rpc
     env_file: .env
     ports:
       - "9004:9004"
-    depends_on:
-      - user-rpc
-      - mysql
-      - redis
     restart: on-failure
 
   message-rpc:
-    build:
-      context: .
-      dockerfile: cmd/Message/rpc/Dockerfile
     container_name: im2_message_rpc
     env_file: .env
     ports:
       - "9005:9005"
-    depends_on:
-      - user-rpc
-      - mysql
-      - redis
-      - mongodb
-      - nats
     restart: on-failure
 
   # ---------------
   # IM2 API 服务层
   # ---------------
   user-api:
-    build:
-      context: .
-      dockerfile: cmd/User/api/Dockerfile
     container_name: im2_user_api
     env_file: .env
     ports:
@@ -170,9 +132,6 @@ services:
     restart: on-failure
 
   auth-api:
-    build:
-      context: .
-      dockerfile: cmd/Auth/api/Dockerfile
     container_name: im2_auth_api
     env_file: .env
     ports:
@@ -182,9 +141,6 @@ services:
     restart: on-failure
 
   group-api:
-    build:
-      context: .
-      dockerfile: cmd/Group/api/Dockerfile
     container_name: im2_group_api
     env_file: .env
     ports:
@@ -194,9 +150,6 @@ services:
     restart: on-failure
 
   message-api:
-    build:
-      context: .
-      dockerfile: cmd/Message/api/Dockerfile
     container_name: im2_message_api
     env_file: .env
     ports:
@@ -206,9 +159,6 @@ services:
     restart: on-failure
 
   file-api:
-    build:
-      context: .
-      dockerfile: cmd/File/api/Dockerfile
     container_name: im2_file_api
     env_file: .env
     ports:
@@ -219,9 +169,6 @@ services:
   # IM2 WebSocket Gateway
   # ---------------
   websocket:
-    build:
-      context: .
-      dockerfile: cmd/websocket/Dockerfile
     container_name: im2_websocket
     env_file: .env
     ports:

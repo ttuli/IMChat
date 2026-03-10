@@ -14,7 +14,7 @@ import (
 func LogoutHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.LogoutReq
-		if err := httpx.Parse(r, &req); err != nil {
+		if err := resultx.ParseProto(r, &req); err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 			return
 		}

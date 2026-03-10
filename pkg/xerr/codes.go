@@ -22,6 +22,7 @@ const (
 	ErrInternalServer ErrorCode = 1007
 	ErrTimeout        ErrorCode = 1008
 	ErrServiceBusy    ErrorCode = 1009
+	ErrKickedOut      ErrorCode = 1010 // 账号在其他设备登录，被强制下线
 
 	// 业务错误码 2xxx
 	ErrDatabase      ErrorCode = 2001
@@ -55,6 +56,7 @@ var ErrorCodeToHTTPStatus = map[ErrorCode]int{
 	ErrInternalServer: http.StatusInternalServerError, // 500
 	ErrTimeout:        http.StatusGatewayTimeout,      // 504
 	ErrServiceBusy:    http.StatusServiceUnavailable,  // 503
+	ErrKickedOut:      http.StatusUnauthorized,        // 401
 
 	// 业务错误码 2xxx
 	ErrDatabase:      http.StatusInternalServerError, // 500

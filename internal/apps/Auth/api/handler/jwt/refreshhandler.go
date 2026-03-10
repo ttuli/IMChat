@@ -9,7 +9,7 @@ import (
 	tokenmanager "IM2/pkg/tokenManager"
 	"IM2/pkg/xerr"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
+	// "github.com/zeromicro/go-zero/rest/httpx"
 
 	"IM2/pkg/resultx"
 )
@@ -17,7 +17,7 @@ import (
 func RefreshHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.RefreshReq
-		if err := httpx.Parse(r, &req); err != nil {
+		if err := resultx.ParseProto(r, &req); err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, xerr.New(xerr.ErrInvalidParams, "参数错误"))
 			return
 		}
