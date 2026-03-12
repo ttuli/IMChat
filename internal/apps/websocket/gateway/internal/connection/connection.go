@@ -103,6 +103,7 @@ func (c *Connection) Kick(reason string) {
 // Close 关闭连接
 func (c *Connection) Close() {
 	c.closeOnce.Do(func() {
+		c.IsClosed()
 		close(c.closeChan)
 		c.Conn.Close()
 	})

@@ -14,8 +14,8 @@ import (
 type Manager interface {
 	// AddConnection 添加连接
 	AddConnection(userID uint64, conn *Connection) error
-	// RemoveConnection 移除连接
-	RemoveConnection(userID uint64) error
+	// RemoveConnection 移除连接（只有当 map 中存的连接指针与 conn 相同时才删除，防止新连接被旧连接的 defer 误删）
+	RemoveConnection(userID uint64, conn *Connection) error
 	// GetLocalConnection 获取本地连接
 	GetLocalConnection(userID uint64) (*Connection, bool)
 	// SendToUser 发送消息给用户
@@ -110,7 +110,6 @@ func (m *DefaultManager) AddConnection(userID uint64, conn *Connection) error {
 	if old, loaded := m.connections.LoadAndDelete(userID); loaded {
 		if oldConn, ok := old.(*Connection); ok {
 			oldConn.Kick("账号在其他设备登录")
-			oldConn.Close()
 		}
 	}
 	logx.Infof("[Connection] user %d added", userID)
@@ -119,12 +118,12 @@ func (m *DefaultManager) AddConnection(userID uint64, conn *Connection) error {
 }
 
 // RemoveConnection 移除连接
-func (m *DefaultManager) RemoveConnection(userID uint64) error {
-	if conn, loaded := m.connections.LoadAndDelete(userID); loaded {
-		if c, ok := conn.(*Connection); ok {
-			logx.Infof("[Connection] user %d removed", userID)
-			c.Close()
-		}
+// 只有当 map 中存储的连接指针与 conn 相同时才删除，防止旧连接 defer 误删新连接。
+func (m *DefaultManager) RemoveConnection(userID uint64, conn *Connection) error {
+	// CompareAndDelete: 原子地比较并删除，确保只删自己
+	if m.connections.CompareAndDelete(userID, conn) {
+		logx.Infof("[Connection] user %d removed", userID)
+		conn.Close()
 	}
 	return nil
 }

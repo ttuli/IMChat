@@ -85,11 +85,16 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer func() {
-		h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID)
+		// 只删除自己：RemoveConnection 内部按指针比对，不会误删新连接
+		h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID, conn)
 		for _, gid := range gids {
 			h.svcCtx.ConnectionManager.RemoveGroupConnection(gid, conn)
 		}
-		h.svcCtx.Router.UnregisterUser(context.Background(), conn.UserID)
+		// 只有当 map 中已不存在该 userID 的连接（即本连接确实是最后一个）时才注销路由
+		// 避免旧连接 defer 注销掉新连接刚注册上的路由
+		if _, exists := h.svcCtx.ConnectionManager.GetLocalConnection(conn.UserID); !exists {
+			h.svcCtx.Router.UnregisterUser(context.Background(), conn.UserID)
+		}
 	}()
 
 	// 启动写循环
