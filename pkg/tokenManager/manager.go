@@ -147,11 +147,16 @@ func (t *TokenManager) GenerateJWTToken(userID uint64, tokenType TokenType, clai
 
 	// 仅在生成 AccessToken 时触发设备管理逻辑，避免重复踢出
 	if tokenType == AccessToken {
-		// 将当前设备加入该用户的在线设备集合
 		devicesKey := BuildUserDevicesKey(userID)
-		_, _ = t.Sadd(devicesKey, deviceId)
-		// 为设备集合设置过期时间（与 RT 保持一致，防止长期僵尸数据）
-		_ = t.Expire(devicesKey, int(t.c.JWTConfig.RefreshExpire))
+		// 原子地将当前设备加入集合并设置过期时间，避免 SADD 成功后 crash 导致僵尸 key
+		saddWithExpireScript := `
+		local added = redis.call('SADD', KEYS[1], ARGV[1])
+		redis.call('EXPIRE', KEYS[1], ARGV[2])
+		return added`
+		_, _ = t.EvalCtx(context.Background(), saddWithExpireScript,
+			[]string{devicesKey},
+			deviceId, strconv.FormatInt(t.c.JWTConfig.RefreshExpire, 10),
+		)
 		// 踢出该用户所有其他设备的 Token
 		_ = t.KickOutOtherDevices(userID, deviceId)
 	}
@@ -180,8 +185,9 @@ func (t *TokenManager) KickOutOtherDevices(userID uint64, currentDevice string) 
 	// 遍历旧设备，删除其 Token 并从集合中移除
 	for _, dev := range devices {
 		if dev != currentDevice && dev != "" {
-			// 删除旧设备的 AT
+			// 删除旧设备的 AT 和 RT
 			_, _ = t.Del(BuildTokenKey(userID, dev, AccessToken))
+			_, _ = t.Del(BuildTokenKey(userID, dev, RefreshToken))
 			// 从在线设备集合中移除
 			_, _ = t.Srem(devicesKey, dev)
 		}

@@ -1,0 +1,40 @@
+port: 7880
+bind_addresses:
+  - ""
+
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 60000
+  # 替换为你服务器的公网 IP
+  use_external_ip: true
+
+redis:
+  address: localhost:6379
+
+turn:
+  enabled: true
+  domain: turn.your-domain.com   # 替换为你的 TURN 域名
+  tls_port: 5349
+  udp_port: 3478
+  external_tls: true
+
+keys:
+  # 替换为你的 API Key 和 Secret（Secret 至少 32 字符）
+  your_api_key: your_api_secret_at_least_32_chars
+
+logging:
+  level: info
+  pion_level: error
+
+room:
+  auto_create: true
+  empty_timeout: 300         # 无人加入时 5 分钟后关闭房间
+  departure_timeout: 20      # 所有人离开后 20 秒关闭房间
+  max_participants: 0        # 0 = 不限制
+  enabled_codecs:
+    - mime: audio/opus
+    - mime: video/vp8
+    - mime: video/h264
+    - mime: video/vp9
+    - mime: video/av1

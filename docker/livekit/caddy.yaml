@@ -1,0 +1,42 @@
+logging:
+  logs:
+    default:
+      level: INFO
+
+apps:
+  layer4:
+    servers:
+      main:
+        listen:
+          - ":443"
+        routes:
+          - match:
+              - tls:
+                  sni:
+                    - your-domain.com   # 替换为你的主域名
+            handle:
+              - handler: tls
+              - handler: proxy
+                upstreams:
+                  - dial:
+                      - localhost:7880
+
+          - match:
+              - tls:
+                  sni:
+                    - turn.your-domain.com   # 替换为你的 TURN 域名
+            handle:
+              - handler: tls
+              - handler: proxy
+                upstreams:
+                  - dial:
+                      - localhost:5349
+
+  tls:
+    automation:
+      policies:
+        - subjects:
+            - your-domain.com
+            - turn.your-domain.com
+          issuers:
+            - module: acme   # 自动申请 Let's Encrypt 证书
