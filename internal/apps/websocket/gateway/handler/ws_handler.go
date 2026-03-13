@@ -71,8 +71,6 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gids := h.storeUserJoinedGroup(ctx, userID)
-
 	// 注册路由
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
@@ -83,6 +81,8 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 		return
 	}
+
+	gids := h.storeUserJoinedGroup(ctx, userID)
 
 	defer func() {
 		// 只删除自己：RemoveConnection 内部按指针比对，不会误删新连接
