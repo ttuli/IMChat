@@ -1,9 +1,3 @@
-# Redis ACL file
-# User im (used by Auth, User, Group etc.)
 user im on >123456 ~* +@all
-
-# User imchat (used by Message, Contact, WS etc.)
 user imchat on >zihang623 ~* +@all
-
-# Default user (recommended to disable or set a strong password)
-user default on nopass ~* +@all
+user default on >zihang623 ~* +@all

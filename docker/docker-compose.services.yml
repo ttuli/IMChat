@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # ---------------
+  # IM2 RPC 服务层（按依赖顺序启动）
+  # ---------------
+  idgen-rpc:
+    container_name: im2_idgen_rpc
+    env_file: .env
+    ports:
+      - "9001:9001"
+    restart: on-failure
+
+  user-rpc:
+    container_name: im2_user_rpc
+    env_file: .env
+    ports:
+      - "9002:9002"
+    restart: on-failure
+
+  auth-rpc:
+    container_name: im2_auth_rpc
+    env_file: .env
+    ports:
+      - "9003:9003"
+    restart: on-failure
+
+  group-rpc:
+    container_name: im2_group_rpc
+    env_file: .env
+    ports:
+      - "9004:9004"
+    restart: on-failure
+
+  message-rpc:
+    container_name: im2_message_rpc
+    env_file: .env
+    ports:
+      - "9005:9005"
+    restart: on-failure
+
+  # ---------------
+  # IM2 API 服务层
+  # ---------------
+  user-api:
+    container_name: im2_user_api
+    env_file: .env
+    ports:
+      - "8001:8001"
+    depends_on:
+      - user-rpc
+    restart: on-failure
+
+  auth-api:
+    container_name: im2_auth_api
+    env_file: .env
+    ports:
+      - "8002:8002"
+    depends_on:
+      - auth-rpc
+    restart: on-failure
+
+  group-api:
+    container_name: im2_group_api
+    env_file: .env
+    ports:
+      - "8003:8003"
+    depends_on:
+      - group-rpc
+    restart: on-failure
+
+  message-api:
+    container_name: im2_message_api
+    env_file: .env
+    ports:
+      - "8004:8004"
+    depends_on:
+      - message-rpc
+    restart: on-failure
+
+  file-api:
+    container_name: im2_file_api
+    env_file: .env
+    ports:
+      - "8005:8005"
+    restart: on-failure
+
+  # ---------------
+  # IM2 WebSocket Gateway
+  # ---------------
+  websocket:
+    container_name: im2_websocket
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - message-rpc
+      - redis
+      - nats
+    restart: on-failure
