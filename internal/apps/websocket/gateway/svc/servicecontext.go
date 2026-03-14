@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -106,6 +107,21 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		GroupRpc: grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
 			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
 	}
+
+	// 设置群成员获取函数
+	connMgr.SetGroupMemberFetcher(func(ctx context.Context, groupID uint64) ([]uint64, error) {
+		resp, err := svc.GroupRpc.GetGroupMemberIDs(ctx, &grouprpc.GetGroupMemberIDsReq{
+			GroupId: groupID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		var userIDs []uint64
+		for _, member := range resp.Members {
+			userIDs = append(userIDs, member.UserId)
+		}
+		return userIDs, nil
+	})
 
 	return svc
 }

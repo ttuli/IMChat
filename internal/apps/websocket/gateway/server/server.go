@@ -126,7 +126,7 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 		}
 		var userIDs []uint64
 		if updateSession.TargetType == common.TargetType_GROUP {
-			userIDs = s.svcCtx.ConnectionManager.GetLocalGroupMembers(updateSession.TargetId)
+			userIDs = s.svcCtx.ConnectionManager.GetLocalGroupMembers(ctx, updateSession.TargetId)
 		} else {
 			userIDs = append(userIDs, updateSession.TargetId)
 		}
@@ -153,8 +153,8 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 	return nil
 }
 
-// syncGroupMembership 根据群组事件类型同步本地 groupConnections 映射。
-// 在消息发送前调用，确保发送时本地连接状态已是最新。
+// syncGroupMembership 根据群组事件类型清理本地 groupCache 映射。
+// 在消息发送前调用，确保发送时本地缓存失效重新拉取最新数据。
 func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
 	var notify common.GroupNotification
 	if err := proto.Unmarshal(msg.Payload, &notify); err != nil {
@@ -162,30 +162,9 @@ func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
 		return err
 	}
 
-	switch notify.OpType {
-	case common.GroupOperationType_GROUP_OP_CREATE, common.GroupOperationType_GROUP_OP_JOIN:
-		// 将本地在线的新成员加入群连接映射
-		for _, uid := range notify.TargetIds {
-			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
-				s.svcCtx.ConnectionManager.AddGroupConnection(msg.RouteTarget, conn)
-			}
-		}
+	// 无论是进群、退群、踢人、解散，都只需要废弃本地该群的短缓存
+	s.svcCtx.ConnectionManager.InvalidateGroupCache(msg.RouteTarget)
 
-	case common.GroupOperationType_GROUP_OP_KICK, common.GroupOperationType_GROUP_OP_LEAVE:
-		// 将被踢/主动退群的成员从群连接映射中移除
-		for _, uid := range notify.TargetIds {
-			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
-				s.svcCtx.ConnectionManager.RemoveGroupConnection(msg.RouteTarget, conn)
-			}
-		}
-	case common.GroupOperationType_GROUP_OP_DISMISS:
-		// 群解散：移除所有本地成员的群连接映射（遍历 TargetIds，若为空则无操作）
-		for _, uid := range notify.TargetIds {
-			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
-				s.svcCtx.ConnectionManager.RemoveGroupConnection(msg.RouteTarget, conn)
-			}
-		}
-	}
 	return nil
 }
 
@@ -197,7 +176,7 @@ func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *co
 		})
 		if err != nil {
 			s.svcCtx.TelemetryBus.Publish(err)
-			return nil
+			return err
 		}
 		for _, manager := range resp.Managers {
 			err := s.svcCtx.ConnectionManager.SendToUser(ctx, manager.UserId, msg)

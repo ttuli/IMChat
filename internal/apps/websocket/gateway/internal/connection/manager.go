@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"IM2/internal/common"
 
@@ -25,27 +26,34 @@ type Manager interface {
 	// SendToGroupLocal 仅发送给本地群组成员
 	SendToGroupLocal(ctx context.Context, groupID uint64, msg *common.WSMessage) error
 	// GetLocalGroupMembers 获取本地群组成员
-	GetLocalGroupMembers(groupId uint64) []uint64
+	GetLocalGroupMembers(ctx context.Context, groupId uint64) []uint64
 	// Broadcast 广播消息给多个用户
 	Broadcast(ctx context.Context, userIDs []uint64, msg *common.WSMessage) error
 	// LocalUserCount 本地用户数量
 	LocalUserCount() int
 	// GetAllLocalUserIDs 获取所有本地用户ID
 	GetAllLocalUserIDs() []uint64
-	// AddGroupConnection 添加群组连接
-	AddGroupConnection(groupID uint64, conn *Connection) error
-	// RemoveGroupConnection 移除群组连接
-	RemoveGroupConnection(groupID uint64, conn *Connection)
+	// SetGroupMemberFetcher 设置获取群成员的方法
+	SetGroupMemberFetcher(fetcher func(ctx context.Context, groupID uint64) ([]uint64, error))
+	// InvalidateGroupCache 清理群组缓存
+	InvalidateGroupCache(groupID uint64)
 	// Close 关闭管理器
 	Close() error
+}
+
+type groupCacheItem struct {
+	UserIDs   []uint64
+	ExpiresAt time.Time
 }
 
 // DefaultManager 默认连接管理器实现
 type DefaultManager struct {
 	connections sync.Map // map[uint64]*Connection
 
-	groupLock        sync.RWMutex
-	groupConnections map[uint64][]*Connection
+	groupLock         sync.RWMutex
+	groupCache        map[uint64]*groupCacheItem
+	groupCacheTTL     time.Duration
+	fetchGroupMembers func(ctx context.Context, groupID uint64) ([]uint64, error)
 
 	nodeID string
 	router MessageRouter
@@ -62,46 +70,55 @@ type MessageRouter interface {
 // NewDefaultManager 创建默认连接管理器
 func NewDefaultManager(nodeID string, router MessageRouter) *DefaultManager {
 	return &DefaultManager{
-		nodeID:           nodeID,
-		router:           router,
-		groupConnections: make(map[uint64][]*Connection),
+		nodeID:        nodeID,
+		router:        router,
+		groupCache:    make(map[uint64]*groupCacheItem),
+		groupCacheTTL: 5 * time.Minute, // 默认5分钟，可根据需要调整
 	}
 }
 
-// AddGroupConnection 添加群组连接
-func (m *DefaultManager) AddGroupConnection(groupID uint64, conn *Connection) error {
-	m.groupLock.Lock()
-	defer m.groupLock.Unlock()
-
-	// 检查是否已经存在 (避免重复添加)
-	conns := m.groupConnections[groupID]
-	for _, c := range conns {
-		if c == conn {
-			return nil
-		}
-	}
-
-	m.groupConnections[groupID] = append(m.groupConnections[groupID], conn)
-	return nil
+// SetGroupMemberFetcher 设置获取群成员的方法
+func (m *DefaultManager) SetGroupMemberFetcher(fetcher func(ctx context.Context, groupID uint64) ([]uint64, error)) {
+	m.fetchGroupMembers = fetcher
 }
 
-// RemoveGroupConnection 移除群组连接
-func (m *DefaultManager) RemoveGroupConnection(groupID uint64, conn *Connection) {
+// InvalidateGroupCache 清理群组缓存
+func (m *DefaultManager) InvalidateGroupCache(groupID uint64) {
 	m.groupLock.Lock()
-	defer m.groupLock.Unlock()
+	delete(m.groupCache, groupID)
+	m.groupLock.Unlock()
+	logx.Infof("[ConnectionManager] Group %d cache invalidated", groupID)
+}
 
-	conns := m.groupConnections[groupID]
-	for i, c := range conns {
-		if c == conn {
-			// 删除
-			m.groupConnections[groupID] = append(conns[:i], conns[i+1:]...)
-			break
-		}
+func (m *DefaultManager) getGroupMembersWithCache(ctx context.Context, groupID uint64) ([]uint64, error) {
+	m.groupLock.RLock()
+	item, ok := m.groupCache[groupID]
+	m.groupLock.RUnlock()
+
+	if ok && time.Now().Before(item.ExpiresAt) {
+		return item.UserIDs, nil
 	}
-	// 如果群组没人了，清理 map key
-	if len(m.groupConnections[groupID]) == 0 {
-		delete(m.groupConnections, groupID)
+
+	if m.fetchGroupMembers == nil {
+		return nil, errors.New("group member fetcher not configured")
 	}
+
+	// 触发外部调用获取成员 (RPC -> Redis/MySQL)
+	userIDs, err := m.fetchGroupMembers(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 更新缓存
+	m.groupLock.Lock()
+	m.groupCache[groupID] = &groupCacheItem{
+		UserIDs:   userIDs,
+		ExpiresAt: time.Now().Add(m.groupCacheTTL),
+	}
+	m.groupLock.Unlock()
+	logx.Infof("[ConnectionManager] Group %d cached %d members", groupID, len(userIDs))
+
+	return userIDs, nil
 }
 
 // AddConnection 添加连接
@@ -168,17 +185,19 @@ func (m *DefaultManager) SendToGroup(ctx context.Context, groupID uint64, msg *c
 
 // SendToGroupLocal 仅发送给本地群组成员(用于处理来自其他节点的广播消息，避免循环路由)
 func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, msg *common.WSMessage) error {
-	m.groupLock.RLock()
-	conns, ok := m.groupConnections[groupID]
-	m.groupLock.RUnlock()
+	userIDs, err := m.getGroupMembersWithCache(ctx, groupID)
+	if err != nil {
+		logx.Errorf("[ConnectionManager] failed to get group %d members: %v", groupID, err)
+		return err
+	}
 
-	if ok {
-		for _, c := range conns {
-			if c.UserID == msg.SenderId {
-				continue
-			}
-			if err := c.Send(msg); err != nil {
-				logx.Errorf("[ConnectionManager] SendToGroupLocal to conn failed: %v", err)
+	for _, uid := range userIDs {
+		if uid == msg.SenderId {
+			continue
+		}
+		if conn, ok := m.GetLocalConnection(uid); ok {
+			if err := conn.Send(msg); err != nil {
+				logx.Errorf("[ConnectionManager] SendToGroupLocal to user %d failed: %v", uid, err)
 			}
 		}
 	}
@@ -186,14 +205,18 @@ func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, m
 }
 
 // GetLocalGroupMembers 获取本地群组成员
-func (m *DefaultManager) GetLocalGroupMembers(groupId uint64) []uint64 {
-	var userIDs []uint64
-	m.groupLock.RLock()
-	defer m.groupLock.RUnlock()
-	for _, conn := range m.groupConnections[groupId] {
-		userIDs = append(userIDs, conn.UserID)
+func (m *DefaultManager) GetLocalGroupMembers(ctx context.Context, groupId uint64) []uint64 {
+	userIDs, err := m.getGroupMembersWithCache(ctx, groupId)
+	if err != nil {
+		return nil
 	}
-	return userIDs
+	var localSubscribers []uint64
+	for _, uid := range userIDs {
+		if _, ok := m.GetLocalConnection(uid); ok {
+			localSubscribers = append(localSubscribers, uid)
+		}
+	}
+	return localSubscribers
 }
 
 // Broadcast 广播消息给多个用户

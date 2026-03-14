@@ -4,19 +4,16 @@ import (
 	"context"
 	"net/http"
 
-	"IM2/internal/apps/Group/rpc/group"
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/internal/connection"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/svc"
 	"IM2/internal/common"
-	"IM2/pkg/logger"
 	"IM2/pkg/resultx"
 	tokenmanager "IM2/pkg/tokenManager"
 	"IM2/pkg/xerr"
 
 	"github.com/gorilla/websocket"
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 var upgrader = websocket.Upgrader{
@@ -82,14 +79,9 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gids := h.storeUserJoinedGroup(ctx, userID)
-
 	defer func() {
 		// 只删除自己：RemoveConnection 内部按指针比对，不会误删新连接
 		h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID, conn)
-		for _, gid := range gids {
-			h.svcCtx.ConnectionManager.RemoveGroupConnection(gid, conn)
-		}
 		// 只有当 map 中已不存在该 userID 的连接（即本连接确实是最后一个）时才注销路由
 		// 避免旧连接 defer 注销掉新连接刚注册上的路由
 		if _, exists := h.svcCtx.ConnectionManager.GetLocalConnection(conn.UserID); !exists {
@@ -110,40 +102,6 @@ func (h *WSHandler) createMessageHandler(ctx context.Context, conn *connection.C
 	return func(msg *common.WSMessage) error {
 		return msgHandler.Handle(ctx, msg)
 	}
-}
-
-func (h *WSHandler) storeUserJoinedGroup(ctx context.Context, userID uint64) []uint64 {
-	// 获取用户的群列表
-	resp, err := h.svcCtx.GroupRpc.GetUserGroups(ctx, &group.GetUserGroupsReq{
-		UserId: userID,
-	})
-	if err != nil {
-		logx.Errorf("get user %d groups failed: %v", userID, err)
-		// 获取群列表失败是严重错误，断开连接让客户端重连
-		if conn, ok := h.svcCtx.ConnectionManager.GetLocalConnection(userID); ok {
-			conn.SendError(&common.ErrorMessage{
-				ErrorCode: int32(common.ErrorCode_SERVER_ERROR),
-				ErrorMsg:  "与服务器建立连接失败",
-			})
-			conn.Close()
-		}
-		return nil
-	}
-
-	// 获取当前连接
-	conn, ok := h.svcCtx.ConnectionManager.GetLocalConnection(userID)
-	if !ok {
-		return nil
-	}
-
-	// 将连接加入到所有群组
-	for _, groupID := range resp.Data {
-		if err := h.svcCtx.ConnectionManager.AddGroupConnection(groupID, conn); err != nil {
-			logx.Errorf("add group connection failed: %v", err)
-		}
-	}
-	logger.Infof("added user %d to %d groups", userID, len(resp.Data))
-	return resp.Data
 }
 
 // ConfigureUpgrader 配置升级器
