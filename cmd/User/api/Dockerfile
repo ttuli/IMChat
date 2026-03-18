@@ -11,5 +11,7 @@ FROM alpine:latest
 RUN apk update --no-cache && apk add --no-cache tzdata ca-certificates
 WORKDIR /app
 COPY --from=builder /app/bin/server /app/server
-EXPOSE 8001
-ENTRYPOINT ["/app/server"]
+COPY --from=builder /app/internal/apps/User/api/etc /app/etc
+# User API port
+
+ENTRYPOINT ["/app/server", "-f", "/app/etc/config.yaml"]

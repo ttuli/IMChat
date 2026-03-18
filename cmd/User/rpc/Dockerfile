@@ -11,5 +11,7 @@ FROM alpine:latest
 RUN apk update --no-cache && apk add --no-cache tzdata ca-certificates
 WORKDIR /app
 COPY --from=builder /app/bin/server /app/server
-EXPOSE 9002
-ENTRYPOINT ["/app/server"]
+COPY --from=builder /app/internal/apps/User/rpc/etc /app/etc
+# User RPC port
+
+ENTRYPOINT ["/app/server", "-f", "/app/etc/config.yaml"]

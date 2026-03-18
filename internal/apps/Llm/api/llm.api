@@ -1,0 +1,28 @@
+syntax = "v1"
+
+info (
+	title:   "LLM API Service"
+	desc:    "AI related services for IM2"
+	author:  "Antigravity"
+	version: "v1.0"
+)
+
+type (
+	SuggestRequest {
+		Content string `json:"content"`
+		Stream  bool   `json:"stream,optional"`
+	}
+	SuggestResponse {
+		Reply string `json:"reply"`
+	}
+)
+
+@server (
+	group:  "llm"
+	prefix: "/ai"
+)
+service llm-api {
+	@handler SuggestHandler
+	post /suggest (SuggestRequest) returns (SuggestResponse)
+}
+

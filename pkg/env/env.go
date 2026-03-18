@@ -68,12 +68,17 @@ func FindProjectRoot() (string, error) {
 
 func LoadEnv() error {
 	projectRoot, err := FindProjectRoot()
+	var envPath string
 	if err != nil {
-		return err
+		// 回退到当前目录
+		fmt.Println("未找到项目根目录，尝试从当前目录加载 .env")
+		envPath = ".env"
+	} else {
+		envPath = filepath.Join(projectRoot, ".env")
 	}
-	envPath := filepath.Join(projectRoot, ".env")
+
 	if _, err := os.Stat(envPath); os.IsNotExist(err) {
-		fmt.Println("env file not found")
+		fmt.Println("未找到 .env 文件，将使用系统默认环境变量")
 		return nil
 	}
 	return godotenv.Load(envPath)

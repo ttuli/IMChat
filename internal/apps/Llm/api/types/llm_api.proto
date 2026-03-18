@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package types.llm;
+
+option go_package = "./;types";
+
+enum Role {
+    ROLE_ME = 0;
+    ROLE_OTHER = 1;
+    ROLE_SYSTEM = 2;
+}
+
+message ChatMessage {
+    Role role = 1;
+    string content = 2;
+}
+
+message SuggestRequest {
+    repeated ChatMessage history = 1;
+}
+
+message SuggestResponse {
+    repeated string reply = 1;
+}

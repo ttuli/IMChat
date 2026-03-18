@@ -6,37 +6,50 @@ services:
   # ---------------
   idgen-rpc:
     container_name: im2_idgen_rpc
+    image: ${REGISTRY}:idgen-rpc-latest
     env_file: .env
     ports:
-      - "9001:9001"
+      - "${IDGEN_RPC_PORT}:${IDGEN_RPC_PORT}"
     restart: on-failure
 
   user-rpc:
     container_name: im2_user_rpc
+    image: ${REGISTRY}:user-rpc-latest
     env_file: .env
     ports:
-      - "9002:9002"
+      - "${USER_RPC_PORT}:${USER_RPC_PORT}"
     restart: on-failure
 
   auth-rpc:
     container_name: im2_auth_rpc
+    image: ${REGISTRY}:auth-rpc-latest
     env_file: .env
     ports:
-      - "9003:9003"
+      - "${AUTH_RPC_PORT}:${AUTH_RPC_PORT}"
     restart: on-failure
 
   group-rpc:
     container_name: im2_group_rpc
+    image: ${REGISTRY}:group-rpc-latest
     env_file: .env
     ports:
-      - "9004:9004"
+      - "${GROUP_RPC_PORT}:${GROUP_RPC_PORT}"
     restart: on-failure
 
   message-rpc:
     container_name: im2_message_rpc
+    image: ${REGISTRY}:message-rpc-latest
     env_file: .env
     ports:
-      - "9005:9005"
+      - "${MESSAGE_RPC_PORT}:${MESSAGE_RPC_PORT}"
+    restart: on-failure
+
+  llm-rpc:
+    container_name: im2_llm_rpc
+    image: ${REGISTRY}:llm-rpc-latest
+    env_file: .env
+    ports:
+      - "${LLM_RPC_PORT}:${LLM_RPC_PORT}"
     restart: on-failure
 
   # ---------------
@@ -44,45 +57,50 @@ services:
   # ---------------
   user-api:
     container_name: im2_user_api
+    image: ${REGISTRY}:user-api-latest
     env_file: .env
     ports:
-      - "8001:8001"
-    depends_on:
-      - user-rpc
+      - "${USER_API_PORT}:${USER_API_PORT}"
     restart: on-failure
 
   auth-api:
     container_name: im2_auth_api
+    image: ${REGISTRY}:auth-api-latest
     env_file: .env
     ports:
-      - "8002:8002"
-    depends_on:
-      - auth-rpc
+      - "${AUTH_API_PORT}:${AUTH_API_PORT}"
     restart: on-failure
 
   group-api:
     container_name: im2_group_api
+    image: ${REGISTRY}:group-api-latest
     env_file: .env
     ports:
-      - "8003:8003"
-    depends_on:
-      - group-rpc
+      - "${GROUP_API_PORT}:${GROUP_API_PORT}"
     restart: on-failure
 
   message-api:
     container_name: im2_message_api
+    image: ${REGISTRY}:message-api-latest
     env_file: .env
     ports:
-      - "8004:8004"
-    depends_on:
-      - message-rpc
+      - "${MESSAGE_API_PORT}:${MESSAGE_API_PORT}"
     restart: on-failure
 
   file-api:
     container_name: im2_file_api
+    image: ${REGISTRY}:file-api-latest
     env_file: .env
     ports:
-      - "8005:8005"
+      - "${FILE_API_PORT}:${FILE_API_PORT}"
+    restart: on-failure
+
+  llm-api:
+    container_name: im2_llm_api
+    image: ${REGISTRY}:llm-api-latest
+    env_file: .env
+    ports:
+      - "${LLM_API_PORT}:${LLM_API_PORT}"
     restart: on-failure
 
   # ---------------
@@ -90,11 +108,8 @@ services:
   # ---------------
   websocket:
     container_name: im2_websocket
+    image: ${REGISTRY}:websocket-latest
     env_file: .env
     ports:
-      - "8080:8080"
-    depends_on:
-      - message-rpc
-      - redis
-      - nats
+      - "${WEBSOCKET_PORT}:${WEBSOCKET_PORT}"
     restart: on-failure

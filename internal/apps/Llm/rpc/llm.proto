@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package llm;
+
+option go_package = "./llm";
+
+// ========== 消息定义 ==========
+
+enum Role {
+    ROLE_ME = 0;
+    ROLE_OTHER = 1;
+    ROLE_SYSTEM = 2;
+}
+
+message Message {
+  Role role = 1;
+  string content = 2;
+}
+
+message SuggestionReq {
+  repeated Message history = 1;
+}
+
+message SuggestionResp {
+  repeated string reply = 1;
+}
+
+// ========== 服务定义 ==========
+
+service Llm {
+  rpc Suggestions(SuggestionReq) returns (SuggestionResp);
+}

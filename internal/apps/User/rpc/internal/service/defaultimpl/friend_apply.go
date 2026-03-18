@@ -62,6 +62,7 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "查询已有申请失败")
 	}
 
+	now := time.Now()
 	// 5. 创建新申请
 	apply := &model.FriendApply{
 		FromUserID: fromUserID,
@@ -69,7 +70,8 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 		ApplyMsg:   applyMsg,
 		Status:     model.ApplyStatusPending,
 		Source:     source,
-		CreateTime: time.Now(),
+		CreateTime: now,
+		HandleTime: now,
 	}
 	if err := s.friendApplyDAO.InsertFriendApply(ctx, apply); err != nil {
 		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "创建好友申请失败")
