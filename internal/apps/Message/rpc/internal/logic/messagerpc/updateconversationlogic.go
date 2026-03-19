@@ -26,8 +26,7 @@ func NewUpdateConversationLogic(ctx context.Context, svcCtx *svc.ServiceContext)
 func (l *UpdateConversationLogic) UpdateConversation(in *message.UpdateConversationReq) (*message.UpdateConversationResp, error) {
 	if err := l.svcCtx.MessageService.UpdateConversation(l.ctx,
 		in.UserId, in.ConversationId,
-		in.IsTop, in.IsDisturb, in.IsMute,
-	); err != nil {
+		in.IsTop, in.IsDisturb); err != nil {
 		return nil, err
 	}
 	return &message.UpdateConversationResp{}, nil

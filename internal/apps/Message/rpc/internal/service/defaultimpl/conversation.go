@@ -26,23 +26,12 @@ func (s *messageService) ReadMessage(ctx context.Context, userID uint64, convers
 }
 
 // UpdateConversation 更新会话设置
-// isTop/isDisturb/isMute: 0-不变更 1-开启 2-关闭
-func (s *messageService) UpdateConversation(ctx context.Context, userID uint64, conversationID string, isTop, isDisturb, isMute int32) error {
+// isTop/isDisturb: 0-不变更 1-开启 2-关闭
+func (s *messageService) UpdateConversation(ctx context.Context, userID uint64, conversationID string, isTop, isDisturb int32) error {
 	updates := make(map[string]any)
 
-	switch isTop {
-	case 1:
-		updates["is_disturb"] = true
-	case 2:
-		updates["is_disturb"] = false
-	}
-
-	switch isMute {
-	case 1:
-		updates["is_mute"] = true
-	case 2:
-		updates["is_mute"] = false
-	}
+	updates["is_disturb"] = isDisturb
+	updates["is_top"] = isTop
 
 	if len(updates) == 0 {
 		return nil

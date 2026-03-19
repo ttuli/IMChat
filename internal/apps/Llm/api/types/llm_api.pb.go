@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v3.19.4
-// source: llm_api.proto
+// source: apps/Llm/api/types/llm_api.proto
 
 package types
 
@@ -54,11 +54,11 @@ func (x Role) String() string {
 }
 
 func (Role) Descriptor() protoreflect.EnumDescriptor {
-	return file_llm_api_proto_enumTypes[0].Descriptor()
+	return file_apps_Llm_api_types_llm_api_proto_enumTypes[0].Descriptor()
 }
 
 func (Role) Type() protoreflect.EnumType {
-	return &file_llm_api_proto_enumTypes[0]
+	return &file_apps_Llm_api_types_llm_api_proto_enumTypes[0]
 }
 
 func (x Role) Number() protoreflect.EnumNumber {
@@ -67,7 +67,7 @@ func (x Role) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Role.Descriptor instead.
 func (Role) EnumDescriptor() ([]byte, []int) {
-	return file_llm_api_proto_rawDescGZIP(), []int{0}
+	return file_apps_Llm_api_types_llm_api_proto_rawDescGZIP(), []int{0}
 }
 
 type ChatMessage struct {
@@ -80,7 +80,7 @@ type ChatMessage struct {
 
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
-	mi := &file_llm_api_proto_msgTypes[0]
+	mi := &file_apps_Llm_api_types_llm_api_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -92,7 +92,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_api_proto_msgTypes[0]
+	mi := &file_apps_Llm_api_types_llm_api_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -105,7 +105,7 @@ func (x *ChatMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
 func (*ChatMessage) Descriptor() ([]byte, []int) {
-	return file_llm_api_proto_rawDescGZIP(), []int{0}
+	return file_apps_Llm_api_types_llm_api_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ChatMessage) GetRole() Role {
@@ -131,7 +131,7 @@ type SuggestRequest struct {
 
 func (x *SuggestRequest) Reset() {
 	*x = SuggestRequest{}
-	mi := &file_llm_api_proto_msgTypes[1]
+	mi := &file_apps_Llm_api_types_llm_api_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -143,7 +143,7 @@ func (x *SuggestRequest) String() string {
 func (*SuggestRequest) ProtoMessage() {}
 
 func (x *SuggestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_api_proto_msgTypes[1]
+	mi := &file_apps_Llm_api_types_llm_api_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -156,7 +156,7 @@ func (x *SuggestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestRequest.ProtoReflect.Descriptor instead.
 func (*SuggestRequest) Descriptor() ([]byte, []int) {
-	return file_llm_api_proto_rawDescGZIP(), []int{1}
+	return file_apps_Llm_api_types_llm_api_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SuggestRequest) GetHistory() []*ChatMessage {
@@ -175,7 +175,7 @@ type SuggestResponse struct {
 
 func (x *SuggestResponse) Reset() {
 	*x = SuggestResponse{}
-	mi := &file_llm_api_proto_msgTypes[2]
+	mi := &file_apps_Llm_api_types_llm_api_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -187,7 +187,7 @@ func (x *SuggestResponse) String() string {
 func (*SuggestResponse) ProtoMessage() {}
 
 func (x *SuggestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_api_proto_msgTypes[2]
+	mi := &file_apps_Llm_api_types_llm_api_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -200,7 +200,7 @@ func (x *SuggestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestResponse.ProtoReflect.Descriptor instead.
 func (*SuggestResponse) Descriptor() ([]byte, []int) {
-	return file_llm_api_proto_rawDescGZIP(), []int{2}
+	return file_apps_Llm_api_types_llm_api_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SuggestResponse) GetReply() []string {
@@ -210,11 +210,11 @@ func (x *SuggestResponse) GetReply() []string {
 	return nil
 }
 
-var File_llm_api_proto protoreflect.FileDescriptor
+var File_apps_Llm_api_types_llm_api_proto protoreflect.FileDescriptor
 
-const file_llm_api_proto_rawDesc = "" +
+const file_apps_Llm_api_types_llm_api_proto_rawDesc = "" +
 	"\n" +
-	"\rllm_api.proto\x12\ttypes.llm\"L\n" +
+	" apps/Llm/api/types/llm_api.proto\x12\ttypes.llm\"L\n" +
 	"\vChatMessage\x12#\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x0f.types.llm.RoleR\x04role\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\"B\n" +
@@ -230,26 +230,26 @@ const file_llm_api_proto_rawDesc = "" +
 	"Z\b./;typesb\x06proto3"
 
 var (
-	file_llm_api_proto_rawDescOnce sync.Once
-	file_llm_api_proto_rawDescData []byte
+	file_apps_Llm_api_types_llm_api_proto_rawDescOnce sync.Once
+	file_apps_Llm_api_types_llm_api_proto_rawDescData []byte
 )
 
-func file_llm_api_proto_rawDescGZIP() []byte {
-	file_llm_api_proto_rawDescOnce.Do(func() {
-		file_llm_api_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_llm_api_proto_rawDesc), len(file_llm_api_proto_rawDesc)))
+func file_apps_Llm_api_types_llm_api_proto_rawDescGZIP() []byte {
+	file_apps_Llm_api_types_llm_api_proto_rawDescOnce.Do(func() {
+		file_apps_Llm_api_types_llm_api_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_apps_Llm_api_types_llm_api_proto_rawDesc), len(file_apps_Llm_api_types_llm_api_proto_rawDesc)))
 	})
-	return file_llm_api_proto_rawDescData
+	return file_apps_Llm_api_types_llm_api_proto_rawDescData
 }
 
-var file_llm_api_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_llm_api_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_llm_api_proto_goTypes = []any{
+var file_apps_Llm_api_types_llm_api_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_apps_Llm_api_types_llm_api_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_apps_Llm_api_types_llm_api_proto_goTypes = []any{
 	(Role)(0),               // 0: types.llm.Role
 	(*ChatMessage)(nil),     // 1: types.llm.ChatMessage
 	(*SuggestRequest)(nil),  // 2: types.llm.SuggestRequest
 	(*SuggestResponse)(nil), // 3: types.llm.SuggestResponse
 }
-var file_llm_api_proto_depIdxs = []int32{
+var file_apps_Llm_api_types_llm_api_proto_depIdxs = []int32{
 	0, // 0: types.llm.ChatMessage.role:type_name -> types.llm.Role
 	1, // 1: types.llm.SuggestRequest.history:type_name -> types.llm.ChatMessage
 	2, // [2:2] is the sub-list for method output_type
@@ -259,27 +259,27 @@ var file_llm_api_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_llm_api_proto_init() }
-func file_llm_api_proto_init() {
-	if File_llm_api_proto != nil {
+func init() { file_apps_Llm_api_types_llm_api_proto_init() }
+func file_apps_Llm_api_types_llm_api_proto_init() {
+	if File_apps_Llm_api_types_llm_api_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_llm_api_proto_rawDesc), len(file_llm_api_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_apps_Llm_api_types_llm_api_proto_rawDesc), len(file_apps_Llm_api_types_llm_api_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_llm_api_proto_goTypes,
-		DependencyIndexes: file_llm_api_proto_depIdxs,
-		EnumInfos:         file_llm_api_proto_enumTypes,
-		MessageInfos:      file_llm_api_proto_msgTypes,
+		GoTypes:           file_apps_Llm_api_types_llm_api_proto_goTypes,
+		DependencyIndexes: file_apps_Llm_api_types_llm_api_proto_depIdxs,
+		EnumInfos:         file_apps_Llm_api_types_llm_api_proto_enumTypes,
+		MessageInfos:      file_apps_Llm_api_types_llm_api_proto_msgTypes,
 	}.Build()
-	File_llm_api_proto = out.File
-	file_llm_api_proto_goTypes = nil
-	file_llm_api_proto_depIdxs = nil
+	File_apps_Llm_api_types_llm_api_proto = out.File
+	file_apps_Llm_api_types_llm_api_proto_goTypes = nil
+	file_apps_Llm_api_types_llm_api_proto_depIdxs = nil
 }

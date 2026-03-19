@@ -44,7 +44,7 @@ type UserClient interface {
 	// 好友管理
 	GetFriends(ctx context.Context, in *GetFriendsReq, opts ...grpc.CallOption) (*GetFriendsResp, error)
 	CreateFriend(ctx context.Context, in *CreateFriendReq, opts ...grpc.CallOption) (*CreateFriendResp, error)
-	UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*EmptyResp, error)
+	UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*UpdateFriendResp, error)
 	DeleteFriend(ctx context.Context, in *DeleteFriendReq, opts ...grpc.CallOption) (*EmptyResp, error)
 	// 好友申请
 	NewFriendApply(ctx context.Context, in *NewFriendApplyReq, opts ...grpc.CallOption) (*NewFriendApplyResp, error)
@@ -120,9 +120,9 @@ func (c *userClient) CreateFriend(ctx context.Context, in *CreateFriendReq, opts
 	return out, nil
 }
 
-func (c *userClient) UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*EmptyResp, error) {
+func (c *userClient) UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*UpdateFriendResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResp)
+	out := new(UpdateFriendResp)
 	err := c.cc.Invoke(ctx, User_UpdateFriend_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ type UserServer interface {
 	// 好友管理
 	GetFriends(context.Context, *GetFriendsReq) (*GetFriendsResp, error)
 	CreateFriend(context.Context, *CreateFriendReq) (*CreateFriendResp, error)
-	UpdateFriend(context.Context, *UpdateFriendReq) (*EmptyResp, error)
+	UpdateFriend(context.Context, *UpdateFriendReq) (*UpdateFriendResp, error)
 	DeleteFriend(context.Context, *DeleteFriendReq) (*EmptyResp, error)
 	// 好友申请
 	NewFriendApply(context.Context, *NewFriendApplyReq) (*NewFriendApplyResp, error)
@@ -216,7 +216,7 @@ func (UnimplementedUserServer) GetFriends(context.Context, *GetFriendsReq) (*Get
 func (UnimplementedUserServer) CreateFriend(context.Context, *CreateFriendReq) (*CreateFriendResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateFriend not implemented")
 }
-func (UnimplementedUserServer) UpdateFriend(context.Context, *UpdateFriendReq) (*EmptyResp, error) {
+func (UnimplementedUserServer) UpdateFriend(context.Context, *UpdateFriendReq) (*UpdateFriendResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateFriend not implemented")
 }
 func (UnimplementedUserServer) DeleteFriend(context.Context, *DeleteFriendReq) (*EmptyResp, error) {

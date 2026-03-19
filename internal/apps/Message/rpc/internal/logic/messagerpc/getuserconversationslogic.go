@@ -34,9 +34,8 @@ func (l *GetUserConversationsLogic) GetUserConversations(in *message.GetUserConv
 		list = append(list, &message.UserConversation{
 			UserId:         uc.UserID,
 			ConversationId: uc.ConversationID,
-			IsTop:          uc.IsTop,
-			IsDisturb:      uc.IsDisturb,
-			IsMute:         uc.IsMute,
+			IsTop:          int32(uc.IsTop),
+			IsDisturb:      int32(uc.IsDisturb),
 			LastReadSeq:    uc.LastReadSeq,
 			CreateTime:     uc.CreateTime.UnixMilli(),
 			UpdateTime:     uc.UpdateTime.UnixMilli(),

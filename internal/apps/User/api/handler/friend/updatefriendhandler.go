@@ -3,8 +3,6 @@ package friend
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
-
 	"IM2/internal/apps/User/api/internal/logic/friend"
 	"IM2/internal/apps/User/api/svc"
 	"IM2/internal/apps/User/api/types"
@@ -21,11 +19,11 @@ func UpdateFriendHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := friend.NewUpdateFriendLogic(r.Context(), svcCtx)
-		err := l.UpdateFriend(&req)
+		resp, err := l.UpdateFriend(&req)
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
-			httpx.Ok(w)
+			resultx.OkProtoCtx(r.Context(), w, r, resp)
 		}
 	}
 }

@@ -105,9 +105,8 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 				userConvs = append(userConvs, &model.UserConversation{
 					UserID:         targetID,
 					ConversationID: session,
-					IsTop:          false,
-					IsDisturb:      false,
-					IsMute:         false,
+					IsTop:          model.InActive,
+					IsDisturb:      model.InActive,
 					LastReadSeq:    0,
 				})
 			}
@@ -147,17 +146,15 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 				{
 					UserID:         friendApply.FromUserId,
 					ConversationID: session,
-					IsTop:          false,
-					IsDisturb:      false,
-					IsMute:         false,
+					IsTop:          model.InActive,
+					IsDisturb:      model.InActive,
 					LastReadSeq:    0,
 				},
 				{
 					UserID:         friendApply.ToUserId,
 					ConversationID: session,
-					IsTop:          false,
-					IsDisturb:      false,
-					IsMute:         false,
+					IsTop:          model.InActive,
+					IsDisturb:      model.InActive,
 					LastReadSeq:    0,
 				},
 			}
@@ -176,17 +173,15 @@ func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
 			{
 				UserID:         friendMsg.FriendId,
 				ConversationID: session,
-				IsTop:          false,
-				IsDisturb:      false,
-				IsMute:         false,
+				IsTop:          model.InActive,
+				IsDisturb:      model.InActive,
 				LastReadSeq:    0,
 			},
 			{
 				UserID:         friendMsg.UserId,
 				ConversationID: session,
-				IsTop:          false,
-				IsDisturb:      false,
-				IsMute:         false,
+				IsTop:          model.InActive,
+				IsDisturb:      model.InActive,
 				LastReadSeq:    0,
 			},
 		}

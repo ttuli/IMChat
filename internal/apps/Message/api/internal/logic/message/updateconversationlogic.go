@@ -34,7 +34,6 @@ func (l *UpdateConversationLogic) UpdateConversation(req *types.UpdateConversati
 		ConversationId: req.ConversationId,
 		IsTop:          req.IsTop,
 		IsDisturb:      req.IsDisturb,
-		IsMute:         req.IsMute,
 	})
 	return err
 }

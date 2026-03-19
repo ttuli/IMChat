@@ -2,10 +2,14 @@ package defaultimpl
 
 import (
 	"context"
+	"database/sql"
 
+	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
+	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -54,31 +58,37 @@ func (s *userService) CreateFriend(ctx context.Context, userID, friendID uint64,
 }
 
 // UpdateFriend 更新好友信息（备注、拉黑、星标）
-func (s *userService) UpdateFriend(ctx context.Context, userID, friendID uint64, remark string, blocked, starred bool) error {
+func (s *userService) UpdateFriend(ctx context.Context, userID, friendID uint64, remark string, blocked, starred bool) (*model.UserFriend, error) {
 	// 检查好友关系是否存在
 	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
 	if err == gorm.ErrRecordNotFound {
-		return xerr.New(xerr.ErrNotFound, "好友关系不存在")
+		return nil, xerr.New(xerr.ErrNotFound, "好友关系不存在")
 	}
 	if err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
 	}
 
 	updates := map[string]any{
 		"remark":  remark,
-		"blocked": blocked,
-		"stared":  starred,
+		"blocked": sql.NullBool{Bool: blocked, Valid: true},
+		"starred": sql.NullBool{Bool: starred, Valid: true},
 	}
 	if err := s.friendDAO.UpdateFriend(ctx, userID, friendID, updates); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "更新好友信息失败")
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "更新好友信息失败")
 	}
-	return nil
+
+	friend, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	if err != nil {
+		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询更新后的好友信息失败")
+	}
+
+	return friend, nil
 }
 
 // DeleteFriend 删除好友（双向删除）
 func (s *userService) DeleteFriend(ctx context.Context, userID, friendID uint64) error {
 	// 检查好友关系是否存在
-	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	friendRecord, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(xerr.ErrNotFound, "好友关系不存在")
 	}
@@ -86,8 +96,13 @@ func (s *userService) DeleteFriend(ctx context.Context, userID, friendID uint64)
 		return xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
 	}
 
-	if err := s.friendDAO.DeleteFriend(ctx, userID, friendID); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "删除好友失败")
+	if msg, err := common.NewFriendUpdateMsg(common.MessageType_FRIEND_DELETED, friendRecord, userID); err == nil {
+		if data, err := proto.Marshal(msg); err == nil {
+			if _, err := s.js.Publish(s.Config.NATS.BroadcastSubject, data); err != nil {
+				logger.Error("DeleteFriend publish error: " + err.Error())
+			}
+		}
 	}
+
 	return nil
 }

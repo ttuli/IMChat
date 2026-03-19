@@ -33,6 +33,7 @@ type (
 	NewFriendApplyReq           = user.NewFriendApplyReq
 	NewFriendApplyResp          = user.NewFriendApplyResp
 	UpdateFriendReq             = user.UpdateFriendReq
+	UpdateFriendResp            = user.UpdateFriendResp
 	UpdateInfoReq               = user.UpdateInfoReq
 	UserInfo                    = user.UserInfo
 	VerifyPasswordReq           = user.VerifyPasswordReq
@@ -47,7 +48,7 @@ type (
 		// 好友管理
 		GetFriends(ctx context.Context, in *GetFriendsReq, opts ...grpc.CallOption) (*GetFriendsResp, error)
 		CreateFriend(ctx context.Context, in *CreateFriendReq, opts ...grpc.CallOption) (*CreateFriendResp, error)
-		UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*EmptyResp, error)
+		UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*UpdateFriendResp, error)
 		DeleteFriend(ctx context.Context, in *DeleteFriendReq, opts ...grpc.CallOption) (*EmptyResp, error)
 		// 好友申请
 		NewFriendApply(ctx context.Context, in *NewFriendApplyReq, opts ...grpc.CallOption) (*NewFriendApplyResp, error)
@@ -98,7 +99,7 @@ func (m *defaultUser) CreateFriend(ctx context.Context, in *CreateFriendReq, opt
 	return client.CreateFriend(ctx, in, opts...)
 }
 
-func (m *defaultUser) UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*EmptyResp, error) {
+func (m *defaultUser) UpdateFriend(ctx context.Context, in *UpdateFriendReq, opts ...grpc.CallOption) (*UpdateFriendResp, error) {
 	client := user.NewUserClient(m.cli.Conn())
 	return client.UpdateFriend(ctx, in, opts...)
 }

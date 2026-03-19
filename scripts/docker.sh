@@ -73,6 +73,9 @@ declare -A SERVICES=(
     ["message-api"]="cmd/Message/api/Dockerfile"
     ["file-api"]="cmd/File/api/Dockerfile"
     ["websocket"]="cmd/websocket/Dockerfile"
+    ["llm-rpc"]="cmd/Llm/rpc/Dockerfile"
+    ["llm-api"]="cmd/Llm/api/Dockerfile"
+    ["llm-python"]="cmd/Llm/python/Dockerfile"
 )
 
 # ========== 核心命令 ==========
@@ -240,6 +243,10 @@ do_help() {
     echo ""
     echo "  # 构建并推送 user-api 服务"
     echo "  \$0 build-push user-api"
+    echo ""
+    echo "  # 构建并推送 llm 相关服务"
+    echo "  \$0 build-push llm-rpc"
+    echo "  \$0 build-push llm-python"
     echo ""
     echo "  # 指定 Tag 为 v1.0.0 并推送到自定义仓库"
     echo "  REGISTRY=registry.example.com/myns TAG=v1.0.0 \$0 build-push"

@@ -52,6 +52,14 @@ services:
       - "${LLM_RPC_PORT}:${LLM_RPC_PORT}"
     restart: on-failure
 
+  llm-python:
+    container_name: im2_llm_python
+    image: ${REGISTRY}:llm-python-latest
+    env_file: .env
+    ports:
+      - "${LLM_PYTHON_PORT}:${LLM_PYTHON_PORT}"
+    restart: on-failure
+
   # ---------------
   # IM2 API 服务层
   # ---------------

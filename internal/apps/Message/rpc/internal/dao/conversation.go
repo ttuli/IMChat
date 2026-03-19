@@ -108,9 +108,8 @@ func (c *ConversationDAO) InsertUserConversation(ctx context.Context, userId uin
 		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.UserConversation{
 			UserID:         userId,
 			ConversationID: conversationId,
-			IsTop:          false,
-			IsDisturb:      false,
-			IsMute:         false,
+			IsTop:          1,
+			IsDisturb:      1,
 			LastReadSeq:    maxSeq,
 		}).Error
 	})

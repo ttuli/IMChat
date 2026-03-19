@@ -23,11 +23,22 @@ func NewUpdateFriendLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upda
 	}
 }
 
-func (l *UpdateFriendLogic) UpdateFriend(in *user.UpdateFriendReq) (*user.EmptyResp, error) {
-	err := l.svcCtx.UserService.UpdateFriend(l.ctx, in.UserId, in.FriendId, in.Remark, in.Blocked, in.Starred)
+func (l *UpdateFriendLogic) UpdateFriend(in *user.UpdateFriendReq) (*user.UpdateFriendResp, error) {
+	friendRecord, err := l.svcCtx.UserService.UpdateFriend(l.ctx, in.UserId, in.FriendId, in.Remark, in.Blocked, in.Starred)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user.EmptyResp{}, nil
+	return &user.UpdateFriendResp{
+		Data: &user.Friend{
+			UserId:     friendRecord.UserID,
+			FriendId:   friendRecord.FriendID,
+			Remark:     friendRecord.Remark,
+			Blocked:    friendRecord.Blocked,
+			Source:     int32(friendRecord.Source),
+			Starred:    friendRecord.Starred,
+			CreateTime: friendRecord.CreateTime.UnixMilli(),
+			Extra:      friendRecord.Extra,
+		},
+	}, nil
 }

@@ -25,7 +25,7 @@ type UserService interface {
 	// CreateFriend 创建好友关系（双向）
 	CreateFriend(ctx context.Context, userID, friendID uint64, source uint8, remark string) (*model.UserFriend, error)
 	// UpdateFriend 更新好友信息（备注、拉黑、星标）
-	UpdateFriend(ctx context.Context, userID, friendID uint64, remark string, blocked, starred bool) error
+	UpdateFriend(ctx context.Context, userID, friendID uint64, remark string, blocked, starred bool) (*model.UserFriend, error)
 	// DeleteFriend 删除好友（双向删除）
 	DeleteFriend(ctx context.Context, userID, friendID uint64) error
 

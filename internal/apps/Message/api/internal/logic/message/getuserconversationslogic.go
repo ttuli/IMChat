@@ -43,7 +43,6 @@ func (l *GetUserConversationsLogic) GetUserConversations() (resp *types.GetUserC
 			ConversationId: c.ConversationId,
 			IsTop:          c.IsTop,
 			IsDisturb:      c.IsDisturb,
-			IsMute:         c.IsMute,
 			LastReadSeq:    c.LastReadSeq,
 			CreateTime:     c.CreateTime,
 			UpdateTime:     c.UpdateTime,

@@ -21,7 +21,7 @@ type MessageService interface {
 	// ReadMessage 消息已读上报（清零未读、更新LastReadSeq）
 	ReadMessage(ctx context.Context, userID uint64, conversationID string, seq uint64) error
 	// UpdateConversation 更新会话设置（置顶/免打扰/静音）
-	UpdateConversation(ctx context.Context, userID uint64, conversationID string, isTop, isDisturb, isMute int32) error
+	UpdateConversation(ctx context.Context, userID uint64, conversationID string, isTop, isDisturb int32) error
 	// GetConversation 批量获取会话详情
 	GetConversation(ctx context.Context, conversationIDs []string) ([]*model.Conversation, error)
 	// GetUserConversations 获取用户所有会话（含未读数等用户维度信息）

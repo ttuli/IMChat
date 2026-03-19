@@ -26,16 +26,30 @@ func NewUpdateFriendLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upda
 	}
 }
 
-func (l *UpdateFriendLogic) UpdateFriend(req *types.UpdateFriendReq) error {
+func (l *UpdateFriendLogic) UpdateFriend(req *types.UpdateFriendReq) (*types.UpdateFriendResp, error) {
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
-	_, err := l.svcCtx.UpdateFriend(l.ctx, &user.UpdateFriendReq{
+	res, err := l.svcCtx.UpdateFriend(l.ctx, &user.UpdateFriendReq{
 		UserId:   userID,
 		FriendId: req.FriendId,
 		Remark:   req.Remark,
 		Blocked:  req.Blocked,
 		Starred:  req.Starred,
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	return &types.UpdateFriendResp{
+		Data: &types.Friend{
+			UserId:     res.Data.UserId,
+			FriendId:   res.Data.FriendId,
+			Source:     res.Data.Source,
+			Remark:     res.Data.Remark,
+			Blocked:    res.Data.Blocked,
+			Starred:    res.Data.Starred,
+			CreateTime: res.Data.CreateTime,
+			Extra:      res.Data.Extra,
+		},
+	}, nil
 }

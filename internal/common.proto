@@ -98,7 +98,8 @@ enum MessageType {
   NOTIFICATION = 600;             // 系统通知
   FRIEND_REQUEST = 601;           // 好友请求
   FRIEND_ADD = 602;               // 添加好友
-  GROUP_REQUEST = 603;            // 群请求
+  FRIEND_DELETED = 603;           // 删除好友
+  GROUP_REQUEST = 604;            // 群请求
   
   // 内部消费消息
   UPDATE_SESSION = 700;           // 更新会话
@@ -367,8 +368,8 @@ message Conversation {
   int64 unread_count = 7;         // 未读消息数
   int64 create_time = 8;          // 创建时间
   int64 update_time = 9;         // 更新时间
-  bool is_top = 10;                // 是否置顶
-  bool is_disturb = 11;           // 是否免打扰
+  int32 is_top = 10;                // 是否置顶
+  int32 is_disturb = 11;           // 是否免打扰
   MessageType last_msg_type = 12; // 最后消息类型 (用于渲染图标)
 }
 

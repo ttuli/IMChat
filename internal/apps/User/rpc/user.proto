@@ -121,7 +121,10 @@ message UpdateFriendReq {
   string remark = 3;
   bool blocked = 4;
   bool starred = 5;
+}
 
+message UpdateFriendResp {
+  Friend data = 1;
 }
 
 message DeleteFriendReq {
@@ -174,7 +177,7 @@ service User {
   // 好友管理
   rpc GetFriends(GetFriendsReq) returns (GetFriendsResp);
   rpc CreateFriend(CreateFriendReq) returns (CreateFriendResp);
-  rpc UpdateFriend(UpdateFriendReq) returns (EmptyResp);
+  rpc UpdateFriend(UpdateFriendReq) returns (UpdateFriendResp);
   rpc DeleteFriend(DeleteFriendReq) returns (EmptyResp);
 
   // 好友申请

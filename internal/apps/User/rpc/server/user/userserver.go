@@ -55,7 +55,7 @@ func (s *UserServer) CreateFriend(ctx context.Context, in *user.CreateFriendReq)
 	return l.CreateFriend(in)
 }
 
-func (s *UserServer) UpdateFriend(ctx context.Context, in *user.UpdateFriendReq) (*user.EmptyResp, error) {
+func (s *UserServer) UpdateFriend(ctx context.Context, in *user.UpdateFriendReq) (*user.UpdateFriendResp, error) {
 	l := userlogic.NewUpdateFriendLogic(ctx, s.svcCtx)
 	return l.UpdateFriend(in)
 }

@@ -76,33 +76,6 @@ func IsNotifyMessage(t MessageType) bool {
 	return t >= MessageType_NOTIFICATION && t <= MessageType_GROUP_REQUEST
 }
 
-// ConvertFriendToWSMessage converts a model.UserFriend to a WSMessage
-func ConvertFriendToWSMessage(f *model.UserFriend, targetID uint64) (*WSMessage, error) {
-	pbFriend := &Friend{
-		UserId:     f.UserID,
-		FriendId:   f.FriendID,
-		Remark:     f.Remark,
-		Starred:    f.Starred,
-		Blocked:    f.Blocked,
-		Source:     FriendSource(f.Source),
-		CreateTime: f.CreateTime.UnixMilli(),
-		Extra:      f.Extra,
-	}
-
-	payload, err := proto.Marshal(pbFriend)
-	if err != nil {
-		return nil, err
-	}
-
-	return &WSMessage{
-		RouteTarget:     targetID,
-		RouteTargetType: TargetType_USER,
-		Timestamp:       time.Now().UnixMilli(),
-		Type:            MessageType_FRIEND_ADD,
-		Payload:         payload,
-	}, nil
-}
-
 // ConvertFriendApplyToWSMessage converts a model.FriendApply to a WSMessage
 func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*WSMessage, error) {
 	pbApply := &FriendRequest{
@@ -231,4 +204,30 @@ func NewGroupOperationMsg(opType GroupOperationType, groupId uint64, targetIDs [
 	}
 	wmsg.Payload = payload
 	return wmsg
+}
+
+func NewFriendUpdateMsg(msgType MessageType, f *model.UserFriend, targetID uint64) (*WSMessage, error) {
+	pbFriend := &Friend{
+		UserId:     f.UserID,
+		FriendId:   f.FriendID,
+		Remark:     f.Remark,
+		Starred:    f.Starred,
+		Blocked:    f.Blocked,
+		Source:     FriendSource(f.Source),
+		CreateTime: f.CreateTime.UnixMilli(),
+		Extra:      f.Extra,
+	}
+
+	payload, err := proto.Marshal(pbFriend)
+	if err != nil {
+		return nil, err
+	}
+
+	return &WSMessage{
+		RouteTarget:     targetID,
+		RouteTargetType: TargetType_USER,
+		Timestamp:       time.Now().UnixMilli(),
+		Type:            msgType,
+		Payload:         payload,
+	}, nil
 }

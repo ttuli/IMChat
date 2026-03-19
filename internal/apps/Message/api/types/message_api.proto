@@ -47,15 +47,13 @@ message UserConversation {
   // @gotags: json:"conversation_id"
   string conversation_id = 2;
   // @gotags: json:"is_top"
-  bool is_top = 3;
+  int32 is_top = 3;
   // @gotags: json:"is_disturb"
-  bool is_disturb = 4;
-  // @gotags: json:"is_mute"
-  bool is_mute = 5;
+  int32 is_disturb = 4;
   // @gotags: json:"last_read_seq"
-  uint64 last_read_seq = 6;
+  uint64 last_read_seq = 5;
   // @gotags: json:"create_time"
-  int64 create_time = 7;
+  int64 create_time = 6;
   // @gotags: json:"update_time"
   int64 update_time = 8;
 }
@@ -94,8 +92,6 @@ message UpdateConversationReq {
   int32 is_top = 2;
   // @gotags: json:"is_disturb,optional"
   int32 is_disturb = 3;
-  // @gotags: json:"is_mute,optional"
-  int32 is_mute = 4;
 }
 
 // GetUserConversationsResp

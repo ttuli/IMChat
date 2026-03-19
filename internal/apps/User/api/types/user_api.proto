@@ -139,6 +139,11 @@ message UpdateFriendReq {
   bool starred = 4;
 }
 
+message UpdateFriendResp {
+  // @gotags: json:"data"
+  Friend data = 1;
+}
+
 // DeleteFriendReq
 message DeleteFriendReq {
   // @gotags: json:"friend_id"

@@ -241,12 +241,11 @@ type UserConversation struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	UserId         uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	ConversationId string                 `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	IsTop          bool                   `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`
-	IsDisturb      bool                   `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`
-	IsMute         bool                   `protobuf:"varint,5,opt,name=is_mute,json=isMute,proto3" json:"is_mute,omitempty"`
-	LastReadSeq    uint64                 `protobuf:"varint,6,opt,name=last_read_seq,json=lastReadSeq,proto3" json:"last_read_seq,omitempty"`
-	CreateTime     int64                  `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	UpdateTime     int64                  `protobuf:"varint,8,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	IsTop          int32                  `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`
+	IsDisturb      int32                  `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`
+	LastReadSeq    uint64                 `protobuf:"varint,5,opt,name=last_read_seq,json=lastReadSeq,proto3" json:"last_read_seq,omitempty"`
+	CreateTime     int64                  `protobuf:"varint,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime     int64                  `protobuf:"varint,7,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -295,25 +294,18 @@ func (x *UserConversation) GetConversationId() string {
 	return ""
 }
 
-func (x *UserConversation) GetIsTop() bool {
+func (x *UserConversation) GetIsTop() int32 {
 	if x != nil {
 		return x.IsTop
 	}
-	return false
+	return 0
 }
 
-func (x *UserConversation) GetIsDisturb() bool {
+func (x *UserConversation) GetIsDisturb() int32 {
 	if x != nil {
 		return x.IsDisturb
 	}
-	return false
-}
-
-func (x *UserConversation) GetIsMute() bool {
-	if x != nil {
-		return x.IsMute
-	}
-	return false
+	return 0
 }
 
 func (x *UserConversation) GetLastReadSeq() uint64 {
@@ -727,7 +719,6 @@ type UpdateConversationReq struct {
 	ConversationId string                 `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
 	IsTop          int32                  `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`             // 0:不变更 1:置顶 2:取消置顶
 	IsDisturb      int32                  `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"` // 0:不变更 1:免打扰 2:取消免打扰
-	IsMute         int32                  `protobuf:"varint,5,opt,name=is_mute,json=isMute,proto3" json:"is_mute,omitempty"`          // 0:不变更 1:静音 2:取消静音
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -786,13 +777,6 @@ func (x *UpdateConversationReq) GetIsTop() int32 {
 func (x *UpdateConversationReq) GetIsDisturb() int32 {
 	if x != nil {
 		return x.IsDisturb
-	}
-	return 0
-}
-
-func (x *UpdateConversationReq) GetIsMute() int32 {
-	if x != nil {
-		return x.IsMute
 	}
 	return 0
 }
@@ -1055,18 +1039,17 @@ const file_rpc_message_proto_rawDesc = "" +
 	"updateTime\x12!\n" +
 	"\flast_content\x18\x06 \x01(\tR\vlastContent\x12\x1f\n" +
 	"\vlast_sender\x18\a \x01(\x04R\n" +
-	"lastSender\"\x89\x02\n" +
+	"lastSender\"\xf0\x01\n" +
 	"\x10UserConversation\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x15\n" +
-	"\x06is_top\x18\x03 \x01(\bR\x05isTop\x12\x1d\n" +
+	"\x06is_top\x18\x03 \x01(\x05R\x05isTop\x12\x1d\n" +
 	"\n" +
-	"is_disturb\x18\x04 \x01(\bR\tisDisturb\x12\x17\n" +
-	"\ais_mute\x18\x05 \x01(\bR\x06isMute\x12\"\n" +
-	"\rlast_read_seq\x18\x06 \x01(\x04R\vlastReadSeq\x12\x1f\n" +
-	"\vcreate_time\x18\a \x01(\x03R\n" +
+	"is_disturb\x18\x04 \x01(\x05R\tisDisturb\x12\"\n" +
+	"\rlast_read_seq\x18\x05 \x01(\x04R\vlastReadSeq\x12\x1f\n" +
+	"\vcreate_time\x18\x06 \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
-	"\vupdate_time\x18\b \x01(\x03R\n" +
+	"\vupdate_time\x18\a \x01(\x03R\n" +
 	"updateTime\"\x84\x01\n" +
 	"\rGetHistoryReq\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1b\n" +
@@ -1088,14 +1071,13 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x10\n" +
 	"\x03seq\x18\x03 \x01(\x04R\x03seq\"\x11\n" +
-	"\x0fReadMessageResp\"\xa8\x01\n" +
+	"\x0fReadMessageResp\"\x8f\x01\n" +
 	"\x15UpdateConversationReq\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x15\n" +
 	"\x06is_top\x18\x03 \x01(\x05R\x05isTop\x12\x1d\n" +
 	"\n" +
-	"is_disturb\x18\x04 \x01(\x05R\tisDisturb\x12\x17\n" +
-	"\ais_mute\x18\x05 \x01(\x05R\x06isMute\"\x18\n" +
+	"is_disturb\x18\x04 \x01(\x05R\tisDisturb\"\x18\n" +
 	"\x16UpdateConversationResp\"V\n" +
 	"\x1dGetUserActiveConversationsReq\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1c\n" +

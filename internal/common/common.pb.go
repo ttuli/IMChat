@@ -160,7 +160,8 @@ const (
 	MessageType_NOTIFICATION   MessageType = 600 // 系统通知
 	MessageType_FRIEND_REQUEST MessageType = 601 // 好友请求
 	MessageType_FRIEND_ADD     MessageType = 602 // 添加好友
-	MessageType_GROUP_REQUEST  MessageType = 603 // 群请求
+	MessageType_FRIEND_DELETED MessageType = 603 // 删除好友
+	MessageType_GROUP_REQUEST  MessageType = 604 // 群请求
 	// 内部消费消息
 	MessageType_UPDATE_SESSION MessageType = 700 // 更新会话
 	// 错误响应 900-999
@@ -199,7 +200,8 @@ var (
 		600: "NOTIFICATION",
 		601: "FRIEND_REQUEST",
 		602: "FRIEND_ADD",
-		603: "GROUP_REQUEST",
+		603: "FRIEND_DELETED",
+		604: "GROUP_REQUEST",
 		700: "UPDATE_SESSION",
 		900: "ERROR",
 	}
@@ -233,7 +235,8 @@ var (
 		"NOTIFICATION":          600,
 		"FRIEND_REQUEST":        601,
 		"FRIEND_ADD":            602,
-		"GROUP_REQUEST":         603,
+		"FRIEND_DELETED":        603,
+		"GROUP_REQUEST":         604,
 		"UPDATE_SESSION":        700,
 		"ERROR":                 900,
 	}
@@ -2983,8 +2986,8 @@ type Conversation struct {
 	UnreadCount     int64                  `protobuf:"varint,7,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`                            // 未读消息数
 	CreateTime      int64                  `protobuf:"varint,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                               // 创建时间
 	UpdateTime      int64                  `protobuf:"varint,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`                               // 更新时间
-	IsTop           bool                   `protobuf:"varint,10,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`                                             // 是否置顶
-	IsDisturb       bool                   `protobuf:"varint,11,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`                                 // 是否免打扰
+	IsTop           int32                  `protobuf:"varint,10,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`                                             // 是否置顶
+	IsDisturb       int32                  `protobuf:"varint,11,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`                                 // 是否免打扰
 	LastMsgType     MessageType            `protobuf:"varint,12,opt,name=last_msg_type,json=lastMsgType,proto3,enum=common.MessageType" json:"last_msg_type,omitempty"` // 最后消息类型 (用于渲染图标)
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -3083,18 +3086,18 @@ func (x *Conversation) GetUpdateTime() int64 {
 	return 0
 }
 
-func (x *Conversation) GetIsTop() bool {
+func (x *Conversation) GetIsTop() int32 {
 	if x != nil {
 		return x.IsTop
 	}
-	return false
+	return 0
 }
 
-func (x *Conversation) GetIsDisturb() bool {
+func (x *Conversation) GetIsDisturb() int32 {
 	if x != nil {
 		return x.IsDisturb
 	}
-	return false
+	return 0
 }
 
 func (x *Conversation) GetLastMsgType() MessageType {
@@ -3786,9 +3789,9 @@ const file_common_proto_rawDesc = "" +
 	"\vupdate_time\x18\t \x01(\x03R\n" +
 	"updateTime\x12\x15\n" +
 	"\x06is_top\x18\n" +
-	" \x01(\bR\x05isTop\x12\x1d\n" +
+	" \x01(\x05R\x05isTop\x12\x1d\n" +
 	"\n" +
-	"is_disturb\x18\v \x01(\bR\tisDisturb\x127\n" +
+	"is_disturb\x18\v \x01(\x05R\tisDisturb\x127\n" +
 	"\rlast_msg_type\x18\f \x01(\x0e2\x13.common.MessageTypeR\vlastMsgType\"\xaf\x02\n" +
 	"\x12SystemNotification\x12'\n" +
 	"\x0fnotification_id\x18\x01 \x01(\tR\x0enotificationId\x12,\n" +
@@ -3860,7 +3863,7 @@ const file_common_proto_rawDesc = "" +
 	"\n" +
 	"CONNECTING\x10\x01\x12\r\n" +
 	"\tCONNECTED\x10\x02\x12\x10\n" +
-	"\fRECONNECTING\x10\x03*\xcb\x04\n" +
+	"\fRECONNECTING\x10\x03*\xe0\x04\n" +
 	"\vMessageType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tCHAT_TEXT\x10d\x12\x0e\n" +
@@ -3898,8 +3901,9 @@ const file_common_proto_rawDesc = "" +
 	"\fNOTIFICATION\x10\xd8\x04\x12\x13\n" +
 	"\x0eFRIEND_REQUEST\x10\xd9\x04\x12\x0f\n" +
 	"\n" +
-	"FRIEND_ADD\x10\xda\x04\x12\x12\n" +
-	"\rGROUP_REQUEST\x10\xdb\x04\x12\x13\n" +
+	"FRIEND_ADD\x10\xda\x04\x12\x13\n" +
+	"\x0eFRIEND_DELETED\x10\xdb\x04\x12\x12\n" +
+	"\rGROUP_REQUEST\x10\xdc\x04\x12\x13\n" +
 	"\x0eUPDATE_SESSION\x10\xbc\x05\x12\n" +
 	"\n" +
 	"\x05ERROR\x10\x84\a*\xd3\x01\n" +

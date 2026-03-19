@@ -44,7 +44,7 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 
 		friendRecord, _ := s.friendDAO.FindFriendRelation(ctx, fromUserID, toUserID)
 
-		msg, _ := common.ConvertFriendToWSMessage(friendRecord, toUserID)
+		msg, _ := common.NewFriendUpdateMsg(common.MessageType_FRIEND_ADD, friendRecord, toUserID)
 		data, _ := proto.Marshal(msg)
 		_, err = s.js.Publish(s.Config.NATS.BroadcastSubject, data)
 		if err != nil {
