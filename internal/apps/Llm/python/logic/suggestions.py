@@ -5,11 +5,11 @@ from ..core.config import config
 
 class DoubaoLlmService:
     def __init__(self):
-        self.api_key = config.suggest_llm_api_key
-        self.base_url = config.suggest_llm_url
-        self.model = config.suggest_llm_model
+        self.api_key = config.suggest_llm_config.api_key
+        self.base_url = config.suggest_llm_config.url
+        self.model = config.suggest_llm_config.model
         # Go implementation had a Prompt field in LlmProviderConfig
-        self.prompt = config.suggest_llm_prompt
+        self.prompt = config.suggest_llm_config.prompt
         
         if not self.api_key:
             raise ValueError("SuggestLlmApiKey not found in environment variables")

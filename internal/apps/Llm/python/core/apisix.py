@@ -3,8 +3,8 @@ from .config import config
 
 class ApisixClient:
     def __init__(self):
-        self.admin_url = config.apisix_url
-        self.api_key = config.apisix_admin_key
+        self.admin_url = config.apisix_config.url
+        self.api_key = config.apisix_config.admin_key
         self.headers = {
             "X-API-KEY": self.api_key,
             "Content-Type": "application/json"

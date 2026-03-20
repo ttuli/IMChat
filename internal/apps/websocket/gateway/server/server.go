@@ -79,8 +79,9 @@ func (s *GatewayServer) Start() error {
 func (s *GatewayServer) Stop() error {
 	fmt.Println("Stopping WebSocket Gateway Server logic...")
 	if s.cancel != nil {
-		s.cancel()
+		defer s.cancel()
 	}
+	
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
 

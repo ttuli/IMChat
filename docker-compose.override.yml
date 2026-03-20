@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  message-rpc:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:message-rpc-latest
+    build: !reset null
+  user-rpc:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:user-rpc-latest
+    build: !reset null
+  file-api:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:file-api-latest
+    build: !reset null
+  message-api:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:message-api-latest
+    build: !reset null
+  auth-api:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:auth-api-latest
+    build: !reset null
+  auth-rpc:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:auth-rpc-latest
+    build: !reset null
+  group-api:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:group-api-latest
+    build: !reset null
+  group-rpc:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:group-rpc-latest
+    build: !reset null
+  idgen-rpc:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:idgen-rpc-latest
+    build: !reset null
+  user-api:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:user-api-latest
+    build: !reset null
+  websocket:
+    image: crpi-sxfmavixm0flbpia.cn-heyuan.personal.cr.aliyuncs.com/dev-development/imchat:websocket-latest
+    build: !reset null

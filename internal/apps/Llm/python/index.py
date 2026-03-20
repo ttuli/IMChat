@@ -10,9 +10,16 @@ env_path = os.path.join(base_dir, ".env")
 load_dotenv(env_path)
 
 from .core.config import config
+from .middleware.jwt_auth import RedisJwtAuthMiddleware
 from .router.suggestions import router as suggestions_router
 
 app = FastAPI()
+
+app.add_middleware(
+    RedisJwtAuthMiddleware,
+    config=config,
+    exclude_paths=["/docs", "/redoc", "/openapi.json"],
+)
 
 # 注册路由
 app.include_router(suggestions_router, prefix="/ai", tags=["suggestions"])

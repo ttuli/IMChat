@@ -97,8 +97,8 @@ class TestConfigLoader(unittest.TestCase):
         parser = NacosParser(nacos_cfg)
         app_cfg = parser.load(AppConfig)
         
-        self.assertEqual(app_cfg.api_key, "secret")
-        self.assertEqual(app_cfg.base_url, "http://api.com")
+        self.assertEqual(app_cfg.suggest_llm_config.api_key, "secret")
+        self.assertEqual(app_cfg.suggest_llm_config.url, "http://api.com")
 
 if __name__ == "__main__":
     unittest.main()

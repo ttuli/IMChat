@@ -17,8 +17,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-COMPOSE_FILE="${PROJECT_ROOT}/docker/docker-compose.yml"
-SERVICES_FILE="${PROJECT_ROOT}/docker/docker-compose.services.yml"
+COMPOSE_FILE="${PROJECT_ROOT}/docker-compose.yml"
+SERVICES_FILE="${PROJECT_ROOT}/docker-compose.services.yml"
 
 # ========== 颜色 ==========
 
@@ -73,9 +73,9 @@ declare -A SERVICES=(
     ["message-api"]="cmd/Message/api/Dockerfile"
     ["file-api"]="cmd/File/api/Dockerfile"
     ["websocket"]="cmd/websocket/Dockerfile"
-    ["llm-rpc"]="cmd/Llm/rpc/Dockerfile"
-    ["llm-api"]="cmd/Llm/api/Dockerfile"
-    ["llm-python"]="cmd/Llm/python/Dockerfile"
+    # ["llm-rpc"]="cmd/Llm/rpc/Dockerfile"
+    # ["llm-api"]="cmd/Llm/api/Dockerfile"
+    # ["llm-python"]="cmd/Llm/python/Dockerfile"
 )
 
 # ========== 核心命令 ==========
@@ -171,13 +171,25 @@ do_pull_start() {
         done
     } > "${override_file}"
 
-    # 3. 启动所有服务
+    # 3. 强制删除可能由其他 compose 项目遗留的同名旧容器
+    log_info "清理旧容器（如有）..."
+    for service in "${services_to_pull[@]}"; do
+        # docker-compose 默认将 project_service 中的连字符转为下划线作为容器名
+        local container_name
+        container_name="$(basename "${PROJECT_ROOT}" | tr '[:upper:]' '[:lower:]')_${service//-/_}"
+        if docker ps -a --format '{{.Names}}' | grep -qx "${container_name}"; then
+            log_warn "发现旧容器 ${container_name}，正在删除..."
+            docker rm -f "${container_name}" || true
+        fi
+    done
+
+    # 4. 启动所有服务
     log_info "启动服务..."
     cd "${PROJECT_ROOT}"
     if [[ -z "$up_services" ]]; then
-        docker-compose -f "${COMPOSE_FILE}" -f "${SERVICES_FILE}" -f "${override_file}" up -d
+        docker-compose -f "${COMPOSE_FILE}" -f "${SERVICES_FILE}" -f "${override_file}" up -d --remove-orphans
     else
-        docker-compose -f "${COMPOSE_FILE}" -f "${SERVICES_FILE}" -f "${override_file}" up -d $up_services
+        docker-compose -f "${COMPOSE_FILE}" -f "${SERVICES_FILE}" -f "${override_file}" up -d --remove-orphans $up_services
     fi
 
     # 清理 override 文件
