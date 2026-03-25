@@ -1009,6 +1009,94 @@ func (*RecallMessageResp) Descriptor() ([]byte, []int) {
 	return file_rpc_message_proto_rawDescGZIP(), []int{16}
 }
 
+type SendMessageReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       *Message               `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendMessageReq) Reset() {
+	*x = SendMessageReq{}
+	mi := &file_rpc_message_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendMessageReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendMessageReq) ProtoMessage() {}
+
+func (x *SendMessageReq) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendMessageReq.ProtoReflect.Descriptor instead.
+func (*SendMessageReq) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *SendMessageReq) GetMessage() *Message {
+	if x != nil {
+		return x.Message
+	}
+	return nil
+}
+
+type SendMessageResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       *Message               `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendMessageResp) Reset() {
+	*x = SendMessageResp{}
+	mi := &file_rpc_message_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendMessageResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendMessageResp) ProtoMessage() {}
+
+func (x *SendMessageResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendMessageResp.ProtoReflect.Descriptor instead.
+func (*SendMessageResp) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *SendMessageResp) GetMessage() *Message {
+	if x != nil {
+		return x.Message
+	}
+	return nil
+}
+
 var File_rpc_message_proto protoreflect.FileDescriptor
 
 const file_rpc_message_proto_rawDesc = "" +
@@ -1089,7 +1177,11 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\x06msg_id\x18\x02 \x01(\tR\x05msgId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x03 \x01(\tR\tsessionId\"\x13\n" +
-	"\x11RecallMessageResp2\xd2\x04\n" +
+	"\x11RecallMessageResp\"<\n" +
+	"\x0eSendMessageReq\x12*\n" +
+	"\amessage\x18\x01 \x01(\v2\x10.message.MessageR\amessage\"=\n" +
+	"\x0fSendMessageResp\x12*\n" +
+	"\amessage\x18\x01 \x01(\v2\x10.message.MessageR\amessage2\x94\x05\n" +
 	"\n" +
 	"MessageRpc\x12=\n" +
 	"\n" +
@@ -1099,7 +1191,8 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\x12UpdateConversation\x12\x1e.message.UpdateConversationReq\x1a\x1f.message.UpdateConversationResp\x12[\n" +
 	"\x14GetUserConversations\x12 .message.GetUserConversationsReq\x1a!.message.GetUserConversationsResp\x12m\n" +
 	"\x1aGetUserActiveConversations\x12&.message.GetUserActiveConversationsReq\x1a'.message.GetUserActiveConversationsResp\x12F\n" +
-	"\rRecallMessage\x12\x19.message.RecallMessageReq\x1a\x1a.message.RecallMessageRespB\vZ\t./messageb\x06proto3"
+	"\rRecallMessage\x12\x19.message.RecallMessageReq\x1a\x1a.message.RecallMessageResp\x12@\n" +
+	"\vSendMessage\x12\x17.message.SendMessageReq\x1a\x18.message.SendMessageRespB\vZ\t./messageb\x06proto3"
 
 var (
 	file_rpc_message_proto_rawDescOnce sync.Once
@@ -1113,7 +1206,7 @@ func file_rpc_message_proto_rawDescGZIP() []byte {
 	return file_rpc_message_proto_rawDescData
 }
 
-var file_rpc_message_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_rpc_message_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_rpc_message_proto_goTypes = []any{
 	(*Message)(nil),                        // 0: message.Message
 	(*Conversation)(nil),                   // 1: message.Conversation
@@ -1132,31 +1225,37 @@ var file_rpc_message_proto_goTypes = []any{
 	(*GetUserActiveConversationsResp)(nil), // 14: message.GetUserActiveConversationsResp
 	(*RecallMessageReq)(nil),               // 15: message.RecallMessageReq
 	(*RecallMessageResp)(nil),              // 16: message.RecallMessageResp
+	(*SendMessageReq)(nil),                 // 17: message.SendMessageReq
+	(*SendMessageResp)(nil),                // 18: message.SendMessageResp
 }
 var file_rpc_message_proto_depIdxs = []int32{
 	0,  // 0: message.GetHistoryResp.messages:type_name -> message.Message
 	1,  // 1: message.GetConversationListResp.conversations:type_name -> message.Conversation
 	2,  // 2: message.GetUserConversationsResp.conversations:type_name -> message.UserConversation
 	1,  // 3: message.GetUserActiveConversationsResp.conversations:type_name -> message.Conversation
-	3,  // 4: message.MessageRpc.GetHistory:input_type -> message.GetHistoryReq
-	5,  // 5: message.MessageRpc.GetConversationList:input_type -> message.GetConversationListReq
-	9,  // 6: message.MessageRpc.ReadMessage:input_type -> message.ReadMessageReq
-	11, // 7: message.MessageRpc.UpdateConversation:input_type -> message.UpdateConversationReq
-	7,  // 8: message.MessageRpc.GetUserConversations:input_type -> message.GetUserConversationsReq
-	13, // 9: message.MessageRpc.GetUserActiveConversations:input_type -> message.GetUserActiveConversationsReq
-	15, // 10: message.MessageRpc.RecallMessage:input_type -> message.RecallMessageReq
-	4,  // 11: message.MessageRpc.GetHistory:output_type -> message.GetHistoryResp
-	6,  // 12: message.MessageRpc.GetConversationList:output_type -> message.GetConversationListResp
-	10, // 13: message.MessageRpc.ReadMessage:output_type -> message.ReadMessageResp
-	12, // 14: message.MessageRpc.UpdateConversation:output_type -> message.UpdateConversationResp
-	8,  // 15: message.MessageRpc.GetUserConversations:output_type -> message.GetUserConversationsResp
-	14, // 16: message.MessageRpc.GetUserActiveConversations:output_type -> message.GetUserActiveConversationsResp
-	16, // 17: message.MessageRpc.RecallMessage:output_type -> message.RecallMessageResp
-	11, // [11:18] is the sub-list for method output_type
-	4,  // [4:11] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	0,  // 4: message.SendMessageReq.message:type_name -> message.Message
+	0,  // 5: message.SendMessageResp.message:type_name -> message.Message
+	3,  // 6: message.MessageRpc.GetHistory:input_type -> message.GetHistoryReq
+	5,  // 7: message.MessageRpc.GetConversationList:input_type -> message.GetConversationListReq
+	9,  // 8: message.MessageRpc.ReadMessage:input_type -> message.ReadMessageReq
+	11, // 9: message.MessageRpc.UpdateConversation:input_type -> message.UpdateConversationReq
+	7,  // 10: message.MessageRpc.GetUserConversations:input_type -> message.GetUserConversationsReq
+	13, // 11: message.MessageRpc.GetUserActiveConversations:input_type -> message.GetUserActiveConversationsReq
+	15, // 12: message.MessageRpc.RecallMessage:input_type -> message.RecallMessageReq
+	17, // 13: message.MessageRpc.SendMessage:input_type -> message.SendMessageReq
+	4,  // 14: message.MessageRpc.GetHistory:output_type -> message.GetHistoryResp
+	6,  // 15: message.MessageRpc.GetConversationList:output_type -> message.GetConversationListResp
+	10, // 16: message.MessageRpc.ReadMessage:output_type -> message.ReadMessageResp
+	12, // 17: message.MessageRpc.UpdateConversation:output_type -> message.UpdateConversationResp
+	8,  // 18: message.MessageRpc.GetUserConversations:output_type -> message.GetUserConversationsResp
+	14, // 19: message.MessageRpc.GetUserActiveConversations:output_type -> message.GetUserActiveConversationsResp
+	16, // 20: message.MessageRpc.RecallMessage:output_type -> message.RecallMessageResp
+	18, // 21: message.MessageRpc.SendMessage:output_type -> message.SendMessageResp
+	14, // [14:22] is the sub-list for method output_type
+	6,  // [6:14] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_rpc_message_proto_init() }
@@ -1170,7 +1269,7 @@ func file_rpc_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rpc_message_proto_rawDesc), len(file_rpc_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -36,11 +36,11 @@ type Router struct {
 }
 
 // NewRouter 创建路由器
-func NewRouter(client *redis.Client, js nats.JetStreamContext, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig pubsub.SubjectConfig) *Router {
+func NewRouter(client *redis.Client, nc *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig pubsub.SubjectConfig) *Router {
 	return &Router{
 		client:       client,
 		nodeID:       nodeID,
-		publisher:    pubsub.NewPublisher(js, codec, nodeID, subjectConfig),
+		publisher:    pubsub.NewPublisher(nc, codec, nodeID, subjectConfig),
 		telemetryBus: bus,
 	}
 }
@@ -118,13 +118,10 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *com
 	return r.publisher.PublishToNode(ctx, targetNodeID, msg)
 }
 
-func (r *Router) RouteGroupMessage(ctx context.Context, targetGroupID uint64, msg *common.WSMessage) error {
-	return r.publisher.BroadcastToAllNodes(ctx, msg)
-}
-
 // BroadcastToAllNodes 广播消息到所有节点
-func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessage) error {
-	return r.publisher.BroadcastToAllNodes(ctx, msg)
+// mode 参数控制消费模式：BroadcastAll 所有节点消费，BroadcastQueue 仅一个节点消费
+func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessage, mode pubsub.BroadcastMode) error {
+	return r.publisher.BroadcastToAllNodes(ctx, msg, mode)
 }
 
 func (r *Router) RouteMsgToDB(ctx context.Context, msg *common.WSMessage) error {

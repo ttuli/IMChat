@@ -11,7 +11,6 @@ import (
 	userclient "IM2/internal/apps/User/rpc/client/user"
 	"IM2/internal/apps/User/rpc/user"
 	"IM2/pkg/logger"
-	"IM2/pkg/redisc"
 	tokenmanager "IM2/pkg/tokenManager"
 	"IM2/pkg/xerr"
 
@@ -26,7 +25,6 @@ import (
 
 type AuthServiceImpl struct {
 	userclient.User
-	*redisc.RedisModel
 	TokenManager   *tokenmanager.TokenManager
 	DypnsapiClient *dypnsapi20170525.Client
 }
@@ -53,12 +51,12 @@ func NewAuthServiceImpl(c config.Config) *AuthServiceImpl {
 	if err != nil {
 		panic(err)
 	}
+
 	return &AuthServiceImpl{
 		User: userclient.NewUser(zrpc.MustNewClient(c.UserRpc,
 			zrpc.WithUnaryClientInterceptor(
 				interceptor.ClientPureErrorInterceptor),
 		)),
-		RedisModel:     redisc.MustNewRedis(c.Redisx),
 		TokenManager:   tokenmanager.NewTokenManager(c.TokenConfig),
 		DypnsapiClient: client,
 	}

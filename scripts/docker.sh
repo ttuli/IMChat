@@ -128,8 +128,12 @@ do_build_push() {
         exit 1
     fi
 
+    echo ""
+    log_header "清理悬挂镜像"
+    log_info "正在清理构建产生的 <none> 镜像以释放空间..."
+    docker image prune -f --filter "dangling=true" || true
 
-
+    echo ""
     log_info "全部完成！TAG=${BOLD}${TAG}${NC}"
 }
 

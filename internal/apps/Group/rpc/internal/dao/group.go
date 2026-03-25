@@ -7,7 +7,7 @@ import (
 
 	"IM2/internal/model"
 	"IM2/pkg/logger"
-	"IM2/pkg/redisc"
+	"IM2/pkg/redisx"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -17,18 +17,17 @@ import (
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-const (
-	redisGroupIdPrefix = "group:id:"
-)
 
 // 缓存过期时间
 const (
-	cacheExpireSeconds = 3600 // 1小时
+	cacheExpireSeconds     = 3600         // 正常缓存1小时
+	nullCacheExpireSeconds = 60           // 空值缓存过期时间（防穿透）
+	nullCacheValue         = "NULL_CACHE" // 空值缓存标记
 )
 
 type GroupDAO struct {
 	*gorm.DB
-	*redisc.RedisModel
+	*redisx.Client
 }
 
 func NewGroupDAO(dbSource string, redisSource redis.RedisConf) *GroupDAO {
@@ -37,9 +36,17 @@ func NewGroupDAO(dbSource string, redisSource redis.RedisConf) *GroupDAO {
 		panic(err)
 	}
 
+	client, err := redisx.NewClient(redisSource,
+		redisx.WithDefaultTTL(time.Duration(cacheExpireSeconds)*time.Second),
+		redisx.WithKeyPrefix("group:id:"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return &GroupDAO{
-		DB:         db,
-		RedisModel: redisc.MustNewRedis(redisSource),
+		DB:     db,
+		Client: client,
 	}
 }
 
@@ -52,31 +59,46 @@ func (m *GroupDAO) InsertGroup(ctx context.Context, data *model.Group) error {
 	if err := m.DB.WithContext(ctx).Create(data).Error; err != nil {
 		return err
 	}
-	m.setGroupCache(ctx, data)
+	// 写缓存
+	if bs, err := json.Marshal(data); err == nil {
+		if err := m.SetexCtx(ctx, fmt.Sprintf("%d", data.ID), string(bs), cacheExpireSeconds); err != nil {
+			logger.Errorf("设置群组缓存失败: %v", err)
+		}
+	}
 	return nil
 }
 
 // FindByID 根据ID查找群组
 func (m *GroupDAO) FindByID(ctx context.Context, id uint64) (*model.Group, error) {
 	// 1. 先查缓存
-	cacheKey := fmt.Sprintf("%s%d", redisGroupIdPrefix, id)
-	res, _ := m.Redis.Get(cacheKey)
+	cacheKey := fmt.Sprintf("%d", id)
+	res, _ := m.GetCtx(ctx, cacheKey)
+	if res == nullCacheValue {
+		return nil, gorm.ErrRecordNotFound
+	}
 	if res != "" {
 		var g model.Group
 		if err := json.Unmarshal([]byte(res), &g); err == nil {
 			return &g, nil
 		}
-		m.Redis.Del(cacheKey)
+		m.DelCtx(ctx, cacheKey)
 	}
 
 	// 2. 查数据库
 	var g model.Group
 	if err := m.DB.WithContext(ctx).Where("id = ?", id).First(&g).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			m.SetexCtx(ctx, cacheKey, nullCacheValue, nullCacheExpireSeconds)
+		}
 		return nil, err
 	}
 
 	// 3. 写缓存
-	m.setGroupCache(ctx, &g)
+	if bs, err := json.Marshal(&g); err == nil {
+		if err := m.SetexCtx(ctx, cacheKey, string(bs), cacheExpireSeconds); err != nil {
+			logger.Errorf("设置群组缓存失败: %v", err)
+		}
+	}
 	return &g, nil
 }
 
@@ -89,7 +111,7 @@ func (m *GroupDAO) FindByIDs(ctx context.Context, ids []uint64) ([]*model.Group,
 	// 1. 构建缓存 key 列表
 	keys := make([]string, 0, len(ids))
 	for _, id := range ids {
-		keys = append(keys, fmt.Sprintf("%s%d", redisGroupIdPrefix, id))
+		keys = append(keys, fmt.Sprintf("%d", id))
 	}
 
 	// 2. 批量查缓存
@@ -108,6 +130,9 @@ func (m *GroupDAO) FindByIDs(ctx context.Context, ids []uint64) ([]*model.Group,
 			missingIDs = append(missingIDs, ids[i])
 			continue
 		}
+		if v == nullCacheValue {
+			continue // 命中空值缓存，相当于确定不存在，略过
+		}
 		var g model.Group
 		if err := json.Unmarshal([]byte(v), &g); err != nil {
 			missingIDs = append(missingIDs, ids[i])
@@ -124,7 +149,14 @@ func (m *GroupDAO) FindByIDs(ctx context.Context, ids []uint64) ([]*model.Group,
 		}
 		for _, g := range dbGroups {
 			groupMap[g.ID] = g
-			go m.setGroupCache(context.Background(), g)
+			// 异步写缓存
+			go func(grp *model.Group) {
+				if bs, err := json.Marshal(grp); err == nil {
+					if err := m.SetexCtx(context.Background(), fmt.Sprintf("%d", grp.ID), string(bs), cacheExpireSeconds); err != nil {
+						logger.Errorf("设置群组缓存失败: %v", err)
+					}
+				}
+			}(g)
 		}
 	}
 
@@ -144,13 +176,30 @@ func (m *GroupDAO) findByIDsFromDB(ctx context.Context, ids []uint64) ([]*model.
 	if err := m.DB.WithContext(ctx).Where("id IN ?", ids).Find(&groups).Error; err != nil {
 		return nil, err
 	}
+
+	// 找出缺失的 ID 加入空值缓存防穿透
+	if len(groups) < len(ids) {
+		found := make(map[uint64]bool)
+		for _, g := range groups {
+			found[g.ID] = true
+		}
+		for _, id := range ids {
+			if !found[id] {
+				go m.SetexCtx(context.Background(), fmt.Sprintf("%d", id), nullCacheValue, nullCacheExpireSeconds)
+			}
+		}
+	}
+
 	return groups, nil
 }
 
 // UpdateGroup 更新群组信息（延迟双删策略）
 func (m *GroupDAO) UpdateGroup(ctx context.Context, data *model.Group) error {
-	// 1. 删除缓存
-	m.deleteGroupCache(ctx, data.ID)
+	// 1. 先删缓存
+	idKey := fmt.Sprintf("%d", data.ID)
+	if _, err := m.DelCtx(ctx, idKey); err != nil {
+		logger.Errorf("删除群组缓存失败: %v", err)
+	}
 
 	// 2. 更新数据库
 	if err := m.DB.WithContext(ctx).Save(data).Error; err != nil {
@@ -158,17 +207,30 @@ func (m *GroupDAO) UpdateGroup(ctx context.Context, data *model.Group) error {
 	}
 
 	// 3. 延迟双删
-	m.delayDeleteCache(data.ID)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if _, err := m.DelCtx(context.Background(), idKey); err != nil {
+			logger.Errorf("延迟删除群组缓存失败: %v", err)
+		}
+	}()
 	return nil
 }
 
 // DeleteGroup 删除群组
 func (m *GroupDAO) DeleteGroup(ctx context.Context, id uint64) error {
-	m.deleteGroupCache(ctx, id)
+	idKey := fmt.Sprintf("%d", id)
+	if _, err := m.DelCtx(ctx, idKey); err != nil {
+		logger.Errorf("删除群组缓存失败: %v", err)
+	}
 	if err := m.DB.WithContext(ctx).Delete(&model.Group{}, id).Error; err != nil {
 		return err
 	}
-	m.delayDeleteCache(id)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if _, err := m.DelCtx(context.Background(), idKey); err != nil {
+			logger.Errorf("延迟删除群组缓存失败: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -219,43 +281,14 @@ func (m *GroupDAO) SearchByName(ctx context.Context, keyword string, limit, offs
 	return groups, total, nil
 }
 
-// ==================== 缓存辅助方法 ====================
-
-func (m *GroupDAO) setGroupCache(ctx context.Context, group *model.Group) {
-	data, err := json.Marshal(group)
-	if err != nil {
-		logger.Errorf("序列化群组数据失败: %v", err)
-		return
-	}
-
-	idKey := fmt.Sprintf("%s%d", redisGroupIdPrefix, group.ID)
-	if err := m.Redis.SetexCtx(ctx, idKey, string(data), cacheExpireSeconds); err != nil {
-		logger.Errorf("设置群组缓存失败: %v", err)
-	}
-}
-
-func (m *GroupDAO) deleteGroupCache(ctx context.Context, groupID uint64) {
-	idKey := fmt.Sprintf("%s%d", redisGroupIdPrefix, groupID)
-	if _, err := m.Redis.DelCtx(ctx, idKey); err != nil {
-		logger.Errorf("删除群组缓存失败: %v", err)
-	}
-}
-
-func (m *GroupDAO) delayDeleteCache(groupID uint64) {
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		idKey := fmt.Sprintf("%s%d", redisGroupIdPrefix, groupID)
-		if _, err := m.Redis.Del(idKey); err != nil {
-			logger.Errorf("延迟删除群组缓存失败: %v", err)
-		}
-	}()
-}
-
 // ==================== 群成员管理 ====================
 
 // InsertMember 添加单个成员，并在同一事务内将群人数 +1
 func (m *GroupDAO) InsertMember(ctx context.Context, member *model.GroupMember) error {
-	m.deleteGroupCache(ctx, member.GroupID)
+	idKey := fmt.Sprintf("%d", member.GroupID)
+	if _, err := m.DelCtx(ctx, idKey); err != nil {
+		logger.Errorf("删除群组缓存失败: %v", err)
+	}
 	err := m.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(member).Error; err != nil {
 			return err
@@ -267,7 +300,12 @@ func (m *GroupDAO) InsertMember(ctx context.Context, member *model.GroupMember) 
 	if err != nil {
 		return err
 	}
-	m.delayDeleteCache(member.GroupID)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if _, err := m.DelCtx(context.Background(), idKey); err != nil {
+			logger.Errorf("延迟删除群组缓存失败: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -319,7 +357,10 @@ func (m *GroupDAO) UpdateMember(ctx context.Context, groupID, userID uint64, upd
 
 // DeleteMember 删除成员，并在同一事务内将群人数 -1
 func (m *GroupDAO) DeleteMember(ctx context.Context, groupID, userID uint64) error {
-	m.deleteGroupCache(ctx, groupID)
+	idKey := fmt.Sprintf("%d", groupID)
+	if _, err := m.DelCtx(ctx, idKey); err != nil {
+		logger.Errorf("删除群组缓存失败: %v", err)
+	}
 	err := m.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("group_id = ? AND user_id = ?", groupID, userID).
 			Delete(&model.GroupMember{}).Error; err != nil {
@@ -332,7 +373,12 @@ func (m *GroupDAO) DeleteMember(ctx context.Context, groupID, userID uint64) err
 	if err != nil {
 		return err
 	}
-	m.delayDeleteCache(groupID)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if _, err := m.DelCtx(context.Background(), idKey); err != nil {
+			logger.Errorf("延迟删除群组缓存失败: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -356,13 +402,21 @@ func (m *GroupDAO) CountMembers(ctx context.Context, groupID uint64) (int64, err
 
 // IncrMemberCount 原子地更新群成员数（delta 为正数时增加，负数时减少）
 func (m *GroupDAO) IncrMemberCount(ctx context.Context, groupID uint64, delta int) error {
-	m.deleteGroupCache(ctx, groupID)
+	idKey := fmt.Sprintf("%d", groupID)
+	if _, err := m.DelCtx(ctx, idKey); err != nil {
+		logger.Errorf("删除群组缓存失败: %v", err)
+	}
 	if err := m.DB.WithContext(ctx).Model(&model.Group{}).
 		Where("id = ?", groupID).
 		UpdateColumn("member_count", gorm.Expr("member_count + ?", delta)).Error; err != nil {
 		return err
 	}
-	m.delayDeleteCache(groupID)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if _, err := m.DelCtx(context.Background(), idKey); err != nil {
+			logger.Errorf("延迟删除群组缓存失败: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -389,7 +443,7 @@ func (m *GroupDAO) FindAdminGroupIDs(ctx context.Context, userID uint64) ([]uint
 	return groupIDs, nil
 }
 
-// FindGroupIDsByUserID 查询用户所在的所有群ID列表（无分页版本）
+// FindAllGroupIDsByUserID 查询用户所在的所有群ID列表（无分页版本）
 func (m *GroupDAO) FindAllGroupIDsByUserID(ctx context.Context, userID uint64) ([]uint64, error) {
 	var groupIDs []uint64
 	if err := m.DB.WithContext(ctx).Model(&model.GroupMember{}).

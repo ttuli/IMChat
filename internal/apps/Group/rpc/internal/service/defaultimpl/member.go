@@ -4,9 +4,12 @@ import (
 	"context"
 	"time"
 
+	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
+	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -71,22 +74,36 @@ func (s *groupService) RemoveMember(ctx context.Context, groupID, operatorID, us
 	}
 
 	// 3. 权限检查：群主可移除任何人，管理员只能移除普通成员
-	if operator.Role == model.GroupRoleOwner {
+	switch operator.Role {
+	case model.GroupRoleOwner:
 		// 群主不能移除自己
 		if userID == operatorID {
 			return xerr.New(xerr.ErrInvalidParams, "群主不能移除自己，请使用解散群聊")
 		}
-	} else if operator.Role == model.GroupRoleAdmin {
+	case model.GroupRoleAdmin:
 		if target.Role != model.GroupRoleMember {
 			return xerr.New(xerr.ErrForbidden, "管理员只能移除普通成员")
 		}
-	} else {
+	default:
 		return xerr.New(xerr.ErrForbidden, "无权移除成员")
 	}
 
 	// 4. 移除成员
 	if err := s.groupDAO.DeleteMember(ctx, groupID, userID); err != nil {
 		return xerr.Wrap(err, xerr.ErrDatabase, "移除成员失败")
+	}
+
+	// 5. 发送群组通知（踢人）
+	wsMsg := common.NewGroupOperationMsg(
+		common.GroupOperationType_GROUP_OP_KICK,
+		groupID, []uint64{userID}, operatorID, nil,
+	)
+	if wsMsg != nil {
+		if b, err := proto.Marshal(wsMsg); err == nil {
+			if _, err = s.js.Publish(s.config.NATS.BroadcastSubject, b); err != nil {
+				logger.Errorf("[RemoveMember] publish nats failed: %v", err)
+			}
+		}
 	}
 
 	return nil
@@ -110,6 +127,19 @@ func (s *groupService) LeaveGroup(ctx context.Context, groupID, userID uint64) e
 	// 3. 删除成员
 	if err := s.groupDAO.DeleteMember(ctx, groupID, userID); err != nil {
 		return xerr.Wrap(err, xerr.ErrDatabase, "退出群聊失败")
+	}
+
+	// 4. 发送群组通知（主动退群）
+	wsMsg := common.NewGroupOperationMsg(
+		common.GroupOperationType_GROUP_OP_LEAVE,
+		groupID, []uint64{userID}, userID, nil,
+	)
+	if wsMsg != nil {
+		if b, err := proto.Marshal(wsMsg); err == nil {
+			if _, err = s.js.Publish(s.config.NATS.BroadcastSubject, b); err != nil {
+				logger.Errorf("[LeaveGroup] publish nats failed: %v", err)
+			}
+		}
 	}
 
 	return nil

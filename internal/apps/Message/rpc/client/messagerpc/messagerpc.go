@@ -28,6 +28,8 @@ type (
 	ReadMessageResp                = message.ReadMessageResp
 	RecallMessageReq               = message.RecallMessageReq
 	RecallMessageResp              = message.RecallMessageResp
+	SendMessageReq                 = message.SendMessageReq
+	SendMessageResp                = message.SendMessageResp
 	UpdateConversationReq          = message.UpdateConversationReq
 	UpdateConversationResp         = message.UpdateConversationResp
 	UserConversation               = message.UserConversation
@@ -40,6 +42,7 @@ type (
 		GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
 		GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error)
 		RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error)
+		SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error)
 	}
 
 	defaultMessageRpc struct {
@@ -86,4 +89,9 @@ func (m *defaultMessageRpc) GetUserActiveConversations(ctx context.Context, in *
 func (m *defaultMessageRpc) RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error) {
 	client := message.NewMessageRpcClient(m.cli.Conn())
 	return client.RecallMessage(ctx, in, opts...)
+}
+
+func (m *defaultMessageRpc) SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error) {
+	client := message.NewMessageRpcClient(m.cli.Conn())
+	return client.SendMessage(ctx, in, opts...)
 }

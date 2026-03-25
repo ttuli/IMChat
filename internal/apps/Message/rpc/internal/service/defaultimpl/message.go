@@ -4,13 +4,15 @@ import (
 	"context"
 	"time"
 
+	"IM2/internal/apps/Message/rpc/message"
 	"IM2/internal/common"
 	"IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/protobuf/proto"
 )
 
 // GetHistory 获取历史消息（基于 Seq 区间分页）
@@ -25,6 +27,46 @@ func (s *messageService) GetHistory(ctx context.Context, conversationID string, 
 		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询历史消息失败")
 	}
 	return messages, nil
+}
+
+// SendMessage 发送消息、生成序号、广播事件、异步落库
+func (s *messageService) SendMessage(ctx context.Context, msg *message.Message) (*message.Message, error) {
+	if msg.MsgId == "" {
+		msg.MsgId = uuid.New().String()
+	}
+	if msg.CreateTime == 0 {
+		msg.CreateTime = time.Now().UnixMilli()
+	}
+
+	// 1. 生成或递增 Seq
+	seq, err := s.conversationDAO.IncrSeq(ctx, msg.ConversationId)
+	if err != nil {
+		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.ConversationId, err)
+		return nil, err
+	}
+	msg.Seq = seq
+	msg.Status = int32(common.MessageStatus_MESSAGE_STATUS_SENT)
+
+	// 2. 构建 content preview（用于 last_content 和 UpdateSession 广播）
+	contentPreview := contentPreviewOf(msg.MsgType, msg.Content)
+
+	// 3. 将完整会话状态推送到 SeqSyncer：批量刷 MySQL + 广播 UpdateSession
+	s.conversationDAO.PushSeqUpdate(
+		msg.ConversationId, msg.Seq,
+		contentPreview, msg.FromUserId, msg.CreateTime,
+	)
+
+	// 4. 异步将消息发布到 DBSubject，由 NATS Consumer 批量写入 MongoDB
+	msgData, err := proto.Marshal(msg)
+	if err != nil {
+		logger.Errorf("Failed to marshal message for DBSubject: %v", err)
+	} else {
+		if _, err := s.js.Publish(s.Config.Listener.DBSubject, msgData); err != nil {
+			logger.Errorf("Failed to publish message to DBSubject: %v", err)
+		}
+	}
+
+	return msg, nil
 }
 
 // RecallMessage 撤回消息

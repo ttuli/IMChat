@@ -8,6 +8,8 @@ import (
 
 	"IM2/interceptor"
 	"IM2/internal/apps/Group/rpc/client/grouprpc"
+	"IM2/internal/apps/Group/rpc/group"
+	"IM2/internal/apps/Message/rpc/client/messagerpc"
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/internal/connection"
 	"IM2/internal/apps/websocket/gateway/internal/dao"
@@ -31,12 +33,12 @@ type ServiceContext struct {
 	Subscriber        *pubsub.Subscriber
 	RedisClient       *redis.Client
 	NatsConn          *nats.Conn
-	Js                nats.JetStreamContext
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
 	ConversationDao   *dao.ConversationDAO
 
-	GroupRpc grouprpc.GroupRpc
+	GroupRpc   grouprpc.GroupRpc
+	MessageRpc messagerpc.MessageRpc
 }
 
 // NewServiceContext 创建服务上下文
@@ -73,13 +75,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	bus := telemetry.NewBus(nodeID, 0)
 	bus.RegisterHandler(telemetry.DefaultLogHandler)
 
-	// 生成 JetStream 上下文
-	js, err := natsConn.JetStream()
-	if err != nil {
-		log.Fatalf("failed to create jetstream context: %v", err)
-	}
 	// 创建路由器
-	r := router.NewRouter(redisClient, js, codec, nodeID, bus, pubsub.SubjectConfig{
+	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus, pubsub.SubjectConfig{
 		NodeSubjectPrefix:     c.Nats.NodeSubjectPrefix,
 		DBSubject:             c.Nats.DBSubject,
 		BroadcastSubject:      c.Nats.BroadcastSubject,
@@ -90,7 +87,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	connMgr := connection.NewDefaultManager(nodeID, r)
 
 	// 创建订阅者
-	sub := pubsub.NewSubscriber(js, codec, nodeID, bus)
+	sub := pubsub.NewSubscriber(natsConn, codec, nodeID, bus)
 
 	svc := &ServiceContext{
 		Config:            c,
@@ -99,28 +96,25 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Subscriber:        sub,
 		RedisClient:       redisClient,
 		NatsConn:          natsConn,
-		Js:                js,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
 		ConversationDao:   dao.NewConversationDAO(c.DAO.MysqlSource, c.DAO.CacheSource),
 
 		GroupRpc: grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
 			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
+		MessageRpc: messagerpc.NewMessageRpc(zrpc.MustNewClient(c.MessageRpc,
+			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
 	}
 
-	// 设置群成员获取函数
-	connMgr.SetGroupMemberFetcher(func(ctx context.Context, groupID uint64) ([]uint64, error) {
-		resp, err := svc.GroupRpc.GetGroupMemberIDs(ctx, &grouprpc.GetGroupMemberIDsReq{
-			GroupId: groupID,
+	// 用户连接时预热群成员：拉取该用户所在所有群的 ID，注册到本地 groupMembers map
+	connMgr.SetOnUserConnect(func(ctx context.Context, userID uint64) ([]uint64, error) {
+		resp, err := svc.GroupRpc.GetUserGroups(ctx, &group.GetUserGroupsReq{
+			UserId: userID,
 		})
 		if err != nil {
 			return nil, err
 		}
-		var userIDs []uint64
-		for _, member := range resp.Members {
-			userIDs = append(userIDs, member.UserId)
-		}
-		return userIDs, nil
+		return resp.Data, nil
 	})
 
 	return svc

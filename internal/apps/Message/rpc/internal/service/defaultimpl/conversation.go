@@ -30,8 +30,12 @@ func (s *messageService) ReadMessage(ctx context.Context, userID uint64, convers
 func (s *messageService) UpdateConversation(ctx context.Context, userID uint64, conversationID string, isTop, isDisturb int32) error {
 	updates := make(map[string]any)
 
-	updates["is_disturb"] = isDisturb
-	updates["is_top"] = isTop
+	if isDisturb != 0 {
+		updates["is_disturb"] = isDisturb
+	}
+	if isTop != 0 {
+		updates["is_top"] = isTop
+	}
 
 	if len(updates) == 0 {
 		return nil
@@ -79,8 +83,5 @@ func (s *messageService) GetUserActiveConversations(ctx context.Context, userID 
 		return nil, err
 	}
 
-	// 此时 MySQL IN 查询出来的结果可能顺序乱了，但我们在 DAO 层提取出的 activeIDs 是按时间倒（或者我们想要的正序）
-	// 为保持时间线特征，我们可以按 activeIDs 的顺序对结果进行排序，但协议端可能不在乎，客户端会根据 message 的拉取自行处理排序。
-	// 这里直接返回查询到的结果即可。
 	return convs, nil
 }

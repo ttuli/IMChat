@@ -34,7 +34,6 @@ func (h *MessageHandler) Handle(ctx context.Context, msg *common.WSMessage) erro
 	}
 }
 
-// handleChatMessage 处理单聊消息 (100-199)
 func (h *MessageHandler) handleChatMessage(ctx context.Context, msg *common.WSMessage) error {
 	base, err := h.processMessage(ctx, msg)
 	if err != nil {

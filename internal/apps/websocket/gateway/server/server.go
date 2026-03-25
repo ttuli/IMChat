@@ -9,7 +9,6 @@ import (
 	"IM2/internal/apps/websocket/gateway/svc"
 	"IM2/internal/common"
 	"IM2/pkg/logger"
-	nats_util "IM2/pkg/nats"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -48,17 +47,8 @@ func (s *GatewayServer) Start() error {
 
 	// 4. 订阅跨节点路由消息
 	nodeSubject := fmt.Sprintf("%s%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
-	subjects := []string{
-		nodeSubject,
-		s.svcCtx.Config.Nats.BroadcastSubject,
-		s.svcCtx.Config.Nats.QueueBroadcastSubject,
-	}
-	if err := nats_util.InitStream(s.svcCtx.Js, subjects); err != nil {
-		return fmt.Errorf("init stream failed: %w", err)
-	}
 
-	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, nodeSubject,
-		s.svcCtx.Config.WebSocket.NodeID, s.handleQueueSubscribeMessage); err != nil {
+	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, nodeSubject, s.handleQueueSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe route message failed: %w", err)
 	}
 	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, s.svcCtx.Config.Nats.BroadcastSubject, s.handleSubscribeMessage); err != nil {
@@ -81,7 +71,7 @@ func (s *GatewayServer) Stop() error {
 	if s.cancel != nil {
 		defer s.cancel()
 	}
-	
+
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
 
@@ -119,23 +109,6 @@ func (s *GatewayServer) Stop() error {
 }
 
 func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
-	if msg.Type == common.MessageType_UPDATE_SESSION {
-		var updateSession common.UpdateSession
-		if err := proto.Unmarshal(msg.Payload, &updateSession); err != nil {
-			s.svcCtx.TelemetryBus.Publish(err)
-			return nil
-		}
-		var userIDs []uint64
-		if updateSession.TargetType == common.TargetType_GROUP {
-			userIDs = s.svcCtx.ConnectionManager.GetLocalGroupMembers(ctx, updateSession.TargetId)
-		} else {
-			userIDs = append(userIDs, updateSession.TargetId)
-		}
-		// 异步收集待保存进数据库的记录
-		s.svcCtx.ConversationDao.SyncConversationToDB(updateSession.SessionId, uint64(updateSession.MaxSeq), updateSession.LastContent, updateSession.Sender, updateSession.UpdateTime)
-
-		return s.svcCtx.ConversationDao.UpdateUsersConversationTimeline(ctx, userIDs, updateSession.SessionId, updateSession.UpdateTime)
-	}
 	// 获取本地连接
 	switch msg.RouteTargetType {
 	case common.TargetType_USER:
@@ -154,17 +127,36 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 	return nil
 }
 
-// syncGroupMembership 根据群组事件类型清理本地 groupCache 映射。
-// 在消息发送前调用，确保发送时本地缓存失效重新拉取最新数据。
+// syncGroupMembership 根据群组事件类型增量更新本地 groupMembers 映射。
+// 在消息发送前调用，保证 SendToGroupLocal 使用最新的本地在线成员集合。
 func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
+	if msg.Type != common.MessageType_GROUP_OP_NOTIFICATION {
+		return nil
+	}
 	var notify common.GroupNotification
 	if err := proto.Unmarshal(msg.Payload, &notify); err != nil {
 		logger.Errorf("[syncGroupMembership] unmarshal failed: %v", err)
 		return err
 	}
 
-	// 无论是进群、退群、踢人、解散，都只需要废弃本地该群的短缓存
-	s.svcCtx.ConnectionManager.InvalidateGroupCache(msg.RouteTarget)
+	groupID := notify.GroupId
+
+	switch notify.OpType {
+	case common.GroupOperationType_GROUP_OP_JOIN:
+		s.svcCtx.ConnectionManager.AddUsersToGroup(groupID, notify.TargetIds)
+
+	case common.GroupOperationType_GROUP_OP_CREATE:
+		members := append(notify.TargetIds, notify.OperatorId)
+		s.svcCtx.ConnectionManager.AddUsersToGroup(groupID, members)
+
+	case common.GroupOperationType_GROUP_OP_LEAVE,
+		common.GroupOperationType_GROUP_OP_KICK:
+		s.svcCtx.ConnectionManager.RemoveUsersFromGroup(groupID, notify.TargetIds)
+
+	case common.GroupOperationType_GROUP_OP_DISMISS:
+		// 解散：直接清除整个群的本地缓存
+		s.svcCtx.ConnectionManager.InvalidateGroupCache(groupID)
+	}
 
 	return nil
 }

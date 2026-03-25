@@ -32,7 +32,8 @@ type Config struct {
 
 	APISIX service.APISIXConfig
 
-	GroupRpc zrpc.RpcClientConf
+	GroupRpc   zrpc.RpcClientConf
+	MessageRpc zrpc.RpcClientConf
 }
 
 // NatsConf NATS 配置

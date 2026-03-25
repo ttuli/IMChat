@@ -40,6 +40,19 @@ func (m *MessageDAO) InsertMessage(ctx context.Context, msg *model.Message) erro
 	return err
 }
 
+// InsertMessages 批量写入消息
+func (m *MessageDAO) InsertMessages(ctx context.Context, msgs []*model.Message) error {
+	if len(msgs) == 0 {
+		return nil
+	}
+	docs := make([]interface{}, len(msgs))
+	for i, msg := range msgs {
+		docs[i] = msg
+	}
+	_, err := m.db.Collection(mongoCollMessage).InsertMany(ctx, docs)
+	return err
+}
+
 // FindByConversation 按会话做范围查询（基于 Seq 区间分页）。
 // startSeq: 区间起始（含），负数表示无下界。
 // endSeq:   区间终止（含），负数表示无上界。

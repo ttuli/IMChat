@@ -17,11 +17,11 @@ type messageService struct {
 }
 
 // NewMessageService 创建消息服务
-func NewMessageService(c config.Config, js nats.JetStreamContext) service.MessageService {
+func NewMessageService(c config.Config, js nats.JetStreamContext, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO) service.MessageService {
 	return &messageService{
 		Config:          c,
-		messageDAO:      dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource),
-		conversationDAO: dao.NewConversationDAO(c.DAO.ConversationDAO.Dbsource, c.DAO.ConversationDAO.Redisx),
+		messageDAO:      msgDao,
+		conversationDAO: convDao,
 		js:              js,
 	}
 }

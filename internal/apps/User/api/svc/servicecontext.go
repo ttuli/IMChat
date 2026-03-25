@@ -5,9 +5,6 @@ import (
 	"IM2/internal/apps/User/api/config"
 	"IM2/internal/apps/User/rpc/client/user"
 	tokenmanager "IM2/pkg/tokenManager"
-
-	// "IM2/pkg/redisc"
-
 	"github.com/zeromicro/go-zero/zrpc"
 )
 

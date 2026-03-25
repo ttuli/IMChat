@@ -8,7 +8,7 @@ import (
 
 	"IM2/internal/model"
 	"IM2/pkg/logger"
-	"IM2/pkg/redisc"
+	"IM2/pkg/redisx"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -30,7 +30,7 @@ const (
 
 type UserDAO struct {
 	*gorm.DB
-	*redisc.RedisModel
+	*redisx.Client
 }
 
 func NewUserDAO(dbSource string, redisSource redis.RedisConf) *UserDAO {
@@ -39,9 +39,14 @@ func NewUserDAO(dbSource string, redisSource redis.RedisConf) *UserDAO {
 		panic(err)
 	}
 
+	redisClient, err := redisx.NewClient(redisSource)
+	if err != nil {
+		panic(err)
+	}
+
 	return &UserDAO{
-		DB:         db,
-		RedisModel: redisc.MustNewRedis(redisSource),
+		DB:     db,
+		Client: redisClient,
 	}
 }
 
@@ -80,14 +85,14 @@ func (m *UserDAO) UpdateUser(ctx context.Context, data *model.UserInfo) error {
 func (m *UserDAO) FindOneByID(ctx context.Context, id uint64) (*model.UserInfo, error) {
 	// 1. 先查缓存
 	cacheKey := fmt.Sprintf("%s%d", redisInfoIdPrefix, id)
-	res, _ := m.Redis.Get(cacheKey)
+	res, _ := m.GetCtx(ctx, cacheKey)
 	if res != "" {
 		var u model.UserInfo
 		if err := json.Unmarshal([]byte(res), &u); err == nil {
 			return &u, nil
 		}
 		// 缓存数据损坏，删除并继续查数据库
-		m.Redis.Del(cacheKey)
+		_, _ = m.DelCtx(ctx, cacheKey)
 	}
 
 	// 2. 查数据库
@@ -176,14 +181,14 @@ func (m *UserDAO) findByIDsFromDB(ctx context.Context, ids []uint64) ([]*model.U
 func (m *UserDAO) FindOneByPhone(ctx context.Context, phone string) (*model.UserInfo, error) {
 	// 1. 先查手机号索引缓存
 	phoneKey := redisInfoPhonePrefix + phone
-	res, _ := m.Redis.Get(phoneKey)
+	res, _ := m.GetCtx(ctx, phoneKey)
 	if res != "" {
 		userID, err := strconv.ParseUint(res, 10, 64)
 		if err == nil {
 			return m.FindOneByID(ctx, userID)
 		}
 		// 缓存数据损坏，删除
-		m.Redis.Del(phoneKey)
+		_, _ = m.DelCtx(ctx, phoneKey)
 	}
 
 	// 2. 查数据库
@@ -221,8 +226,9 @@ func (m *UserDAO) setUserCache(ctx context.Context, user *model.UserInfo) {
 	dataStr := string(data)
 	userIDStr := strconv.FormatUint(user.UserID, 10)
 
+	
 	// 使用 Pipeline 原子性批量设置
-	err = m.Redis.Pipelined(func(p redis.Pipeliner) error {
+	err = m.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
 		p.SetEx(ctx, idKey, dataStr, time.Duration(cacheExpireSeconds)*time.Second)
 		p.SetEx(ctx, phoneKey, userIDStr, time.Duration(cacheExpireSeconds)*time.Second)
 		return nil
@@ -237,7 +243,7 @@ func (m *UserDAO) deleteUserCache(ctx context.Context, userID uint64, phone stri
 	idKey := fmt.Sprintf("%s%d", redisInfoIdPrefix, userID)
 	phoneKey := redisInfoPhonePrefix + phone
 
-	err := m.Redis.Pipelined(func(p redis.Pipeliner) error {
+	err := m.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
 		p.Del(ctx, idKey)
 		p.Del(ctx, phoneKey)
 		return nil
@@ -253,10 +259,12 @@ func (m *UserDAO) delayDeleteCache(userID uint64, phone string) {
 		time.Sleep(500 * time.Millisecond)
 		idKey := fmt.Sprintf("%s%d", redisInfoIdPrefix, userID)
 		phoneKey := redisInfoPhonePrefix + phone
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-		err := m.Redis.Pipelined(func(p redis.Pipeliner) error {
-			p.Del(context.Background(), idKey)
-			p.Del(context.Background(), phoneKey)
+		err := m.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
+			p.Del(ctx, idKey)
+			p.Del(ctx, phoneKey)
 			return nil
 		})
 		if err != nil {

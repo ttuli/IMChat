@@ -2,18 +2,27 @@ package listener
 
 import (
 	"context"
-	"fmt"
+	"sync"
 	"time"
 
 	"IM2/internal/apps/Message/rpc/config"
 	"IM2/internal/apps/Message/rpc/internal/dao"
-	"IM2/internal/common"
+	"IM2/internal/apps/Message/rpc/message"
 	"IM2/internal/model"
 	"IM2/pkg/logger"
 	nats_util "IM2/pkg/nats"
 
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
+)
+
+const (
+	// 每次最多拉取的消息数量
+	fetchBatchSize = 500
+	// 拉取等待超时（积压不足 batchSize 时最多等待这么长）
+	fetchWaitTimeout = 100 * time.Millisecond
+	// 持久化消费者名称（多实例共享，NATS 负载均衡分配消息）
+	durableConsumerName = "message_db_consumer"
 )
 
 // NatsListener 监听 NATS 消息，将消息写入 MongoDB
@@ -25,17 +34,18 @@ type NatsListener struct {
 	conversationDAO *dao.ConversationDAO
 	ctx             context.Context
 	cancel          context.CancelFunc
+	wg              sync.WaitGroup
 }
 
-func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext) *NatsListener {
+func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO) *NatsListener {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &NatsListener{
 		conn:            conn,
 		js:              js,
 		c:               c,
-		messageDAO:      dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource),
-		conversationDAO: dao.NewConversationDAO(c.DAO.ConversationDAO.Dbsource, c.DAO.ConversationDAO.Redisx),
+		messageDAO:      msgDao,
+		conversationDAO: convDao,
 		ctx:             ctx,
 		cancel:          cancel,
 	}
@@ -47,230 +57,96 @@ func (l *NatsListener) Listen() error {
 		return err
 	}
 
-	_, err = l.js.Subscribe(l.c.Listener.DBSubject, func(msg *nats.Msg) {
-		err := l.handleMessage(msg)
-		if err != nil {
-			msg.Nak()
-		} else {
-			msg.Ack()
-		}
-	}, nats.DeliverNew())
+	// Pull Consumer：多个服务实例共享同一个 Durable，NATS 自动负载均衡
+	sub, err := l.js.PullSubscribe(l.c.Listener.DBSubject, durableConsumerName)
 	if err != nil {
 		return err
 	}
 
-	_, err = l.js.Subscribe(l.c.Listener.BroadcastSubject, func(msg *nats.Msg) {
-		err := l.handleBroadcastMsg(msg)
-		if err != nil {
-			msg.Nak()
-		} else {
-			fmt.Println("handleBroadcastMsg: ack")
-			msg.Ack()
-		}
-	}, nats.DeliverNew())
+	l.wg.Add(1)
+	go l.runBatchLoop(sub)
 
-	return err
+	return nil
+}
+
+// runBatchLoop 持续拉取并批量入库
+func (l *NatsListener) runBatchLoop(sub *nats.Subscription) {
+	defer l.wg.Done()
+	for {
+		select {
+		case <-l.ctx.Done():
+			return
+		default:
+		}
+
+		msgs, err := sub.Fetch(fetchBatchSize, nats.MaxWait(fetchWaitTimeout))
+		if err != nil && err != nats.ErrTimeout {
+			logger.Errorf("[NatsListener] fetch error: %v", err)
+			time.Sleep(time.Second)
+			continue
+		}
+		if len(msgs) == 0 {
+			continue
+		}
+
+		if err := l.handleMessagesBulk(msgs); err != nil {
+			for _, msg := range msgs {
+				msg.Nak()
+			}
+		} else {
+			for _, msg := range msgs {
+				msg.Ack()
+			}
+		}
+	}
+}
+
+// handleMessagesBulk 反序列化一批消息并批量写入 MongoDB
+func (l *NatsListener) handleMessagesBulk(msgs []*nats.Msg) error {
+	dbMsgs := make([]*model.Message, 0, len(msgs))
+
+	for _, msg := range msgs {
+		var m message.Message
+		if err := proto.Unmarshal(msg.Data, &m); err != nil {
+			logger.Errorf("[NatsListener] unmarshal error: %v", err)
+			continue
+		}
+		dbMsgs = append(dbMsgs, &model.Message{
+			MsgID:          m.MsgId,
+			ClientID:       m.ClientId,
+			ConversationID: m.ConversationId,
+			FromUserID:     m.FromUserId,
+			MsgType:        int16(m.MsgType),
+			Seq:            m.Seq,
+			Content:        m.Content,
+			MediaURL:       m.MediaUrl,
+			Status:         int8(m.Status),
+			CreateTime:     time.UnixMilli(m.CreateTime),
+		})
+	}
+
+	if len(dbMsgs) == 0 {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(l.ctx, 5*time.Second)
+	defer cancel()
+
+	if err := l.messageDAO.InsertMessages(ctx, dbMsgs); err != nil {
+		logger.Errorf("[NatsListener] bulk insert failed (batch=%d): %v", len(dbMsgs), err)
+		return err
+	}
+
+	logger.Infof("[NatsListener] bulk inserted %d messages", len(dbMsgs))
+	return nil
 }
 
 // Stop 停止监听并释放资源
 func (l *NatsListener) Stop() error {
 	l.cancel()
+	l.wg.Wait() // 等待当前正在执行的批量入库及 Ack 操作完成
 	if l.conn != nil {
 		l.conn.Close()
-	}
-	return nil
-}
-
-func (l *NatsListener) handleBroadcastMsg(msg *nats.Msg) error {
-	var wsMsg common.WSMessage
-	if err := proto.Unmarshal(msg.Data, &wsMsg); err != nil {
-		logger.Errorf("Failed to unmarshal NATS message: %v", err)
-		return err
-	}
-
-	ctx, cancel := context.WithTimeout(l.ctx, 3*time.Second)
-	defer cancel()
-
-	switch wsMsg.Type {
-	case common.MessageType_GROUP_OP_NOTIFICATION:
-		var notify common.GroupNotification
-		if err := proto.Unmarshal(wsMsg.Payload, &notify); err != nil {
-			return err
-		}
-		switch notify.OpType {
-		case common.GroupOperationType_GROUP_OP_CREATE:
-			session := common.GenerateGroupSessionId(notify.GroupId)
-			userConvs := make([]*model.UserConversation, 0, len(notify.TargetIds))
-			for _, targetID := range notify.TargetIds {
-				userConvs = append(userConvs, &model.UserConversation{
-					UserID:         targetID,
-					ConversationID: session,
-					IsTop:          model.InActive,
-					IsDisturb:      model.InActive,
-					LastReadSeq:    0,
-				})
-			}
-			if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeGroup); err != nil {
-				return err
-			}
-		case common.GroupOperationType_GROUP_OP_JOIN:
-			session := common.GenerateGroupSessionId(notify.GroupId)
-			if len(notify.TargetIds) == 0 {
-				logger.Error("handleBroadcastMsg: groupJoin.TargetIds is empty")
-				return nil
-			}
-
-			if err := l.conversationDAO.InsertUserConversation(ctx, notify.TargetIds[0], session, model.ConvTypeGroup); err != nil {
-				return err
-			}
-		}
-	case common.MessageType_GROUP_REQUEST:
-		var groupRequest common.GroupApply
-		if err := proto.Unmarshal(wsMsg.Payload, &groupRequest); err != nil {
-			return err
-		}
-		if groupRequest.Status == common.GroupApplyStatus_GROUP_APPLY_STATUS_ACCEPTED {
-			session := common.GenerateGroupSessionId(groupRequest.GroupId)
-			if err := l.conversationDAO.InsertUserConversation(ctx, groupRequest.SenderId, session, model.ConvTypeGroup); err != nil {
-				return err
-			}
-		}
-	case common.MessageType_FRIEND_REQUEST:
-		var friendApply common.FriendRequest
-		if err := proto.Unmarshal(wsMsg.Payload, &friendApply); err != nil {
-			return err
-		}
-		if friendApply.Status == common.ApplyStatus_APPLY_STATUS_AGREED {
-			session := common.GenerateUserSessionId(friendApply.FromUserId, friendApply.ToUserId)
-			userConvs := []*model.UserConversation{
-				{
-					UserID:         friendApply.FromUserId,
-					ConversationID: session,
-					IsTop:          model.InActive,
-					IsDisturb:      model.InActive,
-					LastReadSeq:    0,
-				},
-				{
-					UserID:         friendApply.ToUserId,
-					ConversationID: session,
-					IsTop:          model.InActive,
-					IsDisturb:      model.InActive,
-					LastReadSeq:    0,
-				},
-			}
-
-			if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeSingle); err != nil {
-				return err
-			}
-		}
-	case common.MessageType_FRIEND_ADD:
-		var friendMsg common.Friend
-		if err := proto.Unmarshal(wsMsg.Payload, &friendMsg); err != nil {
-			return err
-		}
-		session := common.GenerateUserSessionId(friendMsg.FriendId, friendMsg.UserId)
-		userConvs := []*model.UserConversation{
-			{
-				UserID:         friendMsg.FriendId,
-				ConversationID: session,
-				IsTop:          model.InActive,
-				IsDisturb:      model.InActive,
-				LastReadSeq:    0,
-			},
-			{
-				UserID:         friendMsg.UserId,
-				ConversationID: session,
-				IsTop:          model.InActive,
-				IsDisturb:      model.InActive,
-				LastReadSeq:    0,
-			},
-		}
-
-		if err := l.conversationDAO.BatchInsertUserConversations(ctx, userConvs, model.ConvTypeSingle); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (l *NatsListener) handleMessage(msg *nats.Msg) error {
-	// TODO: 反序列化 msg.Data -> model.Message，调用 l.messageDAO.InsertMessage
-	var wsMsg common.WSMessage
-	if err := proto.Unmarshal(msg.Data, &wsMsg); err != nil {
-		logger.Errorf("Failed to unmarshal NATS message: %v", err)
-		return err
-	}
-
-	// 解析出具体的业务消息
-	var baseMsg *common.BaseMessage
-	var content string
-	var mediaURL string
-	var extra map[string]any
-
-	// 根据消息类型解析 Payload
-	switch wsMsg.Type {
-	case common.MessageType_CHAT_TEXT, common.MessageType_GROUP_TEXT:
-		var textMsg common.TextMessage
-		if err := proto.Unmarshal(wsMsg.Payload, &textMsg); err != nil {
-			return err
-		}
-		baseMsg = textMsg.Base
-		content = textMsg.Content
-	case common.MessageType_CHAT_IMAGE, common.MessageType_GROUP_IMAGE:
-		var imgMsg common.ImageMessage
-		if err := proto.Unmarshal(wsMsg.Payload, &imgMsg); err != nil {
-			return err
-		}
-		baseMsg = imgMsg.Base
-		mediaURL = imgMsg.Url
-	case common.MessageType_CHAT_VIDEO, common.MessageType_GROUP_VIDEO:
-		var videoMsg common.VideoMessage
-		if err := proto.Unmarshal(wsMsg.Payload, &videoMsg); err != nil {
-			return err
-		}
-		baseMsg = videoMsg.Base
-		mediaURL = videoMsg.Url
-	case common.MessageType_CHAT_AUDIO, common.MessageType_GROUP_AUDIO:
-		var audioMsg common.AudioMessage
-		if err := proto.Unmarshal(wsMsg.Payload, &audioMsg); err != nil {
-			return err
-		}
-		baseMsg = audioMsg.Base
-		mediaURL = audioMsg.Url
-	case common.MessageType_CHAT_FILE, common.MessageType_GROUP_FILE:
-		var fileMsg common.FileMessage
-		if err := proto.Unmarshal(wsMsg.Payload, &fileMsg); err != nil {
-			return err
-		}
-		baseMsg = fileMsg.Base
-		mediaURL = fileMsg.Url
-	}
-
-	if baseMsg == nil {
-		return fmt.Errorf("Failed to extract BaseMessage or unsupported message type: %v", wsMsg.Type)
-	}
-
-	// 转换为 MongoDB 模型
-	dbMsg := &model.Message{
-		MsgID:          baseMsg.MsgId,
-		ClientID:       baseMsg.ClientId,
-		ConversationID: baseMsg.SessionId,
-		FromUserID:     baseMsg.FromUserId,
-		MsgType:        int16(wsMsg.Type),
-		Seq:            uint64(baseMsg.MsgSeq),
-		Content:        content,
-		MediaURL:       mediaURL,
-		Extra:          extra,
-		Status:         int8(common.MessageStatus_MESSAGE_STATUS_SENT),
-		CreateTime:     time.UnixMilli(wsMsg.Timestamp),
-	}
-
-	ctx, cancel := context.WithTimeout(l.ctx, 3*time.Second)
-	defer cancel()
-
-	if err := l.messageDAO.InsertMessage(ctx, dbMsg); err != nil {
-		logger.Errorf("Failed to insert message to MongoDB: %v", err)
-		return err
 	}
 	return nil
 }
