@@ -101,14 +101,18 @@ do_build_push() {
         local dockerfile="${SERVICES[$service]}"
         local image="${REGISTRY}:${service}-${TAG}"
 
+        local image_latest="${REGISTRY}:${service}-latest"
+
         log_info "构建 ${BOLD}${service}${NC} → ${image}"
         if docker build \
             -f "${PROJECT_ROOT}/${dockerfile}" \
             -t "${image}" \
             "${PROJECT_ROOT}"; then
-            log_info "推送 ${BOLD}${service}${NC} ..."
-            if docker push "${image}"; then
-                log_info "${GREEN}✓${NC} ${BOLD}${service}${NC} 推送成功"
+            # 同时打上 latest 标签
+            docker tag "${image}" "${image_latest}"
+            log_info "推送 ${BOLD}${service}${NC} (${TAG} + latest) ..."
+            if docker push "${image}" && docker push "${image_latest}"; then
+                log_info "${GREEN}✓${NC} ${BOLD}${service}${NC} 推送成功 (${TAG} + latest)"
                 ((success++)) || true
             else
                 log_error "✗ ${BOLD}${service}${NC} 推送失败"

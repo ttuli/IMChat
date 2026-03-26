@@ -4,7 +4,7 @@ import (
 	"IM2/internal/common"
 	"IM2/pkg/xerr"
 	"context"
-	"fmt"
+	"errors"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,8 +18,8 @@ func ServerErrorInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 		if cusErr, ok := err.(*xerr.Error); ok {
 			st := status.New(xerr.ToGRPCCode(cusErr.Code), cusErr.Message)
 			con := &common.ErrorResp{
-				Code:     int32(cusErr.Code),
-				Message:  cusErr.Message,
+				Code:    int32(cusErr.Code),
+				Message: cusErr.Message,
 			}
 			if cusErr.Err != nil {
 				con.RawError = cusErr.Err.Error()
@@ -46,13 +46,13 @@ func ClientErrorInterceptor(ctx context.Context, method string, req, reply any, 
 			for _, detail := range st.Details() {
 				if cusErr, ok := detail.(*common.ErrorResp); ok {
 					if cusErr.RawError != "" {
-						return xerr.Wrap(fmt.Errorf(cusErr.RawError), xerr.ErrorCode(cusErr.Code), cusErr.Message)
+						return xerr.Wrap(errors.New(cusErr.RawError), xerr.ErrorCode(cusErr.Code), cusErr.Message)
 					} else {
-						return xerr.Wrap(fmt.Errorf(st.Message()), xerr.ErrorCode(cusErr.Code), cusErr.Message)
+						return xerr.Wrap(errors.New(st.Message()), xerr.ErrorCode(cusErr.Code), cusErr.Message)
 					}
 				}
 			}
-			return xerr.Wrap(fmt.Errorf(st.Message()), xerr.ErrInternalServer, "服务器内部错误")
+			return xerr.Wrap(errors.New(st.Message()), xerr.ErrInternalServer, "服务器内部错误")
 		}
 	}
 	return nil
@@ -69,7 +69,7 @@ func ClientPureErrorInterceptor(ctx context.Context, method string, req, reply a
 			for _, detail := range st.Details() {
 				if cusErr, ok := detail.(*common.ErrorResp); ok {
 					if cusErr.RawError != "" {
-						return fmt.Errorf(cusErr.RawError)
+						return errors.New(cusErr.RawError)
 					} else {
 						return st.Err()
 					}

@@ -31,13 +31,13 @@ jobs:
       - name: Login to Aliyun ACR
         uses: docker/login-action@v3
         with:
-          registry: registry.cn-shenzhen.aliyuncs.com
+          registry: ${{ secrets.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build and Push All Services
         env:
-          REGISTRY: ${{ secrets.REGISTRY_URL || 'registry.cn-shenzhen.aliyuncs.com/im2' }}
+          REGISTRY: ${{ secrets.REGISTRY }}
         run: |
           # 使用 git commit sha 作为 tag
           TAG=${GITHUB_SHA::7}
