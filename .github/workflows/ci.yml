@@ -3,6 +3,11 @@ name: IM2 CI
 on:
   push:
     branches: [ master, dev ]
+    paths-ignore:          # 这些文件改动不触发 CI
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'ci.yml'
   pull_request:
     branches: [ master ]
 

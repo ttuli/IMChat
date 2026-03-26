@@ -7,3 +7,10 @@ mockdata
 
 docs/
 build/
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
