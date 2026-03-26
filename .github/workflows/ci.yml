@@ -38,4 +38,4 @@ jobs:
           go build -o /dev/null ./cmd/Message/rpc
           go build -o /dev/null ./cmd/Idgen/rpc
           go build -o /dev/null ./cmd/File/api
-          go build -o /dev/null ./cmd/websocket/gateway
+          go build -o /dev/null ./cmd/websocket
