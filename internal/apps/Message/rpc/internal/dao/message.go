@@ -114,3 +114,19 @@ func (m *MessageDAO) UpdateMessageStatus(ctx context.Context, msgID string, stat
 	)
 	return err
 }
+
+// FindBySenderAndClient 根据发送者ID和客户端ID查询消息 (用于幂等判断)
+func (m *MessageDAO) FindBySenderAndClient(ctx context.Context, fromUserID uint64, clientID string) (*model.Message, error) {
+	if clientID == "" {
+		return nil, mongo.ErrNoDocuments
+	}
+	var msg model.Message
+	err := m.db.Collection(mongoCollMessage).FindOne(ctx, bson.M{
+		"from_user_id": fromUserID,
+		"client_id":    clientID,
+	}).Decode(&msg)
+	if err != nil {
+		return nil, err
+	}
+	return &msg, nil
+}

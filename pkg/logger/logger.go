@@ -27,18 +27,22 @@ var (
 
 // InitLogger 初始化日志系统
 func InitLogger(logPath, serviceName string, env LoggerEnv) {
-	// 验证日志路径
-	if logPath == "" {
-		panic("日志文件路径不能为空")
-	}
+	var writerSyncer zapcore.WriteSyncer
 
-	// 1. 配置 Lumberjack 日志轮转
-	logRotator = &lumberjack.Logger{
-		Filename:   logPath, // 日志文件路径
-		MaxSize:    100,     // 单个日志文件最大 100MB
-		MaxBackups: 5,       // 最多保留 5 个旧文件
-		MaxAge:     30,      // 旧文件最多保留 30 天
-		Compress:   true,    // 是否压缩旧文件 (gzip)
+	if logPath != "" {
+		// 1. 配置 Lumberjack 日志轮转
+		logRotator = &lumberjack.Logger{
+			Filename:   logPath, // 日志文件路径
+			MaxSize:    100,     // 单个日志文件最大 100MB
+			MaxBackups: 5,       // 最多保留 5 个旧文件
+			MaxAge:     30,      // 旧文件最多保留 30 天
+			Compress:   true,    // 是否压缩旧文件 (gzip)
+		}
+		// 同时输出到控制台和文件
+		writerSyncer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(logRotator))
+	} else {
+		// 仅输出到控制台（Docker 原生日志模式推荐）
+		writerSyncer = zapcore.AddSync(os.Stdout)
 	}
 
 	// 2. 配置日志编码器 - 适配 Loki 格式
@@ -57,10 +61,7 @@ func InitLogger(logPath, serviceName string, env LoggerEnv) {
 		EncodeCaller:   zapcore.ShortCallerEncoder,     // 短文件路径
 	}
 
-	// 3. 创建写入器 (将 lumberjack 包装为 WriteSyncer)
-	// 这里也可以组合 os.Stdout 实现同时输出到控制台和文件:
-	writerSyncer := zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(logRotator))
-	// writerSyncer := zapcore.AddSync(os.Stdout)
+	// 3. (WriterSyncer 已在上方配置)
 
 	// 4. 创建 Core
 	core := zapcore.NewCore(

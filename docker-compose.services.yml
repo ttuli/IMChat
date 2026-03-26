@@ -1,5 +1,10 @@
 version: '3.8'
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "300m"
+    max-file: "5"
 services:
   # ---------------
   # IM2 RPC 服务层（按依赖顺序启动）
@@ -10,6 +15,7 @@ services:
     env_file: .env
     ports:
       - "${IDGEN_RPC_PORT}:${IDGEN_RPC_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   user-rpc:
@@ -18,6 +24,7 @@ services:
     env_file: .env
     ports:
       - "${USER_RPC_PORT}:${USER_RPC_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   auth-rpc:
@@ -26,6 +33,7 @@ services:
     env_file: .env
     ports:
       - "${AUTH_RPC_PORT}:${AUTH_RPC_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   group-rpc:
@@ -34,6 +42,7 @@ services:
     env_file: .env
     ports:
       - "${GROUP_RPC_PORT}:${GROUP_RPC_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   message-rpc:
@@ -42,6 +51,7 @@ services:
     env_file: .env
     ports:
       - "${MESSAGE_RPC_PORT}:${MESSAGE_RPC_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   llm-rpc:
@@ -50,6 +60,7 @@ services:
     env_file: .env
     ports:
       - "${LLM_RPC_PORT}:${LLM_RPC_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   llm-python:
@@ -58,6 +69,7 @@ services:
     env_file: .env
     ports:
       - "${LLM_PYTHON_PORT}:${LLM_PYTHON_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   # ---------------
@@ -69,6 +81,7 @@ services:
     env_file: .env
     ports:
       - "${USER_API_PORT}:${USER_API_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   auth-api:
@@ -77,6 +90,7 @@ services:
     env_file: .env
     ports:
       - "${AUTH_API_PORT}:${AUTH_API_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   group-api:
@@ -85,6 +99,7 @@ services:
     env_file: .env
     ports:
       - "${GROUP_API_PORT}:${GROUP_API_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   message-api:
@@ -93,6 +108,7 @@ services:
     env_file: .env
     ports:
       - "${MESSAGE_API_PORT}:${MESSAGE_API_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   file-api:
@@ -101,6 +117,7 @@ services:
     env_file: .env
     ports:
       - "${FILE_API_PORT}:${FILE_API_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   llm-api:
@@ -109,6 +126,7 @@ services:
     env_file: .env
     ports:
       - "${LLM_API_PORT}:${LLM_API_PORT}"
+    logging: *default-logging
     restart: on-failure
 
   # ---------------
@@ -120,4 +138,5 @@ services:
     env_file: .env
     ports:
       - "${WEBSOCKET_PORT}:${WEBSOCKET_PORT}"
+    logging: *default-logging
     restart: on-failure

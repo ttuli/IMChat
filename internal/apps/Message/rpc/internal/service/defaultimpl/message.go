@@ -31,6 +31,20 @@ func (s *messageService) GetHistory(ctx context.Context, conversationID string, 
 
 // SendMessage 发送消息、生成序号、广播事件、异步落库
 func (s *messageService) SendMessage(ctx context.Context, msg *message.Message) (*message.Message, error) {
+	// 0. 幂等性校验：检查是否已经有相同的 from_user_id 和 client_id 的消息
+	if msg.ClientId != "" {
+		existingMsg, err := s.messageDAO.FindBySenderAndClient(ctx, msg.FromUserId, msg.ClientId)
+		if err == nil && existingMsg != nil {
+			logger.Infof("Idempotent check hit: message already exists for client_id %s, from_user_id %d", msg.ClientId, msg.FromUserId)
+			// 直接返回已存在的那条消息的完整信息
+			msg.MsgId = existingMsg.MsgID
+			msg.Seq = existingMsg.Seq
+			msg.CreateTime = existingMsg.CreateTime.UnixMilli()
+			msg.Status = int32(existingMsg.Status)
+			return msg, nil
+		}
+	}
+
 	if msg.MsgId == "" {
 		msg.MsgId = uuid.New().String()
 	}

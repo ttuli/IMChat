@@ -1,3 +1,5 @@
+//go:build integration
+
 package idgen_test
 
 import (
@@ -15,6 +17,10 @@ import (
 )
 
 func TestGetUserId_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test")
+	}
+	
 	env.LoadEnv()
 	rpcAddr := env.GetString("ETCD_HOST", "127.0.0.1:8080") // 根据你的 RPC 服务配置修改
 

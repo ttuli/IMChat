@@ -21,6 +21,7 @@ const (
 	convTimelinePrefix = "user:conv:timeline:"
 	convInfoPrefix     = "conv:info:"
 	convInfoExpire     = 7 * 24 * time.Hour
+	defaultSegmentStep = uint64(100) // 号段步长：每次向 MySQL 预申请的 seq 数量
 )
 
 // ConversationDAO 会话数据访问对象 (MySQL + Redis缓存)
@@ -125,11 +126,9 @@ func (c *ConversationDAO) UpdateUserConversation(ctx context.Context, userID uin
 
 // InsertUserConversation 插入新的用户会话
 func (c *ConversationDAO) InsertUserConversation(ctx context.Context, userId uint64, conversationId string, convType int8) error {
-	maxSeqVal, err := c.cache.GetCtx(ctx, "conv:seq:"+conversationId)
-	var maxSeq uint64
-	if err == nil && maxSeqVal != "" {
-		maxSeq, _ = strconv.ParseUint(maxSeqVal, 10, 64)
-	}
+	// 从 Redis hash 的 seg_ceiling 字段读取当前已分配的最大 seq，作为新成员的已读起点。
+	// 若缓存未命中则查 MySQL max_seq。
+	maxSeq := c.currentMaxSeq(ctx, conversationId)
 
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. 同步插入或更新 Conversation 表 (存在则只更新 update_time)
@@ -169,12 +168,7 @@ func (c *ConversationDAO) BatchInsertUserConversations(ctx context.Context, user
 	}
 
 	conversationId := userConvs[0].ConversationID
-
-	maxSeqVal, err := c.cache.GetCtx(ctx, "conv:seq:"+conversationId)
-	var maxSeq uint64
-	if err == nil && maxSeqVal != "" {
-		maxSeq, _ = strconv.ParseUint(maxSeqVal, 10, 64)
-	}
+	maxSeq := c.currentMaxSeq(ctx, conversationId)
 
 	for _, conv := range userConvs {
 		conv.LastReadSeq = maxSeq
@@ -223,111 +217,158 @@ func (c *ConversationDAO) GetActiveConversationIDs(ctx context.Context, userID u
 	return res, nil
 }
 
-// IncrSeq 仅递增会话的序号 (基于 Redis Hash 进行递增，保证整个 conversation 存储在 hset 里以便后续缓存查询)
+// IncrSeq 以号段模式递增会话的 seq。
+//
+// 设计：
+//   - Redis Hash（conv:info:{id}）存两个字段：
+//     cur_seq    当前已分配到的最大 seq（各实例共享的原子计数器）
+//     seg_ceiling 当前号段的上限（对应 MySQL max_seq 的已预申请值）
+//   - 快路径：cur_seq <= seg_ceiling，直接 HINCRBY 返回，无 DB 访问。
+//   - 慢路径：cur_seq > seg_ceiling 或 Redis 冷启动，
+//     去 MySQL 原子扩容 max_seq += step，
+//     用 Lua 将 seg_ceiling 更新至新上限并保证 cur_seq 不低于新号段起点，
+//     从而彻底消除 Redis 宕机/重启导致的 seq 回退。
 func (c *ConversationDAO) IncrSeq(ctx context.Context, conversationID string) (uint64, error) {
 	cacheKey := convInfoPrefix + conversationID
+	expireSecs := strconv.Itoa(int(convInfoExpire.Seconds()))
 
-	// 1. 同步写 Redis (使用 Lua 脚本保证 HINCRBY, HSET 和 EXPIRE 的原子性)
-	script := `
-		local seq = redis.call("HINCRBY", KEYS[1], "max_seq", 1)
-		redis.call("HSET", KEYS[1], "update_time", ARGV[1])
-		redis.call("EXPIRE", KEYS[1], ARGV[2])
-		return seq
+	// 快路径：HINCRBY cur_seq，同时读 seg_ceiling，判断是否在号段内。
+	fastScript := `
+		local cur = redis.call("HINCRBY", KEYS[1], "cur_seq", 1)
+		local ceil = tonumber(redis.call("HGET", KEYS[1], "seg_ceiling")) or 0
+		redis.call("EXPIRE", KEYS[1], ARGV[1])
+		return {cur, ceil}
 	`
-	updateTime := fmt.Sprintf("%d", time.Now().UnixMilli())
-	expireSecs := int(convInfoExpire.Seconds())
-
-	val, err := c.cache.EvalCtx(ctx, script, []string{cacheKey}, updateTime, strconv.Itoa(expireSecs))
+	fastVal, err := c.cache.EvalCtx(ctx, fastScript, []string{cacheKey}, expireSecs)
 	if err != nil {
-		return 0, fmt.Errorf("redis eval lua script for incr max_seq failed: %w", err)
+		return 0, fmt.Errorf("redis eval fast script failed: %w", err)
 	}
 
-	var seq int64
-	switch v := val.(type) {
-	case int64:
-		seq = v
-	case int:
-		seq = int64(v)
-	default:
-		return 0, fmt.Errorf("unexpected return type from redis lua script: %T", val)
+	result, ok := fastVal.([]interface{})
+	if !ok || len(result) != 2 {
+		return 0, fmt.Errorf("unexpected redis result type: %T", fastVal)
 	}
-
-	// 如果 seq == 1说明原来缓存里没有，必须从DB加载正确的seq
-	if seq == 1 {
-		c.cache.HDelCtx(ctx, cacheKey, "max_seq")
-		dbSeq, err := c.incrSeqFromDB(ctx, conversationID, cacheKey)
-		if err != nil {
-			return 0, err
+	toInt64 := func(v interface{}) int64 {
+		switch x := v.(type) {
+		case int64:
+			return x
+		case int:
+			return int64(x)
 		}
-		return uint64(dbSeq), nil
+		return 0
+	}
+	cur := uint64(toInt64(result[0]))
+	segCeiling := uint64(toInt64(result[1]))
+
+	if cur <= segCeiling {
+		// 快路径：在当前号段内，直接返回。
+		return cur, nil
 	}
 
-	return uint64(seq), nil
+	// 慢路径：号段耗尽或冷启动，向 MySQL 申请新号段。
+	newCeiling, err := c.allocSegment(ctx, conversationID, cacheKey, expireSecs)
+	if err != nil {
+		return 0, err
+	}
+
+	if cur <= newCeiling {
+		// 本次 HINCRBY 拿到的 cur 落在新号段内，直接使用。
+		return cur, nil
+	}
+
+	return c.IncrSeq(ctx, conversationID)
 }
 
-// incrSeqFromDB 从 MySQL 递增 max_seq 并回填 Redis 缓存
-func (c *ConversationDAO) incrSeqFromDB(ctx context.Context, conversationID, cacheKey string) (int, error) {
+// allocSegment 原子地向 MySQL 申请下一个号段，并更新 Redis 中的 seg_ceiling 和 cur_seq。
+//
+// 参数 curSeq 是触发扩容的那次 HINCRBY 拿到的值，用于判断 Lua 里是否需要重置 cur_seq。
+// 返回新的 seg_ceiling（即 MySQL 最新的 max_seq）。
+func (c *ConversationDAO) allocSegment(
+	ctx context.Context,
+	conversationID, cacheKey string,
+	expireSecs string,
+) (uint64, error) {
+	// 1. MySQL 原子申请号段：INSERT 不存在则创建，存在则 max_seq += step。
+	//    使用 ON DUPLICATE KEY UPDATE 保证即使会话不存在也能自动初始化。
+	now := time.Now()
+	step := defaultSegmentStep
+
+	err := c.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "conversation_id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"max_seq": gorm.Expr("max_seq + ?", step),
+		}),
+	}).Create(&model.Conversation{
+		ConversationID: conversationID,
+		Type:           int8(common.GetConversationType(conversationID)),
+		MaxSeq:         step, // 初次创建时 max_seq = step
+		CreateTime:     now,
+		UpdateTime:     now,
+	}).Error
+	if err != nil {
+		return 0, fmt.Errorf("allocSegment: upsert conversation failed: %w", err)
+	}
+
+	// 2. 读取更新后的 max_seq（即新的 seg_ceiling）。
 	var conv model.Conversation
-	err := c.db.WithContext(ctx).
+	if err := c.db.WithContext(ctx).
+		Select("max_seq").
 		Where("conversation_id = ?", conversationID).
-		First(&conv).Error
+		First(&conv).Error; err != nil {
+		return 0, fmt.Errorf("allocSegment: read max_seq failed: %w", err)
+	}
+	newCeiling := conv.MaxSeq
+	newBase := newCeiling - step + 1 // 新号段起点
 
+	// 3. 原子更新 Redis：
+	//    - seg_ceiling 设置为新上限（使用 HSET，Last-Write-Wins，多实例并发时取最大值即可）
+	//    - cur_seq：若当前值低于 new_base（冷启动/旧数据），重置到 new_base，避免分配已用过的 seq。
+	allocScript := `
+		local new_ceiling = tonumber(ARGV[1])
+		local new_base    = tonumber(ARGV[2])
+		local expire      = tonumber(ARGV[3])
+
+		-- 仅当新上限更大时才更新（防止并发时旧实例覆盖新实例的更大号段）
+		local old_ceil = tonumber(redis.call("HGET", KEYS[1], "seg_ceiling")) or 0
+		if new_ceiling > old_ceil then
+			redis.call("HSET", KEYS[1], "seg_ceiling", new_ceiling)
+		end
+
+		-- 若 cur_seq 低于新号段起点（冷启动），重置到 new_base
+		local cur = tonumber(redis.call("HGET", KEYS[1], "cur_seq")) or 0
+		if cur < new_base then
+			redis.call("HSET", KEYS[1], "cur_seq", new_base)
+		end
+
+		redis.call("EXPIRE", KEYS[1], expire)
+		return new_ceiling
+	`
+	_, err = c.cache.EvalCtx(ctx, allocScript, []string{cacheKey},
+		strconv.FormatUint(newCeiling, 10),
+		strconv.FormatUint(newBase, 10),
+		expireSecs,
+	)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// 会话不存在，自动创建，max_seq 初始化为 1
-			now := time.Now()
-			newConv := model.Conversation{
-				ConversationID: conversationID,
-				Type:           int8(common.GetConversationType(conversationID)),
-				MaxSeq:         1,
-				CreateTime:     now,
-				UpdateTime:     now,
-			}
-			if createErr := c.db.WithContext(ctx).Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "conversation_id"}},
-				DoUpdates: clause.Assignments(map[string]interface{}{"max_seq": gorm.Expr("max_seq + 1")}),
-			}).Create(&newConv).Error; createErr != nil {
-				return 0, fmt.Errorf("auto create conversation failed: %w", createErr)
-			}
-			// 回填 Redis，将该Conversation的每一个字段都设置进去
-			fields := map[string]string{
-				"conversation_id": newConv.ConversationID,
-				"type":            fmt.Sprintf("%d", newConv.Type),
-				"max_seq":         fmt.Sprintf("%d", newConv.MaxSeq),
-				"create_time":     fmt.Sprintf("%d", newConv.CreateTime.UnixMilli()),
-				"update_time":     fmt.Sprintf("%d", newConv.UpdateTime.UnixMilli()),
-			}
-			err = c.cache.HMSetCtx(ctx, cacheKey, fields)
-			if err != nil {
-				logger.Errorf("redis hmset failed: %v", err)
-			}
-			c.cache.ExpireCtx(ctx, cacheKey, int(convInfoExpire.Seconds()))
-			return int(newConv.MaxSeq), nil
+		logger.Errorf("allocSegment: redis update failed (non-fatal): %v", err)
+	}
+
+	return newCeiling, nil
+}
+
+// currentMaxSeq 返回当前会话已分配的最大 seq。
+// 优先读 Redis Hash 的 seg_ceiling，降级读 MySQL max_seq。
+// 用于新成员加入时初始化 LastReadSeq。
+func (c *ConversationDAO) currentMaxSeq(ctx context.Context, conversationID string) uint64 {
+	cacheKey := convInfoPrefix + conversationID
+	if val, err := c.cache.HGetCtx(ctx, cacheKey, "seg_ceiling"); err == nil && val != "" {
+		if seq, err := strconv.ParseUint(val, 10, 64); err == nil {
+			return seq
 		}
-		return 0, fmt.Errorf("query conversation max_seq failed: %w", err)
 	}
-
-	// 递增 DB
-	newSeq := conv.MaxSeq + 1
-	if updateErr := c.db.WithContext(ctx).
-		Model(&model.Conversation{}).
-		Where("conversation_id = ?", conversationID).
-		Update("max_seq", newSeq).Error; updateErr != nil {
-		return 0, fmt.Errorf("update conversation max_seq failed: %w", updateErr)
+	// 降级读 MySQL
+	var conv model.Conversation
+	if err := c.db.WithContext(ctx).Select("max_seq").Where("conversation_id = ?", conversationID).First(&conv).Error; err == nil {
+		return conv.MaxSeq
 	}
-
-	// 回填 Redis，将该Conversation的每一个字段都设置进去
-	fields := map[string]string{
-		"conversation_id": conv.ConversationID,
-		"type":            fmt.Sprintf("%d", conv.Type),
-		"max_seq":         fmt.Sprintf("%d", newSeq),
-		"create_time":     fmt.Sprintf("%d", conv.CreateTime.UnixMilli()),
-		"update_time":     fmt.Sprintf("%d", time.Now().UnixMilli()),
-	}
-	err = c.cache.HMSetCtx(ctx, cacheKey, fields)
-	if err != nil {
-		logger.Errorf("redis hmset failed: %v", err)
-	}
-	c.cache.ExpireCtx(ctx, cacheKey, int(convInfoExpire.Seconds()))
-	return int(newSeq), nil
+	return 0
 }

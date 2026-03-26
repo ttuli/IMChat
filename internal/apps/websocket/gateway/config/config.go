@@ -18,11 +18,6 @@ type Config struct {
 	// Redis 配置 (用于路由 KV 存储)
 	RouteStore redis.RedisConf
 
-	// MySQL 配置
-	DAO struct {
-		MysqlSource string
-		CacheSource redis.RedisConf
-	}
 
 	// NATS 配置 (用于跨节点消息转发)
 	Nats NatsConf

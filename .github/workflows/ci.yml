@@ -1,0 +1,41 @@
+name: IM2 CI
+
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Test and Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run Tests
+        run: go test -short -v ./...
+
+      - name: Build Check (Compile all services)
+        run: |
+          go build -o /dev/null ./cmd/Auth/api
+          go build -o /dev/null ./cmd/Auth/rpc
+          go build -o /dev/null ./cmd/User/api
+          go build -o /dev/null ./cmd/User/rpc
+          go build -o /dev/null ./cmd/Group/api
+          go build -o /dev/null ./cmd/Group/rpc
+          go build -o /dev/null ./cmd/Message/api
+          go build -o /dev/null ./cmd/Message/rpc
+          go build -o /dev/null ./cmd/Idgen/rpc
+          go build -o /dev/null ./cmd/File/api
+          go build -o /dev/null ./cmd/websocket/gateway

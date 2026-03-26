@@ -9,9 +9,13 @@ import (
 	"syscall"
 	"time"
 
+	"path/filepath"
+	"strings"
+
 	configparser "IM2/pkg/configParser"
 	"IM2/pkg/env"
 	"IM2/pkg/logger"
+	"github.com/google/uuid"
 )
 
 // ServiceRunner 服务运行器
@@ -69,7 +73,20 @@ func WithName(name string) Option {
 // 若要带上服务名，则需要在WithLogger前调用WithName
 func WithLogger(logPath string, env logger.LoggerEnv) Option {
 	return func(r *ServiceRunner) {
-		logger.InitLogger(logPath, r.name, env)
+		// 从环境变量读取，支持禁用文件日志（如 Docker 原生日志场景）
+		if os.Getenv("DISABLE_FILE_LOG") == "true" {
+			logger.InitLogger("", r.name, env)
+			return
+		}
+
+		// 在分布式环境/多实例部署下，防止日志文件名冲突，添加 uuid 后缀
+		ext := filepath.Ext(logPath)
+		base := strings.TrimSuffix(logPath, ext)
+		u := uuid.New().String()
+		// 取 uuid 前8位即可基本保证不冲突，且文件名不会太长
+		finalLogPath := fmt.Sprintf("%s-%s%s", base, u[:8], ext)
+		
+		logger.InitLogger(finalLogPath, r.name, env)
 	}
 }
 

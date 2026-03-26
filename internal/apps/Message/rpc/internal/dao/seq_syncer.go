@@ -22,11 +22,12 @@ const (
 	defaultFlushBatchLimit = 500 // 定量触发：攒满 500 条即提前刷盘
 )
 
-// seqUpdate 代表一条完整的会话状态更新事件
-// 聚合时同一 conversationID 只保留 seq 最大的那一条（覆盖语义，不会丢业务数据）
+// seqUpdate 代表一条完整的会话状态更新事件。
+// 号段模式下 MySQL max_seq 已由 allocSegment 实时写入，SeqSyncer 只负责异步批量刷下面三个元数据字段。
+// 聚合时同一 conversationID 只保留 seq 最大的那条（视为最新状态）。
 type seqUpdate struct {
 	conversationID string
-	seq            uint64
+	seq            uint64 // 仅用于内部聚合去重，不写入 MySQL max_seq
 	lastContent    string
 	lastSender     uint64
 	updateTime     int64
@@ -164,12 +165,12 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	userTimelines := make(map[uint64]map[string]int64)
 
 	for convID, u := range latest {
-		// 1. MySQL 批量条件写（max_seq < newSeq 保证单调递增）
+		// 1. MySQL 条件写：只更新 last_content / last_sender / update_time。
+		// 号段模式下 max_seq 已由 allocSegment 实时写入 MySQL，无需在此同步。
 		res := s.db.WithContext(ctx).
 			Model(&model.Conversation{}).
-			Where("conversation_id = ? AND max_seq < ?", convID, u.seq).
+			Where("conversation_id = ?", convID).
 			Updates(map[string]interface{}{
-				"max_seq":      u.seq,
 				"last_content": u.lastContent,
 				"last_sender":  u.lastSender,
 				"update_time":  now,
