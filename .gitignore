@@ -3,7 +3,7 @@
 nacos/
 **/nacos/
 
-mockdata
+# mockdata
 
 docs/
 build/
