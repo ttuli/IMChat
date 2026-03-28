@@ -1,0 +1,335 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: im2
+---
+# ==========================================
+# Auth API
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-api
+  namespace: im2
+  labels:
+    app: auth-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-api
+  template:
+    metadata:
+      labels:
+        app: auth-api
+    spec:
+      containers:
+        - name: auth-api
+          image: imchat:auth-api-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8022
+          envFrom:
+            - configMapRef:
+                name: im2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-api
+  namespace: im2
+  labels:
+    app: auth-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8022
+      targetPort: 8022
+      protocol: TCP
+  selector:
+    app: auth-api
+
+---
+# ==========================================
+# User API
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-api
+  namespace: im2
+  labels:
+    app: user-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-api
+  template:
+    metadata:
+      labels:
+        app: user-api
+    spec:
+      containers:
+        - name: user-api
+          image: imchat:user-api-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8021
+          envFrom:
+            - configMapRef:
+                name: im2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-api
+  namespace: im2
+  labels:
+    app: user-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8021
+      targetPort: 8021
+      protocol: TCP
+  selector:
+    app: user-api
+
+---
+# ==========================================
+# Group API
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: group-api
+  namespace: im2
+  labels:
+    app: group-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: group-api
+  template:
+    metadata:
+      labels:
+        app: group-api
+    spec:
+      containers:
+        - name: group-api
+          image: imchat:group-api-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8024
+          envFrom:
+            - configMapRef:
+                name: im2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: group-api
+  namespace: im2
+  labels:
+    app: group-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8024
+      targetPort: 8024
+      protocol: TCP
+  selector:
+    app: group-api
+
+---
+# ==========================================
+# Message API
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-api
+  namespace: im2
+  labels:
+    app: message-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: message-api
+  template:
+    metadata:
+      labels:
+        app: message-api
+    spec:
+      containers:
+        - name: message-api
+          image: imchat:message-api-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8025
+          envFrom:
+            - configMapRef:
+                name: im2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: message-api
+  namespace: im2
+  labels:
+    app: message-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8025
+      targetPort: 8025
+      protocol: TCP
+  selector:
+    app: message-api
+
+---
+# ==========================================
+# File API
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-api
+  namespace: im2
+  labels:
+    app: file-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-api
+  template:
+    metadata:
+      labels:
+        app: file-api
+    spec:
+      containers:
+        - name: file-api
+          image: imchat:file-api-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8023
+          envFrom:
+            - configMapRef:
+                name: im2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-api
+  namespace: im2
+  labels:
+    app: file-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8023
+      targetPort: 8023
+      protocol: TCP
+  selector:
+    app: file-api
+
+---
+# ==========================================
+# LLM API
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-api
+  namespace: im2
+  labels:
+    app: llm-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm-api
+  template:
+    metadata:
+      labels:
+        app: llm-api
+    spec:
+      containers:
+        - name: llm-api
+          image: imchat:llm-api-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8026
+          envFrom:
+            - configMapRef:
+                name: im2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-api
+  namespace: im2
+  labels:
+    app: llm-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8026
+      targetPort: 8026
+      protocol: TCP
+  selector:
+    app: llm-api
+
+---
+# ==========================================
+# WebSocket Gateway
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata: # Deployment自身信息标签
+  name: websocket
+  namespace: im2
+  labels:
+    app: websocket 
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: websocket # Deployment要管理的Pod标签
+  template:
+    metadata:
+      labels:
+        app: websocket # Deployment关联的Pod标签
+    spec:
+      containers:
+        - name: websocket
+          image: imchat:websocket-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8009 # 文档性声明，不写也能通信，但写了便于阅读和工具识别
+          envFrom:
+            - configMapRef:
+                name: im2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: websocket
+  namespace: im2
+  labels:
+    app: websocket
+spec:
+  # ClusterIP只在集群内部可访问，有一个虚拟 IP
+  # NodePort在每个节点上开放端口，集群外可访问
+  # LoadBalancer对接云厂商负载均衡器，公网可访问
+  type: ClusterIP
+  ports:
+    - port: 8009
+      targetPort: 8009
+      protocol: TCP
+  selector:
+    app: websocket # Service选择的Pod标签

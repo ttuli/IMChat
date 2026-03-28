@@ -73,8 +73,8 @@ declare -A SERVICES=(
     ["message-api"]="cmd/Message/api/Dockerfile"
     ["file-api"]="cmd/File/api/Dockerfile"
     ["websocket"]="cmd/websocket/Dockerfile"
-    # ["llm-rpc"]="cmd/Llm/rpc/Dockerfile"
-    # ["llm-api"]="cmd/Llm/api/Dockerfile"
+    ["llm-rpc"]="cmd/Llm/rpc/Dockerfile"
+    ["llm-api"]="cmd/Llm/api/Dockerfile"
     # ["llm-python"]="cmd/Llm/python/Dockerfile"
 )
 

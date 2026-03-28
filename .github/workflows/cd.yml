@@ -11,10 +11,17 @@ jobs:
   build-and-push:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    if: ${{ github.event.repository.fork == false && github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ !github.event.repository.fork && github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-tags: true
+
+      - name: Fetch tags
+        run: git fetch --tags --force
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -35,18 +42,77 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and Push All Services
+      - name: Build and Push Changed Services
         env:
           REGISTRY: ${{ secrets.REGISTRY }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          # 使用 git commit sha 作为 tag
-          TAG=${GITHUB_SHA::7}
-          # 如果是 tag 触发，则使用 tag 名
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            TAG=${GITHUB_REF#refs/tags/}
+          set -e
+
+          # ---- 校验必要环境变量 ----
+          if [ -z "$HEAD_SHA" ]; then
+            echo "错误：HEAD_SHA 为空，无法继续构建。"
+            exit 1
           fi
-          
-          echo "Building and pushing to $REGISTRY with TAG: $TAG"
+
+          # ---- 获取 Tag ----
+          TAG=${HEAD_SHA::7}
+          # 用 sort -V | tail -n 1 按语义版本取最新 tag，避免多 tag 时顺序不稳定
+          if git tag --points-at "$HEAD_SHA" | grep -q .; then
+            TAG=$(git tag --points-at "$HEAD_SHA" | sort -V | tail -n 1)
+          fi
+          echo "使用 TAG: $TAG"
+
+          # ---- 获取变动文件 ----
+          # fetch-depth: 2 保证 HEAD~1 一定存在
+          # diff 失败时直接触发全量构建并退出，不传递歧义字符串给后续逻辑
+          if ! CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD); then
+            echo "git diff 执行失败，触发全量构建兜底..."
+            TAG=$TAG REGISTRY=$REGISTRY ./scripts/docker.sh build-push
+            exit 0
+          fi
+
+          echo "变动的文件列表:"
+          echo "$CHANGED_FILES"
+          echo "========================"
+
           chmod +x ./scripts/docker.sh
-          # 注入环境变量并执行脚本
-          TAG=$TAG REGISTRY=$REGISTRY ./scripts/docker.sh build-push
+
+          # ---- 1. 全局公共代码改动 -> 全量构建 ----
+          # 注意：go.sum 不在触发条件内，仅 go.mod 变动才触发全量构建
+          if echo "$CHANGED_FILES" | grep -qE "^(pkg/|internal/|go\.mod|scripts/)"; then
+              echo "检测到公共依赖或配置被修改，触发全量构建..."
+              TAG=$TAG REGISTRY=$REGISTRY ./scripts/docker.sh build-push
+              exit 0
+          fi
+
+          # ---- 2. 萃取需要单独构建的服务名 ----
+          SERVICES=()
+          while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              if [[ $file =~ ^cmd/websocket/ ]]; then
+                  SERVICES+=("websocket")
+              elif [[ $file =~ ^cmd/([a-zA-Z0-9_]+)/(api|rpc|python)/ ]]; then
+                  DOMAIN=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
+                  TYPE="${BASH_REMATCH[2]}"
+                  SERVICES+=("${DOMAIN}-${TYPE}")
+              fi
+          done <<< "$CHANGED_FILES"
+
+          # ---- 3. 数组去重 ----
+          if [ ${#SERVICES[@]} -gt 0 ]; then
+              mapfile -t UNIQUE_SERVICES < <(printf "%s\n" "${SERVICES[@]}" | sort -u)
+          else
+              UNIQUE_SERVICES=()
+          fi
+
+          # ---- 4. 执行构建 ----
+          if [ ${#UNIQUE_SERVICES[@]} -eq 0 ]; then
+              echo "没有任何微服务代码被修改，无需构建新镜像。"
+              exit 0
+          fi
+
+          for svc in "${UNIQUE_SERVICES[@]}"; do
+              echo "检测到 $svc 的代码有修改，开始独立构建..."
+              TAG=$TAG REGISTRY=$REGISTRY ./scripts/docker.sh build-push "$svc"
+          done
