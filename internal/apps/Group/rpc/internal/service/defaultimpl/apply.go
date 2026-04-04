@@ -76,11 +76,23 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "创建入群申请失败")
 	}
 
-	msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
-	bytes, _ := proto.Marshal(msg)
-	_, err = s.js.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
+	// 先获取群管理员（包括群主），统一构建一条消息发往 NATS
+	managers, err := s.groupDAO.FindManagersByGroupID(ctx, apply.GroupID)
 	if err != nil {
-		logger.Errorf("发送nats失败: %v", err)
+		logger.Errorf("查询群管理员失败: %v", err)
+	} else {
+		var targetIDs []uint64
+		for _, manager := range managers {
+			targetIDs = append(targetIDs, manager.UserID)
+		}
+		if len(targetIDs) > 0 {
+			msg, _ := common.ConvertGroupApplyToWSMessage(apply, targetIDs)
+			bytes, _ := proto.Marshal(msg)
+			_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+			if err != nil {
+				logger.Errorf("向管理员发送nats消息失败: %v", err)
+			}
+		}
 	}
 
 	return apply, nil, nil
@@ -147,11 +159,32 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 	apply.HandlerID = operatorID
 	apply.UpdateTime = time.Now()
 
-	msg, _ := common.ConvertGroupApplyToWSMessage(apply, apply.GroupID)
-	bytes, _ := proto.Marshal(msg)
-	_, err = s.js.Publish(s.config.NATS.QueueBroadcastSubject, bytes)
+	// 获取群管理员（包括群主）和申请者，统一构建一条消息发往 NATS
+	managers, err := s.groupDAO.FindManagersByGroupID(ctx, apply.GroupID)
 	if err != nil {
-		logger.Errorf("发送nats失败: %v", err)
+		logger.Errorf("查询群管理员失败: %v", err)
+	} else {
+		targets := make(map[uint64]bool)
+		for _, manager := range managers {
+			targets[manager.UserID] = true
+		}
+		if apply.HandlerID != 0 {
+			targets[apply.FromUserID] = true
+		}
+		
+		var targetIDs []uint64
+		for targetID := range targets {
+			targetIDs = append(targetIDs, targetID)
+		}
+
+		if len(targetIDs) > 0 {
+			msg, _ := common.ConvertGroupApplyToWSMessage(apply, targetIDs)
+			bytes, _ := proto.Marshal(msg)
+			_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+			if err != nil {
+				logger.Errorf("向相关用户发送nats消息失败: %v", err)
+			}
+		}
 	}
 
 	return apply, nil

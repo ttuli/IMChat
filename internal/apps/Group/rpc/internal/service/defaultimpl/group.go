@@ -185,5 +185,26 @@ func (s *groupService) GetUserGroupIDs(ctx context.Context, userID uint64) ([]ui
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询用户群组失败")
 	}
+
+	if len(groupIDs) > 0 {
+		syncMsg := &common.UserGroupSync{
+			UserId:   userID,
+			GroupIds: groupIDs,
+		}
+		payload, _ := proto.Marshal(syncMsg)
+		wsMsg := &common.WSMessage{
+			RouteTarget:     []uint64{userID},
+			RouteTargetType: common.TargetType_USER,
+			Timestamp:       time.Now().UnixMilli(),
+			Type:            common.MessageType_USER_GROUP_SYNC,
+			Payload:         payload,
+		}
+		bytes, _ := proto.Marshal(wsMsg)
+		_, err := s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+		if err != nil {
+			logger.Errorf("发送nats失败: %v", err)
+		}
+	}
+
 	return groupIDs, nil
 }

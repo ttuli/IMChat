@@ -21,7 +21,7 @@ message ApiResponse {
 
 // WebSocket传输的顶层消息
 message WSMessage {
-  uint64 route_target = 1;         // 路由目标
+  repeated uint64 route_target = 1;         // 路由目标
   TargetType route_target_type = 2; // 路由目标类型
   int64 timestamp = 3;            // 时间戳(毫秒)
   MessageType type = 4;           // 消息类型
@@ -38,6 +38,11 @@ message UpdateSession {
   int64 update_time = 5;
   uint64 sender = 6;
   string last_content = 7;
+}
+
+message UserGroupSync {
+  uint64 user_id = 1;
+  repeated uint64 group_ids = 2;
 }
 
 enum TargetType {
@@ -103,6 +108,7 @@ enum MessageType {
   
   // 内部消费消息
   UPDATE_SESSION = 700;           // 更新会话
+  USER_GROUP_SYNC = 701;          // 用户群组映射同步
   
   // 错误响应 900-999
   ERROR = 900;                    // 错误消息

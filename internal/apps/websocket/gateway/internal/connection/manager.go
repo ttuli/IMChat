@@ -37,8 +37,7 @@ type Manager interface {
 	AddUsersToGroup(groupID uint64, userIDs []uint64)
 	// RemoveUsersFromGroup 将指定用户从本地群成员映射中移除
 	RemoveUsersFromGroup(groupID uint64, userIDs []uint64)
-	// SetOnUserConnect 设置用户建立连接时的回调（用于预热群成员）
-	SetOnUserConnect(fn func(ctx context.Context, userID uint64) ([]uint64, error))
+
 	// Close 关闭管理器
 	Close() error
 }
@@ -52,7 +51,6 @@ type DefaultManager struct {
 	groupMembers map[uint64]map[uint64]struct{}
 	// userGroups: userID → set of groupIDs (该用户属于哪些群)
 	userGroups    map[uint64][]uint64
-	onUserConnect func(ctx context.Context, userID uint64) ([]uint64, error)
 
 	nodeID string
 	router MessageRouter
@@ -74,11 +72,6 @@ func NewDefaultManager(nodeID string, router MessageRouter) *DefaultManager {
 		groupMembers: make(map[uint64]map[uint64]struct{}),
 		userGroups:   make(map[uint64][]uint64),
 	}
-}
-
-// SetOnUserConnect 设置用户建立连接时的回调，返回该用户所属的群 ID 列表
-func (m *DefaultManager) SetOnUserConnect(fn func(ctx context.Context, userID uint64) ([]uint64, error)) {
-	m.onUserConnect = fn
 }
 
 // InvalidateGroupCache 清理群组缓存
@@ -138,26 +131,6 @@ func (m *DefaultManager) AddConnection(userID uint64, conn *Connection) error {
 	logx.Infof("[Connection] user %d added", userID)
 	m.connections.Store(userID, conn)
 
-	// 预热群成员
-	if m.onUserConnect != nil {
-		go func() {
-			groupIDs, err := m.onUserConnect(context.Background(), userID)
-			if err != nil {
-				logx.Errorf("[ConnectionManager] onUserConnect: fetch groups for user %d failed: %v", userID, err)
-				return
-			}
-			m.groupLock.Lock()
-			m.userGroups[userID] = groupIDs
-			for _, gid := range groupIDs {
-				if m.groupMembers[gid] == nil {
-					m.groupMembers[gid] = make(map[uint64]struct{})
-				}
-				m.groupMembers[gid][userID] = struct{}{}
-			}
-			m.groupLock.Unlock()
-			logx.Infof("[ConnectionManager] user %d registered to %d groups", userID, len(groupIDs))
-		}()
-	}
 	return nil
 }
 

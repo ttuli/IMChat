@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"IM2/internal/apps/Group/rpc/group"
 	"IM2/internal/apps/websocket/gateway/svc"
 	"IM2/internal/common"
 	"IM2/pkg/logger"
@@ -59,7 +58,6 @@ func (s *GatewayServer) Start() error {
 		return fmt.Errorf("subscribe notice failed: %w", err)
 	}
 
-
 	fmt.Println("WebSocket Gateway Server logic started successfully")
 	return nil
 }
@@ -92,7 +90,6 @@ func (s *GatewayServer) Stop() error {
 	// 4. 关闭 NATS
 	s.svcCtx.NatsConn.Close()
 
-
 	// 6. 关闭 Redis (路由 KV)
 	if err := s.svcCtx.RedisClient.Close(); err != nil {
 		logger.Errorf("close redis client failed: %v", err)
@@ -106,22 +103,40 @@ func (s *GatewayServer) Stop() error {
 }
 
 func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
+	// 拦截内部的群组映射跨节点同步消息
+	if msg.Type == common.MessageType_USER_GROUP_SYNC {
+		var syncMsg common.UserGroupSync
+		if err := proto.Unmarshal(msg.Payload, &syncMsg); err == nil {
+			for _, gid := range syncMsg.GroupIds {
+				s.svcCtx.ConnectionManager.AddUsersToGroup(gid, []uint64{syncMsg.UserId})
+			}
+		} else {
+			logger.Errorf("[handleSubscribeMessage] unmarshal UserGroupSync failed: %v", err)
+		}
+		return nil
+	}
+
 	// 获取本地连接
 	switch msg.RouteTargetType {
 	case common.TargetType_USER:
-		conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(msg.RouteTarget)
-		if ok {
-			return conn.Send(msg)
+		for _, target := range msg.RouteTarget {
+			conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(target)
+			if ok {
+				conn.Send(msg)
+			}
 		}
+		return nil
 	case common.TargetType_GROUP:
 		if err := s.syncGroupMembership(msg); err != nil {
 			return err
 		}
-		return s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, msg.RouteTarget, msg)
+		for _, target := range msg.RouteTarget {
+			s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, target, msg)
+		}
+		return nil
 	default:
 		return nil
 	}
-	return nil
 }
 
 // syncGroupMembership 根据群组事件类型增量更新本地 groupMembers 映射。
@@ -161,26 +176,20 @@ func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
 func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
 	switch msg.Type {
 	case common.MessageType_GROUP_REQUEST:
-		resp, err := s.svcCtx.GroupRpc.GetGroupManagers(ctx, &group.GetGroupManagersReq{
-			GroupId: msg.RouteTarget,
-		})
-		if err != nil {
-			s.svcCtx.TelemetryBus.Publish(err)
-			return err
-		}
-		for _, manager := range resp.Managers {
-			err := s.svcCtx.ConnectionManager.SendToUser(ctx, manager.UserId, msg)
-			if err != nil {
-				s.svcCtx.TelemetryBus.Publish(err)
-			}
-		}
 		var apply common.GroupApply
 		if err := proto.Unmarshal(msg.Payload, &apply); err != nil {
 			s.svcCtx.TelemetryBus.Publish(err)
 			return nil
 		}
+		for _, manager := range msg.RouteTarget {
+			err := s.svcCtx.ConnectionManager.SendToUser(ctx, manager, msg)
+			if err != nil {
+				s.svcCtx.TelemetryBus.Publish(err)
+			}
+		}
+
 		if apply.HandlerId != 0 {
-			err = s.svcCtx.ConnectionManager.SendToUser(ctx, apply.SenderId, msg)
+			err := s.svcCtx.ConnectionManager.SendToUser(ctx, apply.SenderId, msg)
 			if err != nil {
 				s.svcCtx.TelemetryBus.Publish(err)
 			}

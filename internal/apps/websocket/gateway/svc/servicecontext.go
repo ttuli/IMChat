@@ -1,14 +1,13 @@
 package svc
 
 import (
-	"context"
+
 	"fmt"
 	"log"
 	"os"
 
 	"IM2/interceptor"
-	"IM2/internal/apps/Group/rpc/client/grouprpc"
-	"IM2/internal/apps/Group/rpc/group"
+
 	"IM2/internal/apps/Message/rpc/client/messagerpc"
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/internal/connection"
@@ -35,7 +34,6 @@ type ServiceContext struct {
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
 
-	GroupRpc   grouprpc.GroupRpc
 	MessageRpc messagerpc.MessageRpc
 }
 
@@ -97,22 +95,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
 
-		GroupRpc: grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
-			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
+		
 		MessageRpc: messagerpc.NewMessageRpc(zrpc.MustNewClient(c.MessageRpc,
 			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
 	}
-
-	// 用户连接时预热群成员：拉取该用户所在所有群的 ID，注册到本地 groupMembers map
-	connMgr.SetOnUserConnect(func(ctx context.Context, userID uint64) ([]uint64, error) {
-		resp, err := svc.GroupRpc.GetUserGroups(ctx, &group.GetUserGroupsReq{
-			UserId: userID,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return resp.Data, nil
-	})
 
 	return svc
 }

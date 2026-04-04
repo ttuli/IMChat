@@ -31,7 +31,23 @@ func NewMessageDAO(mongoUri string) *MessageDAO {
 		panic(err)
 	}
 
-	return &MessageDAO{db: client.Database(mongoDbName)}
+	dao := &MessageDAO{db: client.Database(mongoDbName)}
+	_ = dao.EnsureIndexes(context.Background())
+	return dao
+}
+
+// EnsureIndexes 创建联合唯一索引
+func (m *MessageDAO) EnsureIndexes(ctx context.Context) error {
+	collection := m.db.Collection(mongoCollMessage)
+	indexModel := mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "client_id", Value: 1},
+			{Key: "msg_id", Value: 1},
+		},
+		Options: options.Index().SetUnique(true),
+	}
+	_, err := collection.Indexes().CreateOne(ctx, indexModel)
+	return err
 }
 
 // InsertMessage 写入消息

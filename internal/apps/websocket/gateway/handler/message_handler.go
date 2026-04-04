@@ -41,12 +41,16 @@ func (h *MessageHandler) handleChatMessage(ctx context.Context, msg *common.WSMe
 	}
 	switch msg.RouteTargetType {
 	case common.TargetType_USER:
-		if err := h.svcCtx.ConnectionManager.SendToUser(ctx, msg.RouteTarget, msg); err != nil {
-			h.svcCtx.TelemetryBus.Publish(err)
+		for _, target := range msg.RouteTarget {
+			if err := h.svcCtx.ConnectionManager.SendToUser(ctx, target, msg); err != nil {
+				h.svcCtx.TelemetryBus.Publish(err)
+			}
 		}
 	case common.TargetType_GROUP:
-		if err := h.svcCtx.ConnectionManager.SendToGroup(ctx, msg.RouteTarget, msg); err != nil {
-			h.svcCtx.TelemetryBus.Publish(err)
+		for _, target := range msg.RouteTarget {
+			if err := h.svcCtx.ConnectionManager.SendToGroup(ctx, target, msg); err != nil {
+				h.svcCtx.TelemetryBus.Publish(err)
+			}
 		}
 	default:
 		return nil

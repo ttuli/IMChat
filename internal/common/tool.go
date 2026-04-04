@@ -96,7 +96,7 @@ func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*
 	}
 
 	return &WSMessage{
-		RouteTarget:     targetID,
+		RouteTarget:     []uint64{targetID},
 		RouteTargetType: TargetType_USER,
 		Timestamp:       apply.HandleTime.UnixMilli(),
 		Type:            MessageType_FRIEND_REQUEST,
@@ -105,7 +105,7 @@ func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*
 }
 
 // ConvertGroupApplyToWSMessage converts a model.GroupApply to a WSMessage
-func ConvertGroupApplyToWSMessage(apply *model.GroupApply, groupID uint64) (*WSMessage, error) {
+func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetIDs []uint64) (*WSMessage, error) {
 	pbApply := &GroupApply{
 		Id:          apply.ID,
 		SenderId:    apply.FromUserID,
@@ -123,8 +123,8 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, groupID uint64) (*WSM
 	}
 
 	return &WSMessage{
-		RouteTarget:     groupID,
-		RouteTargetType: TargetType_GROUP,
+		RouteTarget:     targetIDs,
+		RouteTargetType: TargetType_USER,
 		Timestamp:       apply.UpdateTime.UnixMilli(),
 		Type:            MessageType_GROUP_REQUEST,
 		Payload:         payload,
@@ -144,7 +144,7 @@ func NewMessageOperationMsg(opType MessageType, operator uint64, msg *model.Mess
 
 	ws := &WSMessage{
 		Type:        opType,
-		RouteTarget: targetId,
+		RouteTarget: []uint64{targetId},
 		Timestamp:   now,
 	}
 	if IsGroupSession(msg.ConversationID) {
@@ -173,7 +173,7 @@ func NewGroupOperationMsg(opType GroupOperationType, groupId uint64, targetIDs [
 		Type:            MessageType_GROUP_OP_NOTIFICATION,
 		RouteTargetType: TargetType_GROUP,
 		Timestamp:       time.Now().UnixMilli(),
-		RouteTarget:     groupId,
+		RouteTarget:     []uint64{groupId},
 	}
 	notify := &GroupNotification{
 		OpType:     opType,
@@ -224,7 +224,7 @@ func NewFriendUpdateMsg(msgType MessageType, f *model.UserFriend, targetID uint6
 	}
 
 	return &WSMessage{
-		RouteTarget:     targetID,
+		RouteTarget:     []uint64{targetID},
 		RouteTargetType: TargetType_USER,
 		Timestamp:       time.Now().UnixMilli(),
 		Type:            msgType,

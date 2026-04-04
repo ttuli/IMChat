@@ -2,6 +2,7 @@ package defaultimpl
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"IM2/internal/apps/Message/rpc/message"
@@ -11,6 +12,7 @@ import (
 	"IM2/pkg/xerr"
 
 	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/protobuf/proto"
 )
@@ -30,6 +32,7 @@ func (s *messageService) GetHistory(ctx context.Context, conversationID string, 
 }
 
 // SendMessage 发送消息、生成序号、广播事件、异步落库
+// TODO 改为在消息消费后发送一个ack消息到nats，再由websocket消费发送
 func (s *messageService) SendMessage(ctx context.Context, msg *message.Message) (*message.Message, error) {
 	// 0. 幂等性校验：检查是否已经有相同的 from_user_id 和 client_id 的消息
 	if msg.ClientId != "" {
@@ -74,8 +77,11 @@ func (s *messageService) SendMessage(ctx context.Context, msg *message.Message) 
 	msgData, err := proto.Marshal(msg)
 	if err != nil {
 		logger.Errorf("Failed to marshal message for DBSubject: %v", err)
+		return nil, err
 	} else {
-		if _, err := s.js.Publish(s.Config.Listener.DBSubject, msgData); err != nil {
+		if _, err := s.js.Publish(s.Config.Listener.DBSubject, msgData,
+			nats.MsgId(fmt.Sprintf("%d:%s", msg.FromUserId, msg.ClientId)),
+		); err != nil {
 			logger.Errorf("Failed to publish message to DBSubject: %v", err)
 		}
 	}

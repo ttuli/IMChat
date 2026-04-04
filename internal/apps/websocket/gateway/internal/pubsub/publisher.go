@@ -59,7 +59,7 @@ func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *commo
 		return err
 	}
 
-	logger.Infof("[Publisher] published message to node %s for user %d", nodeID, msg.RouteTarget)
+	logger.Infof("[Publisher] published message to node %s for target %v", nodeID, msg.RouteTarget)
 	return nil
 }
 
@@ -84,7 +84,7 @@ func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessa
 		return err
 	}
 
-	logger.Infof("[Publisher] broadcasted message (mode=%d) to target %d", mode, msg.RouteTarget)
+	logger.Infof("[Publisher] broadcasted message (mode=%d) to target %v", mode, msg.RouteTarget)
 	return nil
 }
 
