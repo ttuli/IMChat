@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v3.19.4
-// source: apps/File/api/types/file_api.proto
+// source: internal/apps/File/api/types/file_api.proto
 
 package types
 
@@ -54,11 +54,11 @@ func (x FileType) String() string {
 }
 
 func (FileType) Descriptor() protoreflect.EnumDescriptor {
-	return file_apps_File_api_types_file_api_proto_enumTypes[0].Descriptor()
+	return file_internal_apps_File_api_types_file_api_proto_enumTypes[0].Descriptor()
 }
 
 func (FileType) Type() protoreflect.EnumType {
-	return &file_apps_File_api_types_file_api_proto_enumTypes[0]
+	return &file_internal_apps_File_api_types_file_api_proto_enumTypes[0]
 }
 
 func (x FileType) Number() protoreflect.EnumNumber {
@@ -67,7 +67,7 @@ func (x FileType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FileType.Descriptor instead.
 func (FileType) EnumDescriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{0}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{0}
 }
 
 type GetMethod int32
@@ -100,11 +100,11 @@ func (x GetMethod) String() string {
 }
 
 func (GetMethod) Descriptor() protoreflect.EnumDescriptor {
-	return file_apps_File_api_types_file_api_proto_enumTypes[1].Descriptor()
+	return file_internal_apps_File_api_types_file_api_proto_enumTypes[1].Descriptor()
 }
 
 func (GetMethod) Type() protoreflect.EnumType {
-	return &file_apps_File_api_types_file_api_proto_enumTypes[1]
+	return &file_internal_apps_File_api_types_file_api_proto_enumTypes[1]
 }
 
 func (x GetMethod) Number() protoreflect.EnumNumber {
@@ -113,7 +113,7 @@ func (x GetMethod) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GetMethod.Descriptor instead.
 func (GetMethod) EnumDescriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{1}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{1}
 }
 
 type PolicyToken struct {
@@ -142,7 +142,7 @@ type PolicyToken struct {
 
 func (x *PolicyToken) Reset() {
 	*x = PolicyToken{}
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[0]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -154,7 +154,7 @@ func (x *PolicyToken) String() string {
 func (*PolicyToken) ProtoMessage() {}
 
 func (x *PolicyToken) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[0]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -167,7 +167,7 @@ func (x *PolicyToken) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PolicyToken.ProtoReflect.Descriptor instead.
 func (*PolicyToken) Descriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{0}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *PolicyToken) GetPolicy() string {
@@ -247,7 +247,7 @@ type CallbackParam struct {
 
 func (x *CallbackParam) Reset() {
 	*x = CallbackParam{}
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[1]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -259,7 +259,7 @@ func (x *CallbackParam) String() string {
 func (*CallbackParam) ProtoMessage() {}
 
 func (x *CallbackParam) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[1]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -272,7 +272,7 @@ func (x *CallbackParam) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallbackParam.ProtoReflect.Descriptor instead.
 func (*CallbackParam) Descriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{1}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CallbackParam) GetCallbackUrl() string {
@@ -318,7 +318,7 @@ type CallbackData struct {
 
 func (x *CallbackData) Reset() {
 	*x = CallbackData{}
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[2]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -330,7 +330,7 @@ func (x *CallbackData) String() string {
 func (*CallbackData) ProtoMessage() {}
 
 func (x *CallbackData) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[2]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -343,7 +343,7 @@ func (x *CallbackData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallbackData.ProtoReflect.Descriptor instead.
 func (*CallbackData) Descriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{2}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CallbackData) GetId() uint64 {
@@ -405,7 +405,7 @@ type GetPostSignatureReq struct {
 
 func (x *GetPostSignatureReq) Reset() {
 	*x = GetPostSignatureReq{}
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[3]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -417,7 +417,7 @@ func (x *GetPostSignatureReq) String() string {
 func (*GetPostSignatureReq) ProtoMessage() {}
 
 func (x *GetPostSignatureReq) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[3]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -430,7 +430,7 @@ func (x *GetPostSignatureReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPostSignatureReq.ProtoReflect.Descriptor instead.
 func (*GetPostSignatureReq) Descriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{3}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetPostSignatureReq) GetFileType() int32 {
@@ -456,7 +456,7 @@ type GetAccessUrlReq struct {
 
 func (x *GetAccessUrlReq) Reset() {
 	*x = GetAccessUrlReq{}
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[4]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -468,7 +468,7 @@ func (x *GetAccessUrlReq) String() string {
 func (*GetAccessUrlReq) ProtoMessage() {}
 
 func (x *GetAccessUrlReq) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[4]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -481,7 +481,7 @@ func (x *GetAccessUrlReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccessUrlReq.ProtoReflect.Descriptor instead.
 func (*GetAccessUrlReq) Descriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{4}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetAccessUrlReq) GetFileKey() string {
@@ -522,7 +522,7 @@ type GetAccessUrlResp struct {
 
 func (x *GetAccessUrlResp) Reset() {
 	*x = GetAccessUrlResp{}
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[5]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -534,7 +534,7 @@ func (x *GetAccessUrlResp) String() string {
 func (*GetAccessUrlResp) ProtoMessage() {}
 
 func (x *GetAccessUrlResp) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_File_api_types_file_api_proto_msgTypes[5]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +547,7 @@ func (x *GetAccessUrlResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccessUrlResp.ProtoReflect.Descriptor instead.
 func (*GetAccessUrlResp) Descriptor() ([]byte, []int) {
-	return file_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{5}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetAccessUrlResp) GetAccessUrl() string {
@@ -557,11 +557,11 @@ func (x *GetAccessUrlResp) GetAccessUrl() string {
 	return ""
 }
 
-var File_apps_File_api_types_file_api_proto protoreflect.FileDescriptor
+var File_internal_apps_File_api_types_file_api_proto protoreflect.FileDescriptor
 
-const file_apps_File_api_types_file_api_proto_rawDesc = "" +
+const file_internal_apps_File_api_types_file_api_proto_rawDesc = "" +
 	"\n" +
-	"\"apps/File/api/types/file_api.proto\x12\x05types\"\xab\x02\n" +
+	"+internal/apps/File/api/types/file_api.proto\x12\x05types\"\xab\x02\n" +
 	"\vPolicyToken\x12\x16\n" +
 	"\x06policy\x18\x01 \x01(\tR\x06policy\x12%\n" +
 	"\x0esecurity_token\x18\x02 \x01(\tR\rsecurityToken\x125\n" +
@@ -607,20 +607,20 @@ const file_apps_File_api_types_file_api_proto_rawDesc = "" +
 	"Z\b./;typesb\x06proto3"
 
 var (
-	file_apps_File_api_types_file_api_proto_rawDescOnce sync.Once
-	file_apps_File_api_types_file_api_proto_rawDescData []byte
+	file_internal_apps_File_api_types_file_api_proto_rawDescOnce sync.Once
+	file_internal_apps_File_api_types_file_api_proto_rawDescData []byte
 )
 
-func file_apps_File_api_types_file_api_proto_rawDescGZIP() []byte {
-	file_apps_File_api_types_file_api_proto_rawDescOnce.Do(func() {
-		file_apps_File_api_types_file_api_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_apps_File_api_types_file_api_proto_rawDesc), len(file_apps_File_api_types_file_api_proto_rawDesc)))
+func file_internal_apps_File_api_types_file_api_proto_rawDescGZIP() []byte {
+	file_internal_apps_File_api_types_file_api_proto_rawDescOnce.Do(func() {
+		file_internal_apps_File_api_types_file_api_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_apps_File_api_types_file_api_proto_rawDesc), len(file_internal_apps_File_api_types_file_api_proto_rawDesc)))
 	})
-	return file_apps_File_api_types_file_api_proto_rawDescData
+	return file_internal_apps_File_api_types_file_api_proto_rawDescData
 }
 
-var file_apps_File_api_types_file_api_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_apps_File_api_types_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_apps_File_api_types_file_api_proto_goTypes = []any{
+var file_internal_apps_File_api_types_file_api_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_internal_apps_File_api_types_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_internal_apps_File_api_types_file_api_proto_goTypes = []any{
 	(FileType)(0),               // 0: types.FileType
 	(GetMethod)(0),              // 1: types.GetMethod
 	(*PolicyToken)(nil),         // 2: types.PolicyToken
@@ -630,7 +630,7 @@ var file_apps_File_api_types_file_api_proto_goTypes = []any{
 	(*GetAccessUrlReq)(nil),     // 6: types.GetAccessUrlReq
 	(*GetAccessUrlResp)(nil),    // 7: types.GetAccessUrlResp
 }
-var file_apps_File_api_types_file_api_proto_depIdxs = []int32{
+var file_internal_apps_File_api_types_file_api_proto_depIdxs = []int32{
 	0, // 0: types.GetAccessUrlReq.file_type:type_name -> types.FileType
 	1, // 1: types.GetAccessUrlReq.method:type_name -> types.GetMethod
 	2, // [2:2] is the sub-list for method output_type
@@ -640,27 +640,27 @@ var file_apps_File_api_types_file_api_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_apps_File_api_types_file_api_proto_init() }
-func file_apps_File_api_types_file_api_proto_init() {
-	if File_apps_File_api_types_file_api_proto != nil {
+func init() { file_internal_apps_File_api_types_file_api_proto_init() }
+func file_internal_apps_File_api_types_file_api_proto_init() {
+	if File_internal_apps_File_api_types_file_api_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_apps_File_api_types_file_api_proto_rawDesc), len(file_apps_File_api_types_file_api_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_apps_File_api_types_file_api_proto_rawDesc), len(file_internal_apps_File_api_types_file_api_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_apps_File_api_types_file_api_proto_goTypes,
-		DependencyIndexes: file_apps_File_api_types_file_api_proto_depIdxs,
-		EnumInfos:         file_apps_File_api_types_file_api_proto_enumTypes,
-		MessageInfos:      file_apps_File_api_types_file_api_proto_msgTypes,
+		GoTypes:           file_internal_apps_File_api_types_file_api_proto_goTypes,
+		DependencyIndexes: file_internal_apps_File_api_types_file_api_proto_depIdxs,
+		EnumInfos:         file_internal_apps_File_api_types_file_api_proto_enumTypes,
+		MessageInfos:      file_internal_apps_File_api_types_file_api_proto_msgTypes,
 	}.Build()
-	File_apps_File_api_types_file_api_proto = out.File
-	file_apps_File_api_types_file_api_proto_goTypes = nil
-	file_apps_File_api_types_file_api_proto_depIdxs = nil
+	File_internal_apps_File_api_types_file_api_proto = out.File
+	file_internal_apps_File_api_types_file_api_proto_goTypes = nil
+	file_internal_apps_File_api_types_file_api_proto_depIdxs = nil
 }
