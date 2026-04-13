@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package message;
+
+option go_package = "IM2/pkg/proto/message";
+
+// 消息状态
+enum MessageStatus {
+  MESSAGE_STATUS_UNSPECIFIED = 0; // 未指定
+  MESSAGE_STATUS_SENDING = 1;     // 发送中
+  MESSAGE_STATUS_SENT = 2;        // 已发送 (服务端已收到)
+  MESSAGE_STATUS_DELIVERED = 3;   // 已送达 (对方已收到)
+  MESSAGE_STATUS_READ = 4;        // 已读
+  MESSAGE_STATUS_RECALLED = 5;    // 已撤回
+  MESSAGE_STATUS_FAILED = 6;      // 发送失败
+}
+
+// 基础消息信息
+message BaseMessage {
+  string msg_id = 1;               // 消息ID
+  string client_id = 2;           // 客户端ID
+  string session_id = 3;          // 会话ID
+  uint64 from_user_id = 4;        // 发送者ID
+  uint64 target = 5;              // 目标ID (私聊=to_user_id, 群聊=group_id, 与ConversationType配套使用)
+  reserved 6;                     // 原 group_id 字段已合并至 target
+  int64 send_time = 7;            // 发送时间
+  int32 msg_seq = 8;              // 消息序号
+  MessageStatus status = 9;       // 消息状态
+  map<string, string> ext = 10;    // 扩展字段
+}
+
+// 文本消息
+message TextMessage {
+  BaseMessage base = 1;
+  string content = 2;             // 文本内容
+  repeated AtInfo at_list = 3;    // @信息列表
+}
+
+// @信息
+message AtInfo {
+  uint64 user_id = 1;             // 被@的用户ID
+  string user_name = 2;           // 被@的用户名
+  int32 offset = 3;               // 在文本中的偏移量
+  int32 length = 4;               // 长度
+}
+
+// 图片消息
+message ImageMessage {
+  BaseMessage base = 1;
+  string url = 2;                 // 图片URL
+  string thumbnail_url = 3;       // 缩略图URL
+  int32 width = 4;                // 宽度
+  int32 height = 5;               // 高度
+  int64 size = 6;                 // 文件大小(字节)
+  string format = 7;              // 图片格式(jpg/png/gif等)
+}
+
+// 视频消息
+message VideoMessage {
+  BaseMessage base = 1;
+  string url = 2;                 // 视频URL
+  string thumbnail_url = 3;       // 视频封面URL
+  int32 duration = 4;             // 时长(秒)
+  int32 width = 5;                // 宽度
+  int32 height = 6;               // 高度
+  int64 size = 7;                 // 文件大小
+  string format = 8;              // 视频格式
+}
+
+// 语音消息
+message AudioMessage {
+  BaseMessage base = 1;
+  string url = 2;                 // 语音URL
+  int32 duration = 3;             // 时长(秒)
+  int64 size = 4;                 // 文件大小
+  string format = 5;              // 音频格式(mp3/wav/amr等)
+  bool is_read = 6;               // 是否已读
+}
+
+// 文件消息
+message FileMessage {
+  BaseMessage base = 1;
+  string url = 2;                 // 文件URL
+  string file_name = 3;           // 文件名
+  int64 size = 4;                 // 文件大小
+  string md5 = 6;                 // 文件MD5
+}
+
+// 位置消息
+message LocationMessage {
+  BaseMessage base = 1;
+  double latitude = 2;            // 纬度
+  double longitude = 3;           // 经度
+  string address = 4;             // 地址描述
+  string title = 5;               // 位置名称
+}
+
+// 自定义消息
+message CustomMessage {
+  BaseMessage base = 1;
+  string custom_type = 2;         // 自定义类型
+  string data = 3;                // JSON格式的自定义数据
+}
+
+// 消息确认(ACK)
+message MessageAck {
+  string msg_id = 1;               // 消息ID
+  string client_id = 2;            // 客户端ID
+  string session_id = 3;           // 会话ID
+  AckStatus status = 4;           // 确认状态
+}
+
+// 二级ACK
+message PersistAck {
+  string msg_id = 1;               // 消息ID
+  string client_id = 2;            // 客户端ID
+  string session_id = 3;           // 会话ID
+  int64 seq = 4;
+  string content = 5;
+  string mediaUrl = 6;
+  int32 msg_type = 7;
+  int64 send_time = 8;
+  int32 status = 9;
+  uint64 sender = 10;
+  uint64 target = 11;
+  AckStatus ack_status = 12;       // 确认状态
+}
+
+enum AckStatus {
+  ACK_STATUS_SUCCESS = 0;         // 成功
+  ACK_STATUS_FAILED = 1;          // 失败
+  ACK_STATUS_DUPLICATE = 2;       // 重复消息
+}
+
+// 消息已读
+message MessageRead {
+  uint64 user_id = 1;             // 用户ID
+  string conversation_id = 2;     // 会话ID
+  repeated int64 msg_ids = 3;     // 已读消息ID列表
+  int64 read_time = 4;            // 已读时间
+}
+
+// 消息撤回
+message MessageRecall {
+  string msg_id = 1;               // 消息ID
+  uint64 user_id = 2;             // 撤回者ID
+  string conversation_id = 3;     // 会话ID
+  int64 recall_time = 4;          // 撤回时间
+  string reason = 5;              // 撤回原因
+}
+
+enum ConversationType {
+  CONVERSATION_TYPE_PRIVATE = 0;  // 私聊
+  CONVERSATION_TYPE_GROUP = 1;    // 群聊
+}
+
+message Conversation {
+  string conversation_id = 1;     // 会话ID
+  ConversationType type = 2;      // 会话类型
+  string last_content = 3;        // 最后一条消息摘要文本
+  int64 max_seq = 4;
+  uint64 last_sender = 5;
+  int64 last_message_time = 6;    // 最后消息时间
+  int64 unread_count = 7;         // 未读消息数
+  int64 create_time = 8;          // 创建时间
+  int64 update_time = 9;         // 更新时间
+  int32 is_top = 10;                // 是否置顶
+  int32 is_disturb = 11;           // 是否免打扰
+}
+
+enum NotificationType {
+  NOTIFICATION_TYPE_SYSTEM = 0;   // 系统通知
+  NOTIFICATION_TYPE_ANNOUNCEMENT = 1; // 公告
+  NOTIFICATION_TYPE_ACTIVITY = 2; // 活动通知
+  NOTIFICATION_TYPE_SECURITY = 3; // 安全通知
+}
+
+// 系统通知
+message SystemNotification {
+  string notification_id = 1;     // 通知ID
+  NotificationType type = 2;      // 通知类型
+  string title = 3;               // 标题
+  string content = 4;             // 内容
+  int64 create_time = 5;          // 创建时间
+  map<string, string> data = 6;   // 附加数据
+}

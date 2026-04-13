@@ -5,8 +5,11 @@ import (
 	"time"
 
 	"IM2/internal/apps/Idgen/rpc/idgen"
-	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/transport"
+	"IM2/pkg/proto/util"
+	"IM2/pkg/proto/svc"
 	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
@@ -72,7 +75,7 @@ func (s *groupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 	}
 
 	// 5. 发送群创建通知
-	wsMsg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
+	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
 		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
@@ -168,7 +171,7 @@ func (s *groupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 	}
 
 	// 3. 发送群解散通知
-	wsMsg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
+	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
 		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
@@ -187,16 +190,16 @@ func (s *groupService) GetUserGroupIDs(ctx context.Context, userID uint64) ([]ui
 	}
 
 	if len(groupIDs) > 0 {
-		syncMsg := &common.UserGroupSync{
+		syncMsg := &svc.UserGroupSync{
 			UserId:   userID,
 			GroupIds: groupIDs,
 		}
 		payload, _ := proto.Marshal(syncMsg)
-		wsMsg := &common.WSMessage{
+		wsMsg := &transport.WSMessage{
 			RouteTarget:     []uint64{userID},
-			RouteTargetType: common.TargetType_USER,
+			RouteTargetType: transport.TargetType_USER,
 			Timestamp:       time.Now().UnixMilli(),
-			Type:            common.MessageType_USER_GROUP_SYNC,
+			Type:            transport.MessageType_USER_GROUP_SYNC,
 			Payload:         payload,
 		}
 		bytes, _ := proto.Marshal(wsMsg)

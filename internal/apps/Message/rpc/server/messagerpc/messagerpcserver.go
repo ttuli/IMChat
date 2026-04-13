@@ -57,8 +57,3 @@ func (s *MessageRpcServer) RecallMessage(ctx context.Context, in *message.Recall
 	l := messagerpclogic.NewRecallMessageLogic(ctx, s.svcCtx)
 	return l.RecallMessage(in)
 }
-
-func (s *MessageRpcServer) SendMessage(ctx context.Context, in *message.SendMessageReq) (*message.SendMessageResp, error) {
-	l := messagerpclogic.NewSendMessageLogic(ctx, s.svcCtx)
-	return l.SendMessage(in)
-}

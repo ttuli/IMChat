@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "IM2/pkg/proto/user";
+
+message UserInfo {
+  uint64 user_id = 1;             // 用户ID
+  string user_name = 2;           // 用户名
+  string avatar = 3;              // 头像
+  Gender gender = 4;              // 性别
+  string phone = 5;               // 手机号
+  JoinType join_type = 6;  // 加入类型
+  UserStatus status = 7;          // 状态
+  string personal_signature = 8;  // 签名
+  int64 create_time = 9;          // 创建时间
+  int64 update_time = 10;         // 更新时间
+}
+
+enum JoinType {
+  JOIN_TYPE_UNSPECIFIED = 0;
+  JOIN_TYPE_AFTER_APPROVAL = 1;   // 同意后加入
+  JOIN_TYPE_DIRECT = 2;           // 直接加入
+}
+
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  GENDER_MALE = 1;
+  GENDER_FEMALE = 2;
+  GENDER_UNKNOWN = 3;             // TS: Unknown=3
+}
+
+enum UserStatus {
+  USER_STATUS_DISABLED = 0;       // 禁用
+  USER_STATUS_NORMAL = 1;         // 正常
+}
+
+// 用户在线状态
+message UserOnlineStatus {
+  uint64 user_id = 1;             // 用户ID
+  OnlineStatus status = 2;        // 在线状态
+  int64 last_active_time = 3;     // 最后活跃时间
+}
+
+enum OnlineStatus {
+  ONLINE_STATUS_OFFLINE = 0;      // 离线
+  ONLINE_STATUS_ONLINE = 1;       // 在线
+  ONLINE_STATUS_AWAY = 2;         // 离开
+  ONLINE_STATUS_BUSY = 3;         // 忙碌
+  ONLINE_STATUS_INVISIBLE = 4;    // 隐身
+}
+
+// 正在输入
+message TypingStatus {
+  uint64 user_id = 1;             // 用户ID
+  string conversation_id = 2;     // 会话ID
+  bool is_typing = 3;             // 是否正在输入
+  int64 timestamp = 4;            // 时间戳
+}
+
+message UserKickoff {
+  uint64 user_id = 1;             // 用户ID
+  string reason = 2;              // 踢出原因
+  int64 timestamp = 3;            // 时间戳
+}

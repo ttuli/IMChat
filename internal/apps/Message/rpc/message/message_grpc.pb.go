@@ -26,7 +26,6 @@ const (
 	MessageRpc_GetUserConversations_FullMethodName       = "/message.MessageRpc/GetUserConversations"
 	MessageRpc_GetUserActiveConversations_FullMethodName = "/message.MessageRpc/GetUserActiveConversations"
 	MessageRpc_RecallMessage_FullMethodName              = "/message.MessageRpc/RecallMessage"
-	MessageRpc_SendMessage_FullMethodName                = "/message.MessageRpc/SendMessage"
 )
 
 // MessageRpcClient is the client API for MessageRpc service.
@@ -40,7 +39,6 @@ type MessageRpcClient interface {
 	GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
 	GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error)
 	RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error)
-	SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error)
 }
 
 type messageRpcClient struct {
@@ -121,16 +119,6 @@ func (c *messageRpcClient) RecallMessage(ctx context.Context, in *RecallMessageR
 	return out, nil
 }
 
-func (c *messageRpcClient) SendMessage(ctx context.Context, in *SendMessageReq, opts ...grpc.CallOption) (*SendMessageResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SendMessageResp)
-	err := c.cc.Invoke(ctx, MessageRpc_SendMessage_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MessageRpcServer is the server API for MessageRpc service.
 // All implementations must embed UnimplementedMessageRpcServer
 // for forward compatibility.
@@ -142,7 +130,6 @@ type MessageRpcServer interface {
 	GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error)
 	GetUserActiveConversations(context.Context, *GetUserActiveConversationsReq) (*GetUserActiveConversationsResp, error)
 	RecallMessage(context.Context, *RecallMessageReq) (*RecallMessageResp, error)
-	SendMessage(context.Context, *SendMessageReq) (*SendMessageResp, error)
 	mustEmbedUnimplementedMessageRpcServer()
 }
 
@@ -173,9 +160,6 @@ func (UnimplementedMessageRpcServer) GetUserActiveConversations(context.Context,
 }
 func (UnimplementedMessageRpcServer) RecallMessage(context.Context, *RecallMessageReq) (*RecallMessageResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecallMessage not implemented")
-}
-func (UnimplementedMessageRpcServer) SendMessage(context.Context, *SendMessageReq) (*SendMessageResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
 }
 func (UnimplementedMessageRpcServer) mustEmbedUnimplementedMessageRpcServer() {}
 func (UnimplementedMessageRpcServer) testEmbeddedByValue()                    {}
@@ -324,24 +308,6 @@ func _MessageRpc_RecallMessage_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MessageRpc_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendMessageReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessageRpcServer).SendMessage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MessageRpc_SendMessage_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).SendMessage(ctx, req.(*SendMessageReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // MessageRpc_ServiceDesc is the grpc.ServiceDesc for MessageRpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -376,10 +342,6 @@ var MessageRpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RecallMessage",
 			Handler:    _MessageRpc_RecallMessage_Handler,
-		},
-		{
-			MethodName: "SendMessage",
-			Handler:    _MessageRpc_SendMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

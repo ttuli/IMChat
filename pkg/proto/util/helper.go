@@ -1,4 +1,4 @@
-package common
+package util
 
 import (
 	"errors"
@@ -7,16 +7,20 @@ import (
 	"time"
 
 	"IM2/internal/model"
+	"IM2/pkg/proto/group"
+	"IM2/pkg/proto/message"
+	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/transport"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
 
-func GetConversationType(sessionId string) ConversationType {
+func GetConversationType(sessionId string) message.ConversationType {
 	if IsGroupSession(sessionId) {
-		return ConversationType_CONVERSATION_TYPE_GROUP
+		return message.ConversationType_CONVERSATION_TYPE_GROUP
 	}
-	return ConversationType_CONVERSATION_TYPE_PRIVATE
+	return message.ConversationType_CONVERSATION_TYPE_PRIVATE
 }
 
 func GenerateUserSessionId(userId uint64, targetId uint64) string {
@@ -68,23 +72,23 @@ func GetTargetIdFromSessionId(sessionId string, currentUserId uint64) (uint64, e
 	return 0, errors.New("invalid session id")
 }
 
-func IsChatMessage(t MessageType) bool {
-	return t >= MessageType_CHAT_TEXT && t <= MessageType_GROUP_NOTICE
+func IsChatMessage(t transport.MessageType) bool {
+	return t >= transport.MessageType_CHAT_TEXT && t <= transport.MessageType_GROUP_NOTICE
 }
 
-func IsNotifyMessage(t MessageType) bool {
-	return t >= MessageType_NOTIFICATION && t <= MessageType_GROUP_REQUEST
+func IsNotifyMessage(t transport.MessageType) bool {
+	return t >= transport.MessageType_NOTIFICATION && t <= transport.MessageType_GROUP_REQUEST
 }
 
 // ConvertFriendApplyToWSMessage converts a model.FriendApply to a WSMessage
-func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*WSMessage, error) {
-	pbApply := &FriendRequest{
+func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*transport.WSMessage, error) {
+	pbApply := &social.FriendRequest{
 		Id:           apply.ID,
 		FromUserId:   apply.FromUserID,
 		ToUserId:     apply.ToUserID,
 		ApplyMsg:     apply.ApplyMsg,
-		Status:       ApplyStatus(int32(apply.Status)),
-		Source:       ApplySource(int32(apply.Source)),
+		Status:       social.ApplyStatus(int32(apply.Status)),
+		Source:       social.ApplySource(int32(apply.Source)),
 		RequestTime:  apply.CreateTime.UnixMilli(),
 		HandleTime:   apply.HandleTime.UnixMilli(),
 		RejectReason: apply.RejectReason,
@@ -95,23 +99,23 @@ func ConvertFriendApplyToWSMessage(apply *model.FriendApply, targetID uint64) (*
 		return nil, err
 	}
 
-	return &WSMessage{
+	return &transport.WSMessage{
 		RouteTarget:     []uint64{targetID},
-		RouteTargetType: TargetType_USER,
+		RouteTargetType: transport.TargetType_USER,
 		Timestamp:       apply.HandleTime.UnixMilli(),
-		Type:            MessageType_FRIEND_REQUEST,
+		Type:            transport.MessageType_FRIEND_REQUEST,
 		Payload:         payload,
 	}, nil
 }
 
 // ConvertGroupApplyToWSMessage converts a model.GroupApply to a WSMessage
-func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetIDs []uint64) (*WSMessage, error) {
-	pbApply := &GroupApply{
+func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetIDs []uint64) (*transport.WSMessage, error) {
+	pbApply := &social.GroupApply{
 		Id:          apply.ID,
 		SenderId:    apply.FromUserID,
 		GroupId:     apply.GroupID,
 		ApplyMsg:    apply.ApplyMsg,
-		Status:      GroupApplyStatus(apply.Status),
+		Status:      social.GroupApplyStatus(apply.Status),
 		HandlerId:   apply.HandlerID,
 		RequestTime: apply.CreateTime.UnixMilli(),
 		HandleTime:  apply.UpdateTime.UnixMilli(),
@@ -122,16 +126,16 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetIDs []uint64) (
 		return nil, err
 	}
 
-	return &WSMessage{
+	return &transport.WSMessage{
 		RouteTarget:     targetIDs,
-		RouteTargetType: TargetType_USER,
+		RouteTargetType: transport.TargetType_USER,
 		Timestamp:       apply.UpdateTime.UnixMilli(),
-		Type:            MessageType_GROUP_REQUEST,
+		Type:            transport.MessageType_GROUP_REQUEST,
 		Payload:         payload,
 	}, nil
 }
 
-func NewMessageOperationMsg(opType MessageType, operator uint64, msg *model.Message) (*WSMessage, error) {
+func NewMessageOperationMsg(opType transport.MessageType, operator uint64, msg *model.Message) (*transport.WSMessage, error) {
 	if msg == nil {
 		return nil, errors.New("message is nil")
 	}
@@ -142,18 +146,18 @@ func NewMessageOperationMsg(opType MessageType, operator uint64, msg *model.Mess
 	}
 	now := time.Now().UnixMilli()
 
-	ws := &WSMessage{
+	ws := &transport.WSMessage{
 		Type:        opType,
 		RouteTarget: []uint64{targetId},
 		Timestamp:   now,
 	}
 	if IsGroupSession(msg.ConversationID) {
-		ws.RouteTargetType = TargetType_GROUP
+		ws.RouteTargetType = transport.TargetType_GROUP
 	} else {
-		ws.RouteTargetType = TargetType_USER
+		ws.RouteTargetType = transport.TargetType_USER
 	}
 
-	recall := &MessageRecall{
+	recall := &message.MessageRecall{
 		MsgId:          msg.MsgID,
 		ConversationId: msg.ConversationID,
 		UserId:         operator,
@@ -168,14 +172,14 @@ func NewMessageOperationMsg(opType MessageType, operator uint64, msg *model.Mess
 	return ws, nil
 }
 
-func NewGroupOperationMsg(opType GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *WSMessage {
-	wmsg := &WSMessage{
-		Type:            MessageType_GROUP_OP_NOTIFICATION,
-		RouteTargetType: TargetType_GROUP,
+func NewGroupOperationMsg(opType social.GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *transport.WSMessage {
+	wmsg := &transport.WSMessage{
+		Type:            transport.MessageType_GROUP_OP_NOTIFICATION,
+		RouteTargetType: transport.TargetType_GROUP,
 		Timestamp:       time.Now().UnixMilli(),
 		RouteTarget:     []uint64{groupId},
 	}
-	notify := &GroupNotification{
+	notify := &social.GroupNotification{
 		OpType:     opType,
 		GroupId:    groupId,
 		OperatorId: operator,
@@ -186,7 +190,7 @@ func NewGroupOperationMsg(opType GroupOperationType, groupId uint64, targetIDs [
 	}
 
 	if groupInfo != nil {
-		notify.GroupInfo = &GroupInfo{
+		notify.GroupInfo = &group.GroupInfo{
 			Id:          groupInfo.ID,
 			OwnerId:     groupInfo.OwnerID,
 			Name:        groupInfo.Name,
@@ -206,14 +210,14 @@ func NewGroupOperationMsg(opType GroupOperationType, groupId uint64, targetIDs [
 	return wmsg
 }
 
-func NewFriendUpdateMsg(msgType MessageType, f *model.UserFriend, targetID uint64) (*WSMessage, error) {
-	pbFriend := &Friend{
+func NewFriendUpdateMsg(msgType transport.MessageType, f *model.UserFriend, targetID uint64) (*transport.WSMessage, error) {
+	pbFriend := &social.Friend{
 		UserId:     f.UserID,
 		FriendId:   f.FriendID,
 		Remark:     f.Remark,
 		Starred:    f.Starred,
 		Blocked:    f.Blocked,
-		Source:     FriendSource(f.Source),
+		Source:     social.FriendSource(f.Source),
 		CreateTime: f.CreateTime.UnixMilli(),
 		Extra:      f.Extra,
 	}
@@ -223,9 +227,9 @@ func NewFriendUpdateMsg(msgType MessageType, f *model.UserFriend, targetID uint6
 		return nil, err
 	}
 
-	return &WSMessage{
+	return &transport.WSMessage{
 		RouteTarget:     []uint64{targetID},
-		RouteTargetType: TargetType_USER,
+		RouteTargetType: transport.TargetType_USER,
 		Timestamp:       time.Now().UnixMilli(),
 		Type:            msgType,
 		Payload:         payload,

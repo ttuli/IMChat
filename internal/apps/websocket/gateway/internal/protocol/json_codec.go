@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"IM2/internal/common"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/xerr"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -26,7 +26,7 @@ func NewJSONCodec() *JSONCodec {
 }
 
 // Encode 编码 WSMessage 为 JSON
-func (c *JSONCodec) Encode(msg *common.WSMessage) ([]byte, error) {
+func (c *JSONCodec) Encode(msg *transport.WSMessage) ([]byte, error) {
 	data, err := c.marshaler.Marshal(msg)
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode WSMessage failed")
@@ -35,8 +35,8 @@ func (c *JSONCodec) Encode(msg *common.WSMessage) ([]byte, error) {
 }
 
 // Decode 解码 JSON 为 WSMessage
-func (c *JSONCodec) Decode(data []byte) (*common.WSMessage, error) {
-	msg := &common.WSMessage{}
+func (c *JSONCodec) Decode(data []byte) (*transport.WSMessage, error) {
+	msg := &transport.WSMessage{}
 	if err := c.unmarshaler.Unmarshal(data, msg); err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode WSMessage failed")
 	}

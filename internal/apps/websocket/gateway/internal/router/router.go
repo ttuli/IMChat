@@ -9,7 +9,7 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/pubsub"
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
-	"IM2/internal/common"
+	"IM2/pkg/proto/transport"
 
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
@@ -103,7 +103,7 @@ func (r *Router) IsLocalUser(ctx context.Context, userID uint64) (bool, error) {
 }
 
 // RouteMessage 路由消息到目标用户
-func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *common.WSMessage) error {
+func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *transport.WSMessage) error {
 	// 获取目标用户所在节点
 	targetNodeID, err := r.GetUserNode(ctx, targetUserID)
 	if err != nil {
@@ -120,11 +120,11 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *com
 
 // BroadcastToAllNodes 广播消息到所有节点
 // mode 参数控制消费模式：BroadcastAll 所有节点消费，BroadcastQueue 仅一个节点消费
-func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessage, mode pubsub.BroadcastMode) error {
+func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode pubsub.BroadcastMode) error {
 	return r.publisher.BroadcastToAllNodes(ctx, msg, mode)
 }
 
-func (r *Router) RouteMsgToDB(ctx context.Context, msg *common.WSMessage) error {
+func (r *Router) RouteMsgToDB(ctx context.Context, msg *transport.WSMessage) error {
 	return r.publisher.PublishToDB(ctx, msg)
 }
 

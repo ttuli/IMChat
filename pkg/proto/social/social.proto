@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package social;
+
+option go_package = "IM2/pkg/proto/social";
+
+import "pkg/proto/group/group.proto";
+
+// 群申请
+message GroupApply {
+  uint64 id = 1;                  // 申请ID
+  uint64 sender_id = 2;           // 发起者ID
+  uint64 group_id = 3;            // 群组ID
+  string apply_msg = 4;           // 申请消息
+  GroupApplyStatus status = 5;    // 申请状态
+  uint64 handler_id = 6;          // 处理者ID
+  int64 request_time = 7;         // 申请时间
+  int64 handle_time = 8;          // 处理时间
+  string reject_reason = 9;       // 拒绝原因
+}
+
+enum GroupApplyStatus {
+  GROUP_APPLY_STATUS_UNSPECIFIED = 0; // 未知
+  GROUP_APPLY_STATUS_PENDING = 1;     // 待处理
+  GROUP_APPLY_STATUS_ACCEPTED = 2;    // 已同意
+  GROUP_APPLY_STATUS_REJECTED = 3;    // 已拒绝
+  GROUP_APPLY_STATUS_IGNORED = 4;     // 已忽略
+}
+
+// 群组操作通知
+message GroupNotification {
+  uint64 group_id = 1;            // 群组ID
+  GroupOperationType op_type = 2; // 操作类型
+  uint64 operator_id = 3;         // 操作者ID
+  repeated uint64 target_ids = 4; // 目标用户ID列表
+  int64 op_time = 5;              // 操作时间
+  string reason = 6;              // 操作原因
+  grouppb.GroupInfo group_info = 7;       // 群组信息
+
+  // 基础字段
+  string msg_id = 8;              // 消息ID
+  string session_id = 9;          // 会话ID
+}
+
+enum GroupOperationType {
+  GROUP_OP_CREATE = 0;            // 创建
+  GROUP_OP_DISMISS = 1;           // 解散
+  GROUP_OP_JOIN = 2;              // 加入
+  GROUP_OP_LEAVE = 3;             // 离开
+  GROUP_OP_KICK = 4;              // 踢出
+  GROUP_OP_INVITE = 5;            // 邀请
+  GROUP_OP_UPDATE_INFO = 6;       // 更新信息
+  GROUP_OP_MUTE = 7;              // 禁言
+  GROUP_OP_UNMUTE = 8;            // 取消禁言
+  GROUP_OP_INFO_UPDATE_NAME = 9;  // 群名称更新
+  GROUP_OP_INFO_UPDATE_NOTICE = 10; // 群公告更新
+}
+
+// 好友信息
+message Friend {
+  uint64 user_id = 1;             // 用户ID（我）
+  uint64 friend_id = 2;           // 好友ID（对方）
+  string remark = 3;              // 好友备注名
+  bool starred = 4;               // 是否星标
+  bool blocked = 5;               // 是否拉黑
+  FriendSource source = 6;        // 来源
+  int64 create_time = 9;          // 成为好友时间
+  string extra = 10;              // 扩展字段
+}
+
+enum FriendSource {
+  FRIEND_SOURCE_UNSPECIFIED = 0;  // 未知
+  FRIEND_SOURCE_SEARCH = 1;       // 搜索添加
+  FRIEND_SOURCE_GROUP = 2;        // 群聊添加
+  FRIEND_SOURCE_RECOMMEND = 3;    // 系统推荐
+}
+
+// 好友请求
+message FriendRequest {
+  uint64 id = 1;                  // 申请记录ID
+  uint64 from_user_id = 2;        // 发起者ID
+  uint64 to_user_id = 3;          // 接收者ID
+  string apply_msg = 4;           // 申请理由
+  ApplyStatus status = 5;         // 申请状态
+  ApplySource source = 6;         // 来源
+  int64 request_time = 7;         // 申请时间
+  int64 handle_time = 8;          // 处理时间
+  string reject_reason = 9;       // 拒绝原因
+}
+
+enum ApplyStatus {
+  APPLY_STATUS_UNSPECIFIED = 0;   // 未知
+  APPLY_STATUS_PENDING = 1;       // 待处理
+  APPLY_STATUS_AGREED = 2;        // 已同意
+  APPLY_STATUS_REJECTED = 3;      // 已拒绝
+  APPLY_STATUS_IGNORED = 4;       // 已忽略
+}
+
+enum ApplySource {
+  APPLY_SOURCE_UNSPECIFIED = 0;
+  APPLY_SOURCE_SEARCH_ACCOUNT = 1;// 搜索账号
+  APPLY_SOURCE_SEARCH_PHONE = 2;  // 搜索手机
+  APPLY_SOURCE_SEARCH_NAME = 3;   // 搜索昵称
+  APPLY_SOURCE_FROM_GROUP = 4;    // 群组添加
+  APPLY_SOURCE_FROM_RECOMMEND = 5;// 系统推荐
+}

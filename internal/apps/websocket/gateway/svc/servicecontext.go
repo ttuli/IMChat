@@ -1,14 +1,11 @@
 package svc
 
 import (
-
 	"fmt"
+	"hash/crc32"
 	"log"
 	"os"
 
-	"IM2/interceptor"
-
-	"IM2/internal/apps/Message/rpc/client/messagerpc"
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/internal/connection"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
@@ -17,10 +14,10 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
 	tokenmanager "IM2/pkg/tokenManager"
 
+	"github.com/bwmarrin/snowflake"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/zrpc"
 )
 
 // ServiceContext 服务上下文
@@ -31,24 +28,31 @@ type ServiceContext struct {
 	Subscriber        *pubsub.Subscriber
 	RedisClient       *redis.Client
 	NatsConn          *nats.Conn
+	JetStream         nats.JetStreamContext
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
-
-	MessageRpc messagerpc.MessageRpc
+	SnowflakeNode     *snowflake.Node
 }
 
 // NewServiceContext 创建服务上下文
 func NewServiceContext(c config.Config) *ServiceContext {
-	// 生成节点ID
-	nodeID := c.WebSocket.NodeID
+	// 生成节点ID：优先使用 K8s Downward API 注入的 Pod Name，降级到 hostname+uuid (本地开发)
+	nodeID := os.Getenv("NODE_ID")
 	if nodeID == "" {
 		hostname, _ := os.Hostname()
 		nodeID = fmt.Sprintf("%s-%s", hostname, uuid.New().String()[:8])
-		c.WebSocket.NodeID = nodeID
 	}
 
 	// 创建编解码器
 	codec := protocol.NewProtoCodec()
+
+	// 初始化 Snowflake ID 生成器
+	// 将字符串格式的 nodeID 映射为 10 bit (0-1023) 的整型节点 ID
+	hashID := int64(crc32.ChecksumIEEE([]byte(nodeID)) % 1024)
+	sfNode, err := snowflake.NewNode(hashID)
+	if err != nil {
+		log.Fatalf("init snowflake failed: %v", err)
+	}
 
 	// 创建 Redis 客户端 (用于路由 KV 存储)
 	redisClient := redis.NewClient(&redis.Options{
@@ -65,6 +69,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	natsConn, err := nats.Connect(natsUrl)
 	if err != nil {
 		log.Fatalf("connect to nats failed: %v", err)
+	}
+
+	// 初始化 JetStream context（用于有去重保证的消息发布）
+	js, err := natsConn.JetStream()
+	if err != nil {
+		log.Fatalf("init jetstream failed: %v", err)
 	}
 
 	// 创建遥测总线
@@ -92,12 +102,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Subscriber:        sub,
 		RedisClient:       redisClient,
 		NatsConn:          natsConn,
+		JetStream:         js,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
-
-		
-		MessageRpc: messagerpc.NewMessageRpc(zrpc.MustNewClient(c.MessageRpc,
-			zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor))),
+		SnowflakeNode:     sfNode,
 	}
 
 	return svc

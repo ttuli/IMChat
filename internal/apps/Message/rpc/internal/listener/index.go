@@ -2,52 +2,50 @@ package listener
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"IM2/internal/apps/Message/rpc/config"
-	"IM2/internal/apps/Message/rpc/internal/dao"
-	"IM2/internal/apps/Message/rpc/message"
-	"IM2/internal/model"
+	"IM2/internal/apps/Message/rpc/internal/service"
 	"IM2/pkg/logger"
 	nats_util "IM2/pkg/nats"
+	"IM2/pkg/proto/message"
+	"IM2/pkg/proto/svc"
+	"IM2/pkg/proto/transport"
+	"IM2/pkg/proto/util"
 
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 )
 
 const (
-	// 每次最多拉取的消息数量
-	fetchBatchSize = 500
-	// 拉取等待超时（积压不足 batchSize 时最多等待这么长）
-	fetchWaitTimeout = 100 * time.Millisecond
+	// 单条读取等待超时
+	fetchWaitTimeout = 200 * time.Millisecond
 	// 持久化消费者名称（多实例共享，NATS 负载均衡分配消息）
 	durableConsumerName = "message_db_consumer"
 )
 
-// NatsListener 监听 NATS 消息，将消息写入 MongoDB
+// NatsListener 监听 NATS 消息，委托 MessageService 完成业务处理（持久化等）
 type NatsListener struct {
-	conn            *nats.Conn
-	js              nats.JetStreamContext
-	c               config.Config
-	messageDAO      *dao.MessageDAO
-	conversationDAO *dao.ConversationDAO
-	ctx             context.Context
-	cancel          context.CancelFunc
-	wg              sync.WaitGroup
+	conn   *nats.Conn
+	js     nats.JetStreamContext
+	c      config.Config
+	svc    service.MessageService
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
-func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO) *NatsListener {
+func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext, svc service.MessageService) *NatsListener {
 	ctx, cancel := context.WithCancel(context.Background())
-
 	return &NatsListener{
-		conn:            conn,
-		js:              js,
-		c:               c,
-		messageDAO:      msgDao,
-		conversationDAO: convDao,
-		ctx:             ctx,
-		cancel:          cancel,
+		conn:   conn,
+		js:     js,
+		c:      c,
+		svc:    svc,
+		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 
@@ -64,13 +62,13 @@ func (l *NatsListener) Listen() error {
 	}
 
 	l.wg.Add(1)
-	go l.runBatchLoop(sub)
+	go l.runLoop(sub)
 
 	return nil
 }
 
-// runBatchLoop 持续拉取并批量入库
-func (l *NatsListener) runBatchLoop(sub *nats.Subscription) {
+// runLoop 循环拉取并单条处理消息
+func (l *NatsListener) runLoop(sub *nats.Subscription) {
 	defer l.wg.Done()
 	for {
 		select {
@@ -79,7 +77,7 @@ func (l *NatsListener) runBatchLoop(sub *nats.Subscription) {
 		default:
 		}
 
-		msgs, err := sub.Fetch(fetchBatchSize, nats.MaxWait(fetchWaitTimeout))
+		msgs, err := sub.Fetch(1, nats.MaxWait(fetchWaitTimeout))
 		if err != nil && err != nats.ErrTimeout {
 			logger.Errorf("[NatsListener] fetch error: %v", err)
 			time.Sleep(time.Second)
@@ -89,62 +87,82 @@ func (l *NatsListener) runBatchLoop(sub *nats.Subscription) {
 			continue
 		}
 
-		if err := l.handleMessagesBulk(msgs); err != nil {
-			for _, msg := range msgs {
-				msg.Nak()
-			}
+		msg := msgs[0]
+		if err := l.handleMessage(msg); err != nil {
+			logger.Error(err.Error())
+			msg.Nak()
 		} else {
-			for _, msg := range msgs {
-				msg.Ack()
-			}
+			msg.Ack()
 		}
 	}
 }
 
-// handleMessagesBulk 反序列化一批消息并批量写入 MongoDB
-func (l *NatsListener) handleMessagesBulk(msgs []*nats.Msg) error {
-	dbMsgs := make([]*model.Message, 0, len(msgs))
-
-	for _, msg := range msgs {
-		var m message.Message
-		if err := proto.Unmarshal(msg.Data, &m); err != nil {
-			logger.Errorf("[NatsListener] unmarshal error: %v", err)
-			continue
-		}
-		dbMsgs = append(dbMsgs, &model.Message{
-			MsgID:          m.MsgId,
-			ClientID:       m.ClientId,
-			ConversationID: m.ConversationId,
-			FromUserID:     m.FromUserId,
-			MsgType:        int16(m.MsgType),
-			Seq:            m.Seq,
-			Content:        m.Content,
-			MediaURL:       m.MediaUrl,
-			Status:         int8(m.Status),
-			CreateTime:     time.UnixMilli(m.CreateTime),
-		})
-	}
-
-	if len(dbMsgs) == 0 {
-		return nil
+// handleMessage 反序列化单条 NATS 消息并委托 Service 持久化
+func (l *NatsListener) handleMessage(msg *nats.Msg) error {
+	var m svc.MessageSend
+	if err := proto.Unmarshal(msg.Data, &m); err != nil {
+		return fmt.Errorf("[NatsListener] unmarshal error: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(l.ctx, 5*time.Second)
 	defer cancel()
 
-	if err := l.messageDAO.InsertMessages(ctx, dbMsgs); err != nil {
-		logger.Errorf("[NatsListener] bulk insert failed (batch=%d): %v", len(dbMsgs), err)
-		return err
+	dbMsg, err := l.svc.SendMessage(ctx, &m)
+	if err != nil {
+		pack := &message.PersistAck{
+			MsgId:     m.MsgId,
+			ClientId:  m.ClientId,
+			SessionId: m.ConversationId,
+			SendTime:  m.CreateTime,
+			AckStatus: message.AckStatus_ACK_STATUS_FAILED,
+		}
+		data, _ := proto.Marshal(pack)
+		rt := transport.TargetType_USER
+		if util.IsGroupSession(m.ConversationId) {
+			rt = transport.TargetType_GROUP
+		}
+		wsmsg := &transport.WSMessage{
+			Type:            transport.MessageType_MSG_PERSIST_ACK,
+			Payload:         data,
+			RouteTarget:     []uint64{m.Target},
+			Timestamp:       m.CreateTime,
+			RouteTargetType: rt,
+			SenderId:        m.Sender,
+		}
+		data, _ = proto.Marshal(wsmsg)
+		err = l.conn.Publish(l.c.Listener.AckSubject, data)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		return fmt.Errorf("[NatsListener] SendMessage error: %v", err)
+	} else {
+		pack := &message.PersistAck{
+			MsgId:     dbMsg.MsgID,
+			ClientId:  dbMsg.ClientID,
+			SessionId: dbMsg.ConversationID,
+			Seq:       int64(dbMsg.Seq),
+			Content:   dbMsg.Content,
+			MediaUrl:  dbMsg.MediaURL,
+			MsgType:   int32(dbMsg.MsgType),
+			SendTime:  dbMsg.CreateTime.UnixMilli(),
+			Status:    int32(dbMsg.Status),
+			Sender:    dbMsg.FromUserID,
+			Target:    m.Target,
+			AckStatus: message.AckStatus_ACK_STATUS_SUCCESS,
+		}
+		data, _ := proto.Marshal(pack)
+		err = l.conn.Publish(l.c.Listener.AckSubject, data)
+		if err != nil {
+			logger.Error(err.Error())
+		}
 	}
-
-	logger.Infof("[NatsListener] bulk inserted %d messages", len(dbMsgs))
 	return nil
 }
 
 // Stop 停止监听并释放资源
 func (l *NatsListener) Stop() error {
 	l.cancel()
-	l.wg.Wait() // 等待当前正在执行的批量入库及 Ack 操作完成
+	l.wg.Wait()
 	if l.conn != nil {
 		l.conn.Close()
 	}

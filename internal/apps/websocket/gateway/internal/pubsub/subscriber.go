@@ -6,14 +6,14 @@ import (
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
-	"IM2/internal/common"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/logger"
 
 	"github.com/nats-io/nats.go"
 )
 
 // MessageHandler 消息处理函数
-type MessageHandler func(ctx context.Context, msg *common.WSMessage) error
+type MessageHandler func(ctx context.Context, msg *transport.WSMessage) error
 
 // Subscriber NATS 消息订阅者
 type Subscriber struct {

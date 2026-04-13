@@ -104,14 +104,6 @@ message RecallMessageReq {
 
 message RecallMessageResp {}
 
-message SendMessageReq {
-  Message message = 1;
-}
-
-message SendMessageResp {
-  Message message = 1;
-}
-
 // ========== 服务定义 ==========
 
 service MessageRpc {
@@ -122,5 +114,4 @@ service MessageRpc {
   rpc GetUserConversations(GetUserConversationsReq) returns (GetUserConversationsResp);
   rpc GetUserActiveConversations(GetUserActiveConversationsReq) returns (GetUserActiveConversationsResp);
   rpc RecallMessage(RecallMessageReq) returns (RecallMessageResp);
-  rpc SendMessage(SendMessageReq) returns (SendMessageResp);
 }

@@ -46,6 +46,12 @@ func (s *StringManager) MgetCtx(ctx context.Context, keys ...string) ([]string, 
 	return s.client.rdb.MgetCtx(ctx, builtKeys...)
 }
 
+// SetnxExCtx 原子 SET-if-Not-eXists，并指定过期时间（秒）。
+// 返回 true 表示写入成功（key 之前不存在），false 表示 key 已存在（本次未写入）。
+func (s *StringManager) SetnxExCtx(ctx context.Context, key, val string, seconds int) (bool, error) {
+	return s.client.rdb.SetnxExCtx(ctx, s.client.buildKey(key), val, seconds)
+}
+
 // ---------- Bitmap ----------
 
 // SetBitCtx 将 key 在 offset 处的 bit 设为 val（0 或 1），返回修改前的旧值。

@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package transport;
+
+option go_package = "IM2/pkg/proto/transport";
+
+enum TargetType {
+  USER  = 0;
+  GROUP = 1;
+}
+
+// 消息类型枚举
+enum MessageType {
+  UNKNOWN = 0;
+  
+  // 单聊消息 100-199
+  CHAT_TEXT = 100;                // 文本消息
+  CHAT_IMAGE = 101;               // 图片消息
+  CHAT_VIDEO = 102;               // 视频消息
+  CHAT_AUDIO = 103;               // 语音消息
+  CHAT_FILE = 104;                // 文件消息
+  CHAT_LOCATION = 105;            // 位置消息
+  CHAT_CUSTOM = 106;              // 自定义消息
+  
+  // 群聊消息 200-299
+  GROUP_TEXT = 200;               // 群文本消息
+  GROUP_IMAGE = 201;              // 群图片消息
+  GROUP_VIDEO = 202;              // 群视频消息
+  GROUP_AUDIO = 203;              // 群语音消息
+  GROUP_FILE = 204;               // 群文件消息
+  GROUP_NOTICE = 205;             // 群公告
+  
+  // 消息状态 300-399
+  MSG_ACK = 300;                  // 消息确认
+  MSG_READ = 301;                 // 消息已读
+  MSG_DELIVERED = 302;            // 消息送达
+  MSG_RECALL = 303;               // 消息撤回
+  MSG_DELETE = 304;               // 消息删除
+  MSG_PERSIST_ACK = 305;          // 消息持久化确认
+  
+  // 用户状态 400-499
+  USER_ONLINE = 400;              // 用户上线
+  USER_OFFLINE = 401;             // 用户下线
+  USER_TYPING = 402;              // 正在输入
+  USER_STATUS_CHANGE = 403;       // 状态变更
+  USER_KICKOFF = 404;             // 用户被踢
+  
+  // 群组操作
+  GROUP_OP_NOTIFICATION = 500;    // 群操作通知
+
+  // 消息操作
+  MSG_OP_RECALL = 501;      // 消息撤回
+  
+  // 通知类 600-699
+  NOTIFICATION = 600;             // 系统通知
+  FRIEND_REQUEST = 601;           // 好友请求
+  FRIEND_ADD = 602;               // 添加好友
+  FRIEND_DELETED = 603;           // 删除好友
+  GROUP_REQUEST = 604;            // 群请求
+  
+  // 内部消费消息
+  UPDATE_SESSION = 700;           // 更新会话
+  USER_GROUP_SYNC = 701;          // 用户群组映射同步
+  
+  // 错误响应 900-999
+  ERROR = 900;                    // 错误消息
+}
+
+
+// 只保留路由信息，不 import 任何业务结构
+message WSMessage {
+  repeated uint64 route_target    = 1;
+  TargetType      route_target_type = 2;
+  int64           timestamp       = 3;
+  MessageType     type            = 4;
+  bytes           payload         = 5;  // 具体内容各业务包自己解析
+  uint64          sender_id       = 6;
+  int32           version         = 7;
+}
+
+// API 通用响应包装
+message ApiResponse {
+    int32 code = 1;         // 状态码 (0表示成功)
+    string message = 2;     // 响应提示信息
+    bytes data = 3;         // 响应数据(序列化后的pb字节流)
+}
+
+// 错误响应
+message ErrorMessage {
+  int32 error_code = 1;           // 错误码
+  string error_msg = 2;           // 错误信息
+  string session_id = 3;          // 关联会话ID
+  string request_id = 4;          // 关联的请求ID
+  map<string, string> details = 5; // 错误详情
+}
+
+// 常见错误码定义
+enum ErrorCode {
+  OK = 0;
+  INVALID_PARAM = 1001;           // 参数无效
+  UNAUTHORIZED = 1002;            // 未授权
+  TOKEN_EXPIRED = 1003;           // Token过期
+  USER_NOT_FOUND = 1004;          // 用户不存在
+  MESSAGE_TOO_LARGE = 1005;       // 消息过大
+  RATE_LIMIT = 1006;              // 频率限制
+  SERVER_ERROR = 5000;            // 服务器错误
+  SERVICE_UNAVAILABLE = 5001;     // 服务不可用
+}

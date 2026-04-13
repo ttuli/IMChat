@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 
-	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/proto/transport"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
@@ -96,7 +97,7 @@ func (s *userService) DeleteFriend(ctx context.Context, userID, friendID uint64)
 		return xerr.Wrap(err, xerr.ErrDatabase, "查询好友关系失败")
 	}
 
-	if msg, err := common.NewFriendUpdateMsg(common.MessageType_FRIEND_DELETED, friendRecord, userID); err == nil {
+	if msg, err := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_DELETED, friendRecord, userID); err == nil {
 		if data, err := proto.Marshal(msg); err == nil {
 			if _, err := s.js.Publish(s.Config.NATS.BroadcastSubject, data); err != nil {
 				logger.Error("DeleteFriend publish error: " + err.Error())

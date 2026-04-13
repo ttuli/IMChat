@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
-	"IM2/internal/common"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/logger"
 
 	"github.com/nats-io/nats.go"
@@ -47,7 +47,7 @@ func NewPublisher(nc *nats.Conn, codec protocol.Codec, nodeID string, subjectCon
 }
 
 // PublishToNode 发布消息到指定节点
-func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *common.WSMessage) error {
+func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *transport.WSMessage) error {
 	subject := p.getNodeSubject(nodeID)
 
 	data, err := p.codec.Encode(msg)
@@ -66,7 +66,7 @@ func (p *Publisher) PublishToNode(ctx context.Context, nodeID string, msg *commo
 // BroadcastToAllNodes 广播消息到所有节点（或通过 Queue 仅让一个节点消费）
 //   - BroadcastAll:   消息发布到 BroadcastSubject，所有节点都会收到（fan-out）
 //   - BroadcastQueue: 消息发布到 QueueBroadcastSubject，仅 Queue Group 内的一个节点消费（负载均衡）
-func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessage, mode BroadcastMode) error {
+func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode BroadcastMode) error {
 	var subject string
 	switch mode {
 	case BroadcastQueue:
@@ -88,7 +88,7 @@ func (p *Publisher) BroadcastToAllNodes(ctx context.Context, msg *common.WSMessa
 	return nil
 }
 
-func (p *Publisher) PublishToDB(ctx context.Context, msg *common.WSMessage) error {
+func (p *Publisher) PublishToDB(ctx context.Context, msg *transport.WSMessage) error {
 	subject := p.subjectConfig.DBSubject
 
 	data, err := p.codec.Encode(msg)

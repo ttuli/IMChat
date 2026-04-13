@@ -6,8 +6,11 @@ import (
 	"time"
 
 	"IM2/internal/apps/websocket/gateway/svc"
-	"IM2/internal/common"
 	"IM2/pkg/logger"
+	"IM2/pkg/proto/message"
+	"IM2/pkg/proto/social"
+	protosvc "IM2/pkg/proto/svc"
+	"IM2/pkg/proto/transport"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -47,7 +50,7 @@ func (s *GatewayServer) Start() error {
 	// 4. 订阅跨节点路由消息
 	nodeSubject := fmt.Sprintf("%s%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
 
-	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, nodeSubject, s.handleQueueSubscribeMessage); err != nil {
+	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, nodeSubject, s.handleSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe route message failed: %w", err)
 	}
 	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, s.svcCtx.Config.Nats.BroadcastSubject, s.handleSubscribeMessage); err != nil {
@@ -56,6 +59,10 @@ func (s *GatewayServer) Start() error {
 	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.QueueBroadcastSubject,
 		s.svcCtx.Config.Nats.QueueName, s.handleQueueSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe notice failed: %w", err)
+	}
+	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.AckSubject,
+		s.svcCtx.Config.Nats.QueueName, s.handleQueueSubscribeMessage); err != nil {
+		return fmt.Errorf("subscribe ack message failed: %w", err)
 	}
 
 	fmt.Println("WebSocket Gateway Server logic started successfully")
@@ -102,10 +109,10 @@ func (s *GatewayServer) Stop() error {
 	return nil
 }
 
-func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
+func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *transport.WSMessage) error {
 	// 拦截内部的群组映射跨节点同步消息
-	if msg.Type == common.MessageType_USER_GROUP_SYNC {
-		var syncMsg common.UserGroupSync
+	if msg.Type == transport.MessageType_USER_GROUP_SYNC {
+		var syncMsg protosvc.UserGroupSync
 		if err := proto.Unmarshal(msg.Payload, &syncMsg); err == nil {
 			for _, gid := range syncMsg.GroupIds {
 				s.svcCtx.ConnectionManager.AddUsersToGroup(gid, []uint64{syncMsg.UserId})
@@ -118,7 +125,7 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 
 	// 获取本地连接
 	switch msg.RouteTargetType {
-	case common.TargetType_USER:
+	case transport.TargetType_USER:
 		for _, target := range msg.RouteTarget {
 			conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(target)
 			if ok {
@@ -126,7 +133,7 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 			}
 		}
 		return nil
-	case common.TargetType_GROUP:
+	case transport.TargetType_GROUP:
 		if err := s.syncGroupMembership(msg); err != nil {
 			return err
 		}
@@ -141,11 +148,11 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *common.
 
 // syncGroupMembership 根据群组事件类型增量更新本地 groupMembers 映射。
 // 在消息发送前调用，保证 SendToGroupLocal 使用最新的本地在线成员集合。
-func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
-	if msg.Type != common.MessageType_GROUP_OP_NOTIFICATION {
+func (s *GatewayServer) syncGroupMembership(msg *transport.WSMessage) error {
+	if msg.Type != transport.MessageType_GROUP_OP_NOTIFICATION {
 		return nil
 	}
-	var notify common.GroupNotification
+	var notify social.GroupNotification
 	if err := proto.Unmarshal(msg.Payload, &notify); err != nil {
 		logger.Errorf("[syncGroupMembership] unmarshal failed: %v", err)
 		return err
@@ -154,18 +161,18 @@ func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
 	groupID := notify.GroupId
 
 	switch notify.OpType {
-	case common.GroupOperationType_GROUP_OP_JOIN:
+	case social.GroupOperationType_GROUP_OP_JOIN:
 		s.svcCtx.ConnectionManager.AddUsersToGroup(groupID, notify.TargetIds)
 
-	case common.GroupOperationType_GROUP_OP_CREATE:
+	case social.GroupOperationType_GROUP_OP_CREATE:
 		members := append(notify.TargetIds, notify.OperatorId)
 		s.svcCtx.ConnectionManager.AddUsersToGroup(groupID, members)
 
-	case common.GroupOperationType_GROUP_OP_LEAVE,
-		common.GroupOperationType_GROUP_OP_KICK:
+	case social.GroupOperationType_GROUP_OP_LEAVE,
+		social.GroupOperationType_GROUP_OP_KICK:
 		s.svcCtx.ConnectionManager.RemoveUsersFromGroup(groupID, notify.TargetIds)
 
-	case common.GroupOperationType_GROUP_OP_DISMISS:
+	case social.GroupOperationType_GROUP_OP_DISMISS:
 		// 解散：直接清除整个群的本地缓存
 		s.svcCtx.ConnectionManager.InvalidateGroupCache(groupID)
 	}
@@ -173,10 +180,10 @@ func (s *GatewayServer) syncGroupMembership(msg *common.WSMessage) error {
 	return nil
 }
 
-func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *common.WSMessage) error {
+func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *transport.WSMessage) error {
 	switch msg.Type {
-	case common.MessageType_GROUP_REQUEST:
-		var apply common.GroupApply
+	case transport.MessageType_GROUP_REQUEST:
+		var apply social.GroupApply
 		if err := proto.Unmarshal(msg.Payload, &apply); err != nil {
 			s.svcCtx.TelemetryBus.Publish(err)
 			return nil
@@ -195,7 +202,20 @@ func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *co
 			}
 		}
 
-		return nil
+	case transport.MessageType_MSG_PERSIST_ACK:
+		var ack message.PersistAck
+		if err := proto.Unmarshal(msg.Payload, &ack); err != nil {
+			s.svcCtx.TelemetryBus.Publish(err)
+			return nil
+		}
+		err := s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Target, msg)
+		if err != nil {
+			s.svcCtx.TelemetryBus.Publish(err)
+		}
+		err = s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Sender, msg)
+		if err != nil {
+			s.svcCtx.TelemetryBus.Publish(err)
+		}
 	}
 
 	return nil

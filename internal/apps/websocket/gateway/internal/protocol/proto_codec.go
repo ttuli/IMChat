@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"IM2/internal/common"
+	"IM2/pkg/proto/transport"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -15,7 +15,7 @@ func NewProtoCodec() *ProtoCodec {
 }
 
 // Encode 编码 WSMessage 为 protobuf 二进制
-func (c *ProtoCodec) Encode(msg *common.WSMessage) ([]byte, error) {
+func (c *ProtoCodec) Encode(msg *transport.WSMessage) ([]byte, error) {
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
@@ -24,8 +24,8 @@ func (c *ProtoCodec) Encode(msg *common.WSMessage) ([]byte, error) {
 }
 
 // Decode 解码 protobuf 二进制为 WSMessage
-func (c *ProtoCodec) Decode(data []byte) (*common.WSMessage, error) {
-	msg := &common.WSMessage{}
+func (c *ProtoCodec) Decode(data []byte) (*transport.WSMessage, error) {
+	msg := &transport.WSMessage{}
 	if err := proto.Unmarshal(data, msg); err != nil {
 		return nil, err
 	}

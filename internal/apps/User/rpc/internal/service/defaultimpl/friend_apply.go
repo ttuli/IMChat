@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/proto/transport"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
@@ -44,7 +45,7 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 
 		friendRecord, _ := s.friendDAO.FindFriendRelation(ctx, fromUserID, toUserID)
 
-		msg, _ := common.NewFriendUpdateMsg(common.MessageType_FRIEND_ADD, friendRecord, toUserID)
+		msg, _ := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_ADD, friendRecord, toUserID)
 		data, _ := proto.Marshal(msg)
 		_, err = s.js.Publish(s.Config.NATS.BroadcastSubject, data)
 		if err != nil {
@@ -77,7 +78,7 @@ func (s *userService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 		return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "创建好友申请失败")
 	}
 
-	msg, _ := common.ConvertFriendApplyToWSMessage(apply, toUserID)
+	msg, _ := util.ConvertFriendApplyToWSMessage(apply, toUserID)
 	data, _ := proto.Marshal(msg)
 	_, err = s.js.Publish(s.Config.NATS.BroadcastSubject, data)
 	if err != nil {
@@ -134,7 +135,7 @@ func (s *userService) HandleFriendApply(ctx context.Context, applyID, operatorID
 	apply.Status = status
 	apply.RejectReason = rejectReason
 
-	msg, _ := common.ConvertFriendApplyToWSMessage(apply, apply.FromUserID)
+	msg, _ := util.ConvertFriendApplyToWSMessage(apply, apply.FromUserID)
 	data, _ := proto.Marshal(msg)
 	_, err = s.js.Publish(s.Config.NATS.BroadcastSubject, data)
 	if err != nil {

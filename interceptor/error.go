@@ -1,7 +1,7 @@
 package interceptor
 
 import (
-	"IM2/internal/common"
+	"IM2/pkg/proto/svc"
 	"IM2/pkg/xerr"
 	"context"
 	"errors"
@@ -17,7 +17,7 @@ func ServerErrorInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 	if err != nil {
 		if cusErr, ok := err.(*xerr.Error); ok {
 			st := status.New(xerr.ToGRPCCode(cusErr.Code), cusErr.Message)
-			con := &common.ErrorResp{
+			con := &svc.ErrorResp{
 				Code:    int32(cusErr.Code),
 				Message: cusErr.Message,
 			}
@@ -44,7 +44,7 @@ func ClientErrorInterceptor(ctx context.Context, method string, req, reply any, 
 			return xerr.Wrap(err, xerr.ErrInternalServer, "服务器内部错误")
 		} else {
 			for _, detail := range st.Details() {
-				if cusErr, ok := detail.(*common.ErrorResp); ok {
+				if cusErr, ok := detail.(*svc.ErrorResp); ok {
 					if cusErr.RawError != "" {
 						return xerr.Wrap(errors.New(cusErr.RawError), xerr.ErrorCode(cusErr.Code), cusErr.Message)
 					} else {
@@ -67,7 +67,7 @@ func ClientPureErrorInterceptor(ctx context.Context, method string, req, reply a
 			return err
 		} else {
 			for _, detail := range st.Details() {
-				if cusErr, ok := detail.(*common.ErrorResp); ok {
+				if cusErr, ok := detail.(*svc.ErrorResp); ok {
 					if cusErr.RawError != "" {
 						return errors.New(cusErr.RawError)
 					} else {

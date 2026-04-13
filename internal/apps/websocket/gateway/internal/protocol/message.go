@@ -4,14 +4,15 @@ import (
 	"errors"
 	"time"
 
-	"IM2/internal/common"
+	"IM2/pkg/proto/transport"
+	"IM2/pkg/proto/message"
 
 	"google.golang.org/protobuf/proto"
 )
 
 // NewWSMessage 创建新的 WSMessage
-func NewWSMessage(msgType common.MessageType, payload proto.Message) (*common.WSMessage, error) {
-	msg := &common.WSMessage{
+func NewWSMessage(msgType transport.MessageType, payload proto.Message) (*transport.WSMessage, error) {
+	msg := &transport.WSMessage{
 		Timestamp: time.Now().UnixMilli(),
 		Type:      msgType,
 	}
@@ -26,29 +27,28 @@ func NewWSMessage(msgType common.MessageType, payload proto.Message) (*common.WS
 }
 
 // NewErrorWSMessage 创建错误消息
-func NewErrorWSMessage(code int32, message string) *common.WSMessage {
-	errMsg := &common.ErrorMessage{
+func NewErrorWSMessage(code int32, message string) *transport.WSMessage {
+	errMsg := &transport.ErrorMessage{
 		ErrorCode: code,
 		ErrorMsg:  message,
 	}
 	data, _ := proto.Marshal(errMsg)
-	return &common.WSMessage{
+	return &transport.WSMessage{
 		Timestamp: time.Now().UnixMilli(),
-		Type:      common.MessageType_ERROR,
+		Type:      transport.MessageType_ERROR,
 		Payload:   data,
 	}
 }
 
-func NewAckMessage(base *common.BaseMessage, st common.AckStatus) *common.WSMessage {
-	wm := &common.WSMessage{
+func NewAckMessage(base *message.BaseMessage, st message.AckStatus) *transport.WSMessage {
+	wm := &transport.WSMessage{
 		Timestamp: time.Now().UnixMilli(),
-		Type:      common.MessageType_MSG_ACK,
+		Type:      transport.MessageType_MSG_ACK,
 	}
-	ack := &common.MessageAck{
+	ack := &message.MessageAck{
 		MsgId:     base.MsgId,
 		ClientId:  base.ClientId,
 		SessionId: base.SessionId,
-		Seq:       base.MsgSeq,
 		Status:    st,
 	}
 	data, _ := proto.Marshal(ack)
@@ -57,7 +57,7 @@ func NewAckMessage(base *common.BaseMessage, st common.AckStatus) *common.WSMess
 }
 
 // DecodePayload 从 WSMessage 中解码 payload 到指定 proto message
-func DecodePayload[T proto.Message](msg *common.WSMessage, target T) error {
+func DecodePayload[T proto.Message](msg *transport.WSMessage, target T) error {
 	if len(msg.Payload) == 0 {
 		return errors.New("empty payload")
 	}

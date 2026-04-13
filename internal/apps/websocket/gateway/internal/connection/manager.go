@@ -6,7 +6,8 @@ import (
 	"sync"
 
 	"IM2/internal/apps/websocket/gateway/internal/pubsub"
-	"IM2/internal/common"
+
+	"IM2/pkg/proto/transport"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -20,13 +21,13 @@ type Manager interface {
 	// GetLocalConnection 获取本地连接
 	GetLocalConnection(userID uint64) (*Connection, bool)
 	// SendToUser 发送消息给用户
-	SendToUser(ctx context.Context, userID uint64, msg *common.WSMessage) error
+	SendToUser(ctx context.Context, userID uint64, msg *transport.WSMessage) error
 	// SendToGroup 发送消息给群组 (并在集群内路由)
-	SendToGroup(ctx context.Context, groupID uint64, msg *common.WSMessage) error
+	SendToGroup(ctx context.Context, groupID uint64, msg *transport.WSMessage) error
 	// SendToGroupLocal 仅发送给本地群组成员
-	SendToGroupLocal(ctx context.Context, groupID uint64, msg *common.WSMessage) error
+	SendToGroupLocal(ctx context.Context, groupID uint64, msg *transport.WSMessage) error
 	// Broadcast 广播消息给多个用户
-	Broadcast(ctx context.Context, userIDs []uint64, msg *common.WSMessage) error
+	Broadcast(ctx context.Context, userIDs []uint64, msg *transport.WSMessage) error
 	// LocalUserCount 本地用户数量
 	LocalUserCount() int
 	// GetAllLocalUserIDs 获取所有本地用户ID
@@ -50,7 +51,7 @@ type DefaultManager struct {
 	// groupMembers: groupID → set of userIDs (在线用户)
 	groupMembers map[uint64]map[uint64]struct{}
 	// userGroups: userID → set of groupIDs (该用户属于哪些群)
-	userGroups    map[uint64][]uint64
+	userGroups map[uint64][]uint64
 
 	nodeID string
 	router MessageRouter
@@ -59,9 +60,9 @@ type DefaultManager struct {
 // MessageRouter 消息路由接口(用于跨节点通信)
 type MessageRouter interface {
 	// RouteMessage 路由消息到目标用户
-	RouteMessage(ctx context.Context, targetUserID uint64, msg *common.WSMessage) error
+	RouteMessage(ctx context.Context, targetUserID uint64, msg *transport.WSMessage) error
 	// BroadcastToAllNodes 广播消息到所有节点（BroadcastAll: 所有节点消费; BroadcastQueue: 仅一个节点消费）
-	BroadcastToAllNodes(ctx context.Context, msg *common.WSMessage, mode pubsub.BroadcastMode) error
+	BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode pubsub.BroadcastMode) error
 }
 
 // NewDefaultManager 创建默认连接管理器
@@ -165,7 +166,7 @@ func (m *DefaultManager) GetLocalConnection(userID uint64) (*Connection, bool) {
 }
 
 // SendToUser 发送消息给用户
-func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *common.WSMessage) error {
+func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *transport.WSMessage) error {
 	// 先尝试本地发送
 	if conn, ok := m.GetLocalConnection(userID); ok {
 		if err := conn.Send(msg); err != nil {
@@ -185,7 +186,7 @@ func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *com
 	return errors.New("user not connected")
 }
 
-func (m *DefaultManager) SendToGroup(ctx context.Context, groupID uint64, msg *common.WSMessage) error {
+func (m *DefaultManager) SendToGroup(ctx context.Context, groupID uint64, msg *transport.WSMessage) error {
 	// 总是广播群消息到其他节点
 	if m.router != nil {
 		return m.router.BroadcastToAllNodes(ctx, msg, pubsub.BroadcastAll)
@@ -194,7 +195,7 @@ func (m *DefaultManager) SendToGroup(ctx context.Context, groupID uint64, msg *c
 }
 
 // SendToGroupLocal 仅发送给本地群组成员(用于处理来自其他节点的广播消息，避免循环路由)
-func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, msg *common.WSMessage) error {
+func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, msg *transport.WSMessage) error {
 	m.groupLock.RLock()
 	members := m.groupMembers[groupID]
 	var localIDs []uint64
@@ -219,7 +220,7 @@ func (m *DefaultManager) SendToGroupLocal(ctx context.Context, groupID uint64, m
 }
 
 // Broadcast 广播消息给多个用户
-func (m *DefaultManager) Broadcast(ctx context.Context, userIDs []uint64, msg *common.WSMessage) error {
+func (m *DefaultManager) Broadcast(ctx context.Context, userIDs []uint64, msg *transport.WSMessage) error {
 	var wg sync.WaitGroup
 	var errOnce sync.Once
 	var firstErr error

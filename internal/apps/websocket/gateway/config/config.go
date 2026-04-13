@@ -6,7 +6,6 @@ import (
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/rest"
-	"github.com/zeromicro/go-zero/zrpc"
 )
 
 type Config struct {
@@ -18,7 +17,6 @@ type Config struct {
 	// Redis 配置 (用于路由 KV 存储)
 	RouteStore redis.RedisConf
 
-
 	// NATS 配置 (用于跨节点消息转发)
 	Nats NatsConf
 
@@ -26,9 +24,6 @@ type Config struct {
 	TokenConfig tokenmanager.TokenConfig
 
 	APISIX service.APISIXConfig
-
-	GroupRpc   zrpc.RpcClientConf
-	MessageRpc zrpc.RpcClientConf
 }
 
 // NatsConf NATS 配置
@@ -38,15 +33,16 @@ type NatsConf struct {
 
 	NodeSubjectPrefix     string
 	BroadcastSubject      string
-	DBSubject             string
 	QueueBroadcastSubject string
 	QueueName             string
+	DBSubject             string
+	AckSubject            string
 }
 
 // WebSocketConf WebSocket 配置
 type WebSocketConf struct {
 	// 节点ID，为空时自动生成
-	NodeID string
+	NodeID string `json:",optional"`
 	// WebSocket 路径
 	Path string
 	// 读缓冲区大小

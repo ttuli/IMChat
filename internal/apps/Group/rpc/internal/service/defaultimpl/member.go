@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
@@ -94,8 +95,8 @@ func (s *groupService) RemoveMember(ctx context.Context, groupID, operatorID, us
 	}
 
 	// 5. 发送群组通知（踢人）
-	wsMsg := common.NewGroupOperationMsg(
-		common.GroupOperationType_GROUP_OP_KICK,
+	wsMsg := util.NewGroupOperationMsg(
+		social.GroupOperationType_GROUP_OP_KICK,
 		groupID, []uint64{userID}, operatorID, nil,
 	)
 	if wsMsg != nil {
@@ -130,8 +131,8 @@ func (s *groupService) LeaveGroup(ctx context.Context, groupID, userID uint64) e
 	}
 
 	// 4. 发送群组通知（主动退群）
-	wsMsg := common.NewGroupOperationMsg(
-		common.GroupOperationType_GROUP_OP_LEAVE,
+	wsMsg := util.NewGroupOperationMsg(
+		social.GroupOperationType_GROUP_OP_LEAVE,
 		groupID, []uint64{userID}, userID, nil,
 	)
 	if wsMsg != nil {

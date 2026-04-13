@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"IM2/internal/apps/Message/rpc/message"
 	"IM2/internal/model"
+	"IM2/pkg/proto/svc"
 )
 
 // MessageService 消息服务接口
@@ -16,7 +16,7 @@ type MessageService interface {
 	GetHistory(ctx context.Context, conversationID string, startSeq, endSeq int64, limit int) ([]*model.Message, error)
 
 	// SendMessage 发送消息、生成序号、广播事件、异步落库
-	SendMessage(ctx context.Context, msg *message.Message) (*message.Message, error)
+	SendMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error)
 
 	// ========== 会话操作 ==========
 
@@ -35,4 +35,7 @@ type MessageService interface {
 
 	// RecallMessage 撤回消息（校验发送者 + 2分钟时间窗口）
 	RecallMessage(ctx context.Context, userID uint64, msgID string, sessionID string) error
+
+	// BulkPersistMessages 批量持久化消息（由 NATS Listener 消费后调用）
+	BulkPersistMessages(ctx context.Context, msgs []*model.Message) error
 }

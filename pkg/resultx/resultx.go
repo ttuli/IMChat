@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"IM2/internal/common"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/logger"
 	"IM2/pkg/xerr"
 
@@ -100,7 +100,7 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 			return
 		}
 
-		apiResp := &common.ApiResponse{
+		apiResp := &transport.ApiResponse{
 			Code:    200,
 			Message: "success",
 			Data:    data,
@@ -123,7 +123,7 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 }
 
 // ErrorProtoCtx 根据 Accept 头协商错误响应格式
-// Accept 包含 application/x-protobuf → 返回 protobuf 二进制 (包装在 common.ApiResponse 中)
+// Accept 包含 application/x-protobuf → 返回 protobuf 二进制 (包装在 transport.ApiResponse 中)
 // 其他 → 返回 JSON
 func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 	if !strings.Contains(r.Header.Get("Accept"), "application/x-protobuf") {
@@ -146,7 +146,7 @@ func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 	}
 
 	httpCode := xerr.HTTPStatusFromErrorCode(xerrErr.Code)
-	apiResp := &common.ApiResponse{
+	apiResp := &transport.ApiResponse{
 		Code:    int32(httpCode),
 		Message: xerrErr.Message,
 		Data:    nil,

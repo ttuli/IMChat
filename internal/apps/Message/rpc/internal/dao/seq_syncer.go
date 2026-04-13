@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/logger"
 	"IM2/pkg/redisx"
 
@@ -182,12 +182,12 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 
 		// 2. 收集需要更新的时间线信息
 		var userIDs []uint64
-		if common.IsGroupSession(convID) {
+		if util.IsGroupSession(convID) {
 			// 从 DB 查群成员 (UserConversation 记录了用户参与了哪些会话)
 			s.db.WithContext(ctx).Model(&model.UserConversation{}).
 				Where("conversation_id = ?", convID).
 				Pluck("user_id", &userIDs)
-		} else if common.IsPrivateSession(convID) {
+		} else if util.IsPrivateSession(convID) {
 			// 单谈直接从 SessionID 提取双方 ID
 			parts := strings.Split(convID, "_")
 			if len(parts) == 3 {

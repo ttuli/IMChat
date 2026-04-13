@@ -9,6 +9,7 @@ type ListenerConfig struct {
 	Url              string
 	BroadcastSubject string
 	DBSubject        string
+	AckSubject       string
 }
 
 type Config struct {

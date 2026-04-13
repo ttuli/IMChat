@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package svc;
+
+option go_package = "IM2/pkg/proto/svc";
+
+// 服务间通信扩展，当前为空，待后续增加
+
+message ErrorResp {
+    int32 code = 1;
+    string message = 2;
+    string rawError = 3;
+}
+
+message UserGroupSync {
+  uint64 user_id = 1;
+  repeated uint64 group_ids = 2;
+}
+
+message MessageSend {
+  string msg_id = 1;
+  string client_id = 2;
+  string conversation_id = 3;
+  uint64 sender = 4;
+  uint64 target = 5;
+  string content = 6;
+  string media_url = 7;
+  int64 create_time = 8;
+  int32 msg_type = 9;
+}
+

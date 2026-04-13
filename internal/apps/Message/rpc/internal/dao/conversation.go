@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/logger"
 	"IM2/pkg/redisx"
 
@@ -300,7 +300,7 @@ func (c *ConversationDAO) allocSegment(
 		}),
 	}).Create(&model.Conversation{
 		ConversationID: conversationID,
-		Type:           int8(common.GetConversationType(conversationID)),
+		Type:           int8(util.GetConversationType(conversationID)),
 		MaxSeq:         step, // 初次创建时 max_seq = step
 		CreateTime:     now,
 		UpdateTime:     now,

@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
-	"IM2/internal/common"
 	"IM2/internal/model"
 	"IM2/pkg/logger"
+	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
 
 	"github.com/gogo/protobuf/proto"
@@ -43,7 +44,7 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 			return nil, nil, xerr.Wrap(err, xerr.ErrDatabase, "直接加入群组失败")
 		}
 
-		msg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
+		msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
 		bytes, _ := proto.Marshal(msg)
 		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 		if err != nil {
@@ -86,7 +87,7 @@ func (s *groupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 			targetIDs = append(targetIDs, manager.UserID)
 		}
 		if len(targetIDs) > 0 {
-			msg, _ := common.ConvertGroupApplyToWSMessage(apply, targetIDs)
+			msg, _ := util.ConvertGroupApplyToWSMessage(apply, targetIDs)
 			bytes, _ := proto.Marshal(msg)
 			_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 			if err != nil {
@@ -144,7 +145,7 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 				return nil, xerr.Wrap(err, xerr.ErrDatabase, "添加群成员失败")
 			}
 
-			msg := common.NewGroupOperationMsg(common.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
+			msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
 			bytes, _ := proto.Marshal(msg)
 			_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 			if err != nil {
@@ -171,14 +172,14 @@ func (s *groupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 		if apply.HandlerID != 0 {
 			targets[apply.FromUserID] = true
 		}
-		
+
 		var targetIDs []uint64
 		for targetID := range targets {
 			targetIDs = append(targetIDs, targetID)
 		}
 
 		if len(targetIDs) > 0 {
-			msg, _ := common.ConvertGroupApplyToWSMessage(apply, targetIDs)
+			msg, _ := util.ConvertGroupApplyToWSMessage(apply, targetIDs)
 			bytes, _ := proto.Marshal(msg)
 			_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
 			if err != nil {

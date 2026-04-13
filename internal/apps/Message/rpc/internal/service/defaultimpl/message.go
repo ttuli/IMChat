@@ -2,17 +2,16 @@ package defaultimpl
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"IM2/internal/apps/Message/rpc/message"
-	"IM2/internal/common"
 	"IM2/internal/model"
+	"IM2/pkg/proto/message"
+	"IM2/pkg/proto/transport"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/logger"
+	"IM2/pkg/proto/svc"
 	"IM2/pkg/xerr"
 
-	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/protobuf/proto"
 )
@@ -31,62 +30,43 @@ func (s *messageService) GetHistory(ctx context.Context, conversationID string, 
 	return messages, nil
 }
 
-// SendMessage 发送消息、生成序号、广播事件、异步落库
+// SendMessage 消费NATS消息、生成序号、广播事件、同步落库
 // TODO 改为在消息消费后发送一个ack消息到nats，再由websocket消费发送
-func (s *messageService) SendMessage(ctx context.Context, msg *message.Message) (*message.Message, error) {
-	// 0. 幂等性校验：检查是否已经有相同的 from_user_id 和 client_id 的消息
-	if msg.ClientId != "" {
-		existingMsg, err := s.messageDAO.FindBySenderAndClient(ctx, msg.FromUserId, msg.ClientId)
-		if err == nil && existingMsg != nil {
-			logger.Infof("Idempotent check hit: message already exists for client_id %s, from_user_id %d", msg.ClientId, msg.FromUserId)
-			// 直接返回已存在的那条消息的完整信息
-			msg.MsgId = existingMsg.MsgID
-			msg.Seq = existingMsg.Seq
-			msg.CreateTime = existingMsg.CreateTime.UnixMilli()
-			msg.Status = int32(existingMsg.Status)
-			return msg, nil
-		}
-	}
-
-	if msg.MsgId == "" {
-		msg.MsgId = uuid.New().String()
-	}
-	if msg.CreateTime == 0 {
-		msg.CreateTime = time.Now().UnixMilli()
-	}
-
+func (s *messageService) SendMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
 	// 1. 生成或递增 Seq
 	seq, err := s.conversationDAO.IncrSeq(ctx, msg.ConversationId)
 	if err != nil {
 		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.ConversationId, err)
 		return nil, err
 	}
-	msg.Seq = seq
-	msg.Status = int32(common.MessageStatus_MESSAGE_STATUS_SENT)
+	status := int32(message.MessageStatus_MESSAGE_STATUS_SENT)
 
-	// 2. 构建 content preview（用于 last_content 和 UpdateSession 广播）
-	contentPreview := contentPreviewOf(msg.MsgType, msg.Content)
-
-	// 3. 将完整会话状态推送到 SeqSyncer：批量刷 MySQL + 广播 UpdateSession
+	// 3. 将完整会话状态推送到 SeqSyncer
 	s.conversationDAO.PushSeqUpdate(
-		msg.ConversationId, msg.Seq,
-		contentPreview, msg.FromUserId, msg.CreateTime,
+		msg.ConversationId, seq,
+		msg.Content, msg.Sender, msg.CreateTime,
 	)
 
-	// 4. 异步将消息发布到 DBSubject，由 NATS Consumer 批量写入 MongoDB
-	msgData, err := proto.Marshal(msg)
-	if err != nil {
-		logger.Errorf("Failed to marshal message for DBSubject: %v", err)
-		return nil, err
-	} else {
-		if _, err := s.js.Publish(s.Config.Listener.DBSubject, msgData,
-			nats.MsgId(fmt.Sprintf("%d:%s", msg.FromUserId, msg.ClientId)),
-		); err != nil {
-			logger.Errorf("Failed to publish message to DBSubject: %v", err)
-		}
+	// 4. 构建 db model 并落库
+	dbMsg := &model.Message{
+		MsgID:          msg.MsgId,
+		ClientID:       msg.ClientId,
+		ConversationID: msg.ConversationId,
+		FromUserID:     msg.Sender,
+		MsgType:        int16(msg.MsgType),
+		Seq:            seq,
+		Content:        msg.Content,
+		MediaURL:       msg.MediaUrl,
+		Status:         int8(status),
+		CreateTime:     time.UnixMilli(msg.CreateTime),
 	}
 
-	return msg, nil
+	if err := s.messageDAO.InsertMessages(ctx, []*model.Message{dbMsg}); err != nil {
+		logger.Errorf("Failed to persist message %s: %v", msg.MsgId, err)
+		return nil, err
+	}
+
+	return dbMsg, nil
 }
 
 // RecallMessage 撤回消息
@@ -126,7 +106,7 @@ func (s *messageService) RecallMessage(ctx context.Context, userID uint64, msgID
 		return xerr.Wrap(err, xerr.ErrDatabase, "撤回消息失败")
 	}
 
-	ws, err := common.NewMessageOperationMsg(common.MessageType_MSG_OP_RECALL, userID, msg)
+	ws, err := util.NewMessageOperationMsg(transport.MessageType_MSG_OP_RECALL, userID, msg)
 	if err != nil {
 		logger.Errorf("Failed to create WSMessage: %v", err)
 		return nil
@@ -140,5 +120,18 @@ func (s *messageService) RecallMessage(ctx context.Context, userID uint64, msgID
 		logger.Errorf("Failed to publish NATS message: %v", err)
 	}
 
+	return nil
+}
+
+// BulkPersistMessages 批量持久化消息，由 NATS Listener 消费后调用。
+func (s *messageService) BulkPersistMessages(ctx context.Context, msgs []*model.Message) error {
+	if len(msgs) == 0 {
+		return nil
+	}
+	if err := s.messageDAO.InsertMessages(ctx, msgs); err != nil {
+		logger.Errorf("[MessageService] BulkPersistMessages failed (batch=%d): %v", len(msgs), err)
+		return err
+	}
+	logger.Infof("[MessageService] BulkPersistMessages ok: %d messages persisted", len(msgs))
 	return nil
 }

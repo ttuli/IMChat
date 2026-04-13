@@ -1,19 +1,21 @@
 package handler
 
 import (
-	"context"
 	"fmt"
+	"time"
 
-	"IM2/internal/apps/Message/rpc/message"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
-	"IM2/internal/common"
 	"IM2/pkg/logger"
+	"IM2/pkg/proto/message"
+	"IM2/pkg/proto/svc"
+	"IM2/pkg/proto/transport"
 
+	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 )
 
 // ─────────────────────────────────────────────────────
-// 消息类型注册表：用泛型消除 prepareMessage 的重复 switch-case
+// 消息类型注册表：消除 prepareMessage 的 switch-case
 // ─────────────────────────────────────────────────────
 
 // messageSpec 描述一种消息类型的反序列化规则
@@ -21,137 +23,109 @@ type messageSpec struct {
 	// newMsg 创建该类型消息的空实例
 	newMsg func() proto.Message
 	// getBase 从反序列化后的消息中提取 BaseMessage 指针
-	getBase func(proto.Message) *common.BaseMessage
-	// getContent 提取文本内容（非文本消息返回空）
-	getContent func(proto.Message) string
-	// getMediaUrl 提取多媒体链接（非媒体消息返回空）
+	getBase func(proto.Message) *message.BaseMessage
+	// getPreview 生成消息的概括内容/预览（用于会话列表显示）
+	getPreview func(proto.Message) string
+	// getMediaUrl 提取多媒体链接（非多媒体消息返回空）
 	getMediaUrl func(proto.Message) string
 }
 
 // msgSpecRegistry 消息类型 → 反序列化规则 的映射表
-var msgSpecRegistry = map[common.MessageType]messageSpec{
+var msgSpecRegistry = map[transport.MessageType]messageSpec{
 	// ─── 文本消息 ───
-	common.MessageType_CHAT_TEXT:  textSpec(),
-	common.MessageType_GROUP_TEXT: textSpec(),
+	transport.MessageType_CHAT_TEXT:  {func() proto.Message { return &message.TextMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.TextMessage).Base }, func(m proto.Message) string { return m.(*message.TextMessage).Content }, func(proto.Message) string { return "" }},
+	transport.MessageType_GROUP_TEXT: {func() proto.Message { return &message.TextMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.TextMessage).Base }, func(m proto.Message) string { return m.(*message.TextMessage).Content }, func(proto.Message) string { return "" }},
 	// ─── 图片消息 ───
-	common.MessageType_CHAT_IMAGE:  staticSpec(func() proto.Message { return &common.ImageMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.ImageMessage).Base }, func(m proto.Message) string { return m.(*common.ImageMessage).Url }),
-	common.MessageType_GROUP_IMAGE: staticSpec(func() proto.Message { return &common.ImageMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.ImageMessage).Base }, func(m proto.Message) string { return m.(*common.ImageMessage).Url }),
+	transport.MessageType_CHAT_IMAGE:  {func() proto.Message { return &message.ImageMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.ImageMessage).Base }, func(proto.Message) string { return "[图片]" }, func(m proto.Message) string { return m.(*message.ImageMessage).Url }},
+	transport.MessageType_GROUP_IMAGE: {func() proto.Message { return &message.ImageMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.ImageMessage).Base }, func(proto.Message) string { return "[图片]" }, func(m proto.Message) string { return m.(*message.ImageMessage).Url }},
 	// ─── 视频消息 ───
-	common.MessageType_CHAT_VIDEO:  staticSpec(func() proto.Message { return &common.VideoMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.VideoMessage).Base }, func(m proto.Message) string { return m.(*common.VideoMessage).Url }),
-	common.MessageType_GROUP_VIDEO: staticSpec(func() proto.Message { return &common.VideoMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.VideoMessage).Base }, func(m proto.Message) string { return m.(*common.VideoMessage).Url }),
+	transport.MessageType_CHAT_VIDEO:  {func() proto.Message { return &message.VideoMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.VideoMessage).Base }, func(proto.Message) string { return "[视频]" }, func(m proto.Message) string { return m.(*message.VideoMessage).Url }},
+	transport.MessageType_GROUP_VIDEO: {func() proto.Message { return &message.VideoMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.VideoMessage).Base }, func(proto.Message) string { return "[视频]" }, func(m proto.Message) string { return m.(*message.VideoMessage).Url }},
 	// ─── 语音消息 ───
-	common.MessageType_CHAT_AUDIO:  staticSpec(func() proto.Message { return &common.AudioMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.AudioMessage).Base }, func(m proto.Message) string { return m.(*common.AudioMessage).Url }),
-	common.MessageType_GROUP_AUDIO: staticSpec(func() proto.Message { return &common.AudioMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.AudioMessage).Base }, func(m proto.Message) string { return m.(*common.AudioMessage).Url }),
+	transport.MessageType_CHAT_AUDIO:  {func() proto.Message { return &message.AudioMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.AudioMessage).Base }, func(proto.Message) string { return "[语音]" }, func(m proto.Message) string { return m.(*message.AudioMessage).Url }},
+	transport.MessageType_GROUP_AUDIO: {func() proto.Message { return &message.AudioMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.AudioMessage).Base }, func(proto.Message) string { return "[语音]" }, func(m proto.Message) string { return m.(*message.AudioMessage).Url }},
 	// ─── 文件消息 ───
-	common.MessageType_CHAT_FILE:  staticSpec(func() proto.Message { return &common.FileMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.FileMessage).Base }, func(m proto.Message) string { return m.(*common.FileMessage).Url }),
-	common.MessageType_GROUP_FILE: staticSpec(func() proto.Message { return &common.FileMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.FileMessage).Base }, func(m proto.Message) string { return m.(*common.FileMessage).Url }),
+	transport.MessageType_CHAT_FILE:  {func() proto.Message { return &message.FileMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.FileMessage).Base }, func(proto.Message) string { return "[文件]" }, func(m proto.Message) string { return m.(*message.FileMessage).Url }},
+	transport.MessageType_GROUP_FILE: {func() proto.Message { return &message.FileMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.FileMessage).Base }, func(proto.Message) string { return "[文件]" }, func(m proto.Message) string { return m.(*message.FileMessage).Url }},
 	// ─── 位置消息 ───
-	common.MessageType_CHAT_LOCATION: staticSpec(func() proto.Message { return &common.LocationMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.LocationMessage).Base }, func(m proto.Message) string { return "" }),
+	transport.MessageType_CHAT_LOCATION: {func() proto.Message { return &message.LocationMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.LocationMessage).Base }, func(proto.Message) string { return "[位置]" }, func(proto.Message) string { return "" }},
 	// ─── 自定义消息 ───
-	common.MessageType_CHAT_CUSTOM: staticSpec(func() proto.Message { return &common.CustomMessage{} }, func(m proto.Message) *common.BaseMessage { return m.(*common.CustomMessage).Base }, func(m proto.Message) string { return "" }),
+	transport.MessageType_CHAT_CUSTOM: {func() proto.Message { return &message.CustomMessage{} }, func(m proto.Message) *message.BaseMessage { return m.(*message.CustomMessage).Base }, func(proto.Message) string { return "[自定义消息]" }, func(proto.Message) string { return "" }},
 }
 
-// textSpec 文本消息的特殊处理：提取实际文本
-func textSpec() messageSpec {
-	return messageSpec{
-		newMsg:  func() proto.Message { return &common.TextMessage{} },
-		getBase: func(m proto.Message) *common.BaseMessage { return m.(*common.TextMessage).Base },
-		getContent: func(m proto.Message) string {
-			return m.(*common.TextMessage).Content
-		},
-		getMediaUrl: func(m proto.Message) string { return "" },
-	}
-}
-
-// staticSpec 构造仅包含媒体等非文本信息的 messageSpec
-func staticSpec(newMsg func() proto.Message, getBase func(proto.Message) *common.BaseMessage, getUrl func(proto.Message) string) messageSpec {
-	return messageSpec{
-		newMsg:      newMsg,
-		getBase:     getBase,
-		getContent:  func(proto.Message) string { return "" }, // 非文本消息 Content 为空
-		getMediaUrl: getUrl,
-	}
-}
-
-// processMessage 提取 base、填充服务端字段、重新打包、路由到 DB
-// 返回 base 供调用方使用（如发送 ACK、转发等），error 非 nil 时已发送失败 ACK
-func (h *MessageHandler) processMessage(ctx context.Context, msg *common.WSMessage) (*common.BaseMessage, error) {
+// processMessage 提取 base、填充服务端字段、重新打包
+// 返回 base、消息概览(preview)、多媒体URL(mediaUrl)供调用方使用（如发送到 MQ 入库），error 非 nil 时已发送失败 ACK
+func (h *MessageHandler) processMessage(msg *transport.WSMessage) error {
 	msg.SenderId = h.conn.UserID
-	base, contentStr, mediaUrl, repack, err := h.prepareMessage(msg)
+	base, preview, mediaUrl, err := h.prepareMessage(msg)
 	if err != nil {
 		logger.Errorf("[MessageHandler] prepare message failed: %v", err)
-		return nil, err
+		return err
 	}
-
-	base.FromUserId = h.conn.UserID
 
 	// 验证目标
 	if base.Target == 0 {
-		h.conn.Send(protocol.NewAckMessage(base, common.AckStatus_ACK_STATUS_FAILED))
-		return nil, fmt.Errorf("target is empty")
+		h.conn.Send(protocol.NewAckMessage(base, message.AckStatus_ACK_STATUS_FAILED))
+		return fmt.Errorf("target is empty")
 	}
 
-	// 调用 RPC 处理：seq递增、MsgId生成、DB落盘、广播UpdateSession
-	rpcReq := &message.SendMessageReq{
-		Message: &message.Message{
-			ClientId:       base.ClientId,
-			ConversationId: base.SessionId,
-			FromUserId:     base.FromUserId,
-			MsgType:        int32(msg.Type),
-			Content:        contentStr,
-			MediaUrl:       mediaUrl,
-		},
+	// 网关层只负责生成 MsgId，seq 分配和 DB 落盘由后续 MQ 队列消费者异步完成
+	base.FromUserId = h.conn.UserID
+	base.MsgId = h.svcCtx.SnowflakeNode.Generate().String()
+	base.SendTime = time.Now().UnixMilli()
+	msg.Timestamp = base.SendTime
+	base.Status = message.MessageStatus_MESSAGE_STATUS_SENDING
+
+	msgSend := svc.MessageSend{
+		MsgId:          base.MsgId,
+		ClientId:       base.ClientId,
+		ConversationId: base.SessionId,
+		Sender:         base.FromUserId,
+		Target:         base.Target,
+		CreateTime:     base.SendTime,
+		Content:        preview,
+		MediaUrl:       mediaUrl,
+		MsgType:        int32(msg.Type),
 	}
 
-	rpcResp, err := h.svcCtx.MessageRpc.SendMessage(ctx, rpcReq)
+	msgSendBytes, err := proto.Marshal(&msgSend)
 	if err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
-		h.conn.Send(protocol.NewAckMessage(base, common.AckStatus_ACK_STATUS_FAILED))
-		return nil, fmt.Errorf("rpc send message failed: %w", err)
+		h.conn.Send(protocol.NewAckMessage(base, message.AckStatus_ACK_STATUS_FAILED))
+		return err
 	}
 
-	// RPC 处理成功，将处理后的 Seq、MsgId、SendTime 写回本地 base，重新打包以便推给对端
-	respMsg := rpcResp.Message
-	base.MsgSeq = int32(respMsg.Seq)
-	base.MsgId = respMsg.MsgId
-	base.SendTime = respMsg.CreateTime
-	base.Status = common.MessageStatus_MESSAGE_STATUS_SENT
-	msg.Timestamp = respMsg.CreateTime
-
-	// 重新序列化（base 已被原地修改，只需一次 Marshal）
-	if err := repack(); err != nil {
+	dedupKey := fmt.Sprintf("%d:%s", base.FromUserId, base.ClientId)
+	if _, err := h.svcCtx.JetStream.Publish(
+		h.svcCtx.Config.Nats.DBSubject,
+		msgSendBytes,
+		nats.MsgId(dedupKey),
+	); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
-		h.conn.Send(protocol.NewAckMessage(base, common.AckStatus_ACK_STATUS_FAILED))
-		return nil, err
+		h.conn.Send(protocol.NewAckMessage(base, message.AckStatus_ACK_STATUS_FAILED))
+		return err
 	}
 
-	return base, nil
+	h.conn.Send(protocol.NewAckMessage(base, message.AckStatus_ACK_STATUS_SUCCESS))
+	return nil
 }
 
 // ─────────────────────────────────────────────────────
 // prepareMessage 通过注册表反序列化消息
 // ─────────────────────────────────────────────────────
 
-// prepareMessage 反序列化消息并返回 BaseMessage 指针、文案预览、多媒体URL和重新打包闭包
-// 修改 base 字段后调用 repack() 即可将修改后的消息重新序列化到 msg.Payload
-func (h *MessageHandler) prepareMessage(msg *common.WSMessage) (base *common.BaseMessage, contentStr string, mediaUrl string, repack func() error, err error) {
+// prepareMessage 反序列化消息并返回 BaseMessage 指针、预览文本、多媒体URL
+func (h *MessageHandler) prepareMessage(msg *transport.WSMessage) (base *message.BaseMessage, preview string, mediaUrl string, err error) {
 	spec, ok := msgSpecRegistry[msg.Type]
 	if !ok {
-		return nil, "", "", nil, fmt.Errorf("unsupported message type: %v", msg.Type)
+		return nil, "", "", fmt.Errorf("unsupported message type: %v", msg.Type)
 	}
 
 	// 反序列化
 	m := spec.newMsg()
 	if err := proto.Unmarshal(msg.Payload, m); err != nil {
-		return nil, "", "", nil, err
+		return nil, "", "", err
 	}
 
-	return spec.getBase(m), spec.getContent(m), spec.getMediaUrl(m), func() error {
-		data, err := proto.Marshal(m)
-		if err != nil {
-			return err
-		}
-		msg.Payload = data
-		return nil
-	}, nil
+	return spec.getBase(m), spec.getPreview(m), spec.getMediaUrl(m), nil
 }
