@@ -37,7 +37,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	msgDao := dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource)
 	convDao := dao.NewConversationDAO(c.DAO.ConversationDAO.Dbsource, c.DAO.ConversationDAO.Redisx)
 
-	msgSvc := defaultimpl.NewMessageService(c, js, msgDao, convDao, redisClient)
+	msgSvc := defaultimpl.NewMessageService(c, js, conn, msgDao, convDao, redisClient)
 
 	return &ServiceContext{
 		Config:         c,

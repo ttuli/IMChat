@@ -116,7 +116,7 @@ func (s *messageService) RecallMessage(ctx context.Context, userID uint64, msgID
 		logger.Errorf("Failed to marshal WSMessage: %v", err)
 		return nil
 	}
-	if _, err := s.js.Publish(s.Config.Listener.BroadcastSubject, payload); err != nil {
+	if err := s.nc.Publish(s.Config.Listener.BroadcastSubject, payload); err != nil {
 		logger.Errorf("Failed to publish NATS message: %v", err)
 	}
 

@@ -15,16 +15,18 @@ type messageService struct {
 	messageDAO      *dao.MessageDAO
 	conversationDAO *dao.ConversationDAO
 	js              nats.JetStreamContext
+	nc              *nats.Conn
 	redis           *redisx.Client
 }
 
 // NewMessageService 创建消息服务
-func NewMessageService(c config.Config, js nats.JetStreamContext, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO, redisClient *redisx.Client) service.MessageService {
+func NewMessageService(c config.Config, js nats.JetStreamContext, nc *nats.Conn, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO, redisClient *redisx.Client) service.MessageService {
 	return &messageService{
 		Config:          c,
 		messageDAO:      msgDao,
 		conversationDAO: convDao,
 		js:              js,
+		nc:              nc,
 		redis:           redisClient,
 	}
 }
