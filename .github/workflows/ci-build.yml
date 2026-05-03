@@ -1,8 +1,8 @@
-name: IM2 CD
+name: CI-build
 
 on:
   workflow_run:
-    workflows: ["IM2 CI"]
+    workflows: ["CI-check"]
     types:
       - completed
     branches: [ master ]

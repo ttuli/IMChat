@@ -71,23 +71,28 @@ do_build_push() {
     for service in "${services_to_build[@]}"; do
         local dockerfile="${SERVICES[$service]}"
         local image="${REGISTRY}/${service}:${TAG}"
+        local latest_image="${REGISTRY}/${service}:latest"
 
         log_info "构建 ${BOLD}${service}${NC} → ${image}"
         if docker build \
             -f "${PROJECT_ROOT}/${dockerfile}" \
             -t "${image}" \
+            -t "${latest_image}" \
             "${PROJECT_ROOT}"; then
-            log_info "推送 ${BOLD}${service}${NC} (${TAG}) ..."
-            if docker push "${image}"; then
-                log_info "${GREEN}✓${NC} ${BOLD}${service}${NC} 推送成功 (${TAG})"
+
+            log_info "推送 ${BOLD}${service}${NC} ..."
+
+            # 一次推送所有标签（registry/name 部分需相同）
+            if docker push --all-tags "${REGISTRY}/${service}"; then
+                log_info "${GREEN}✓${NC} ${BOLD}${service}${NC} 推送成功 (${TAG} + latest)"
                 ((success++)) || true
             else
                 log_error "✗ ${BOLD}${service}${NC} 推送失败"
-                failed_services+=("$service")
+                failed_services+=("${service}")
             fi
         else
             log_error "✗ ${BOLD}${service}${NC} 构建失败"
-            failed_services+=("$service")
+            failed_services+=("${service}")
         fi
     done
 

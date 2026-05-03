@@ -1,4 +1,4 @@
-name: IM2 CI
+name: CI-check
 
 on:
   push:
