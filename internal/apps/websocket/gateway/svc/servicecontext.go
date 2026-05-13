@@ -42,7 +42,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		hostname, _ := os.Hostname()
 		nodeID = fmt.Sprintf("%s-%s", hostname, uuid.New().String()[:8])
 	}
-
+	c.WebSocket.NodeID = nodeID
 	// 创建编解码器
 	codec := protocol.NewProtoCodec()
 
