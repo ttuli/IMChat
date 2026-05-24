@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"IM2/internal/apps/websocket/gateway/svc"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/social"
@@ -16,12 +15,12 @@ import (
 )
 
 type GatewayServer struct {
-	svcCtx *svc.ServiceContext
+	svcCtx *ServiceContext
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
-func NewGatewayServer(svcCtx *svc.ServiceContext) *GatewayServer {
+func NewGatewayServer(svcCtx *ServiceContext) *GatewayServer {
 	return &GatewayServer{
 		svcCtx: svcCtx,
 	}

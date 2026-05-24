@@ -1,4 +1,4 @@
-package handler
+package dispatch
 
 import (
 	"fmt"
@@ -55,11 +55,11 @@ var msgSpecRegistry = map[transport.MessageType]messageSpec{
 
 // processMessage 提取 base、填充服务端字段、重新打包
 // 返回 base、消息概览(preview)、多媒体URL(mediaUrl)供调用方使用（如发送到 MQ 入库），error 非 nil 时已发送失败 ACK
-func (h *MessageHandler) processMessage(msg *transport.WSMessage) error {
+func (h *Dispatcher) processMessage(msg *transport.WSMessage) error {
 	msg.SenderId = h.conn.UserID
 	base, preview, mediaUrl, err := h.prepareMessage(msg)
 	if err != nil {
-		logger.Errorf("[MessageHandler] prepare message failed: %v", err)
+		logger.Errorf("[Dispatcher] prepare message failed: %v", err)
 		return err
 	}
 
@@ -115,7 +115,7 @@ func (h *MessageHandler) processMessage(msg *transport.WSMessage) error {
 // ─────────────────────────────────────────────────────
 
 // prepareMessage 反序列化消息并返回 BaseMessage 指针、预览文本、多媒体URL
-func (h *MessageHandler) prepareMessage(msg *transport.WSMessage) (base *message.BaseMessage, preview string, mediaUrl string, err error) {
+func (h *Dispatcher) prepareMessage(msg *transport.WSMessage) (base *message.BaseMessage, preview string, mediaUrl string, err error) {
 	spec, ok := msgSpecRegistry[msg.Type]
 	if !ok {
 		return nil, "", "", fmt.Errorf("unsupported message type: %v", msg.Type)

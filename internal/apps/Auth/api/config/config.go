@@ -10,8 +10,7 @@ import (
 
 type Config struct {
 	rest.RestConf
-
-	UserRpc zrpc.RpcClientConf
+	
 	AuthRpc zrpc.RpcClientConf
 
 	TokenConfig tokenmanager.TokenConfig

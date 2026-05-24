@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
-	"IM2/internal/apps/websocket/gateway/internal/pubsub"
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
 	"IM2/pkg/proto/transport"
 
@@ -31,16 +30,16 @@ const (
 type Router struct {
 	client       *redis.Client
 	nodeID       string
-	publisher    *pubsub.Publisher
+	publisher    *Publisher
 	telemetryBus *telemetry.Bus
 }
 
 // NewRouter 创建路由器
-func NewRouter(client *redis.Client, nc *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig pubsub.SubjectConfig) *Router {
+func NewRouter(client *redis.Client, nc *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig SubjectConfig) *Router {
 	return &Router{
 		client:       client,
 		nodeID:       nodeID,
-		publisher:    pubsub.NewPublisher(nc, codec, nodeID, subjectConfig),
+		publisher:    NewPublisher(nc, codec, nodeID, subjectConfig),
 		telemetryBus: bus,
 	}
 }
@@ -120,7 +119,7 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *tra
 
 // BroadcastToAllNodes 广播消息到所有节点
 // mode 参数控制消费模式：BroadcastAll 所有节点消费，BroadcastQueue 仅一个节点消费
-func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode pubsub.BroadcastMode) error {
+func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode BroadcastMode) error {
 	return r.publisher.BroadcastToAllNodes(ctx, msg, mode)
 }
 

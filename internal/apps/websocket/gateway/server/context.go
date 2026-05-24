@@ -1,4 +1,4 @@
-package svc
+package server
 
 import (
 	"fmt"
@@ -7,11 +7,10 @@ import (
 	"os"
 
 	"IM2/internal/apps/websocket/gateway/config"
-	"IM2/internal/apps/websocket/gateway/internal/connection"
+	"IM2/internal/apps/websocket/gateway/connection"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
-	"IM2/internal/apps/websocket/gateway/internal/pubsub"
-	"IM2/internal/apps/websocket/gateway/internal/router"
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
+	"IM2/internal/apps/websocket/gateway/router"
 	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/bwmarrin/snowflake"
@@ -25,7 +24,7 @@ type ServiceContext struct {
 	Config            config.Config
 	ConnectionManager connection.Manager
 	Router            *router.Router
-	Subscriber        *pubsub.Subscriber
+	Subscriber        *router.Subscriber
 	RedisClient       *redis.Client
 	NatsConn          *nats.Conn
 	JetStream         nats.JetStreamContext
@@ -82,7 +81,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	bus.RegisterHandler(telemetry.DefaultLogHandler)
 
 	// 创建路由器
-	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus, pubsub.SubjectConfig{
+	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus, router.SubjectConfig{
 		NodeSubjectPrefix:     c.Nats.NodeSubjectPrefix,
 		DBSubject:             c.Nats.DBSubject,
 		BroadcastSubject:      c.Nats.BroadcastSubject,
@@ -93,7 +92,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	connMgr := connection.NewDefaultManager(nodeID, r)
 
 	// 创建订阅者
-	sub := pubsub.NewSubscriber(natsConn, codec, nodeID, bus)
+	sub := router.NewSubscriber(natsConn, codec, nodeID, bus)
 
 	svc := &ServiceContext{
 		Config:            c,

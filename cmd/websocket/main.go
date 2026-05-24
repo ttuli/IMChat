@@ -6,9 +6,8 @@ import (
 	"log"
 
 	"IM2/internal/apps/websocket/gateway/config"
-	"IM2/internal/apps/websocket/gateway/handler"
 	gwserver "IM2/internal/apps/websocket/gateway/server"
-	"IM2/internal/apps/websocket/gateway/svc"
+	"IM2/internal/apps/websocket/gateway/transport"
 	configparser "IM2/pkg/configParser"
 	"IM2/pkg/logger"
 	service "IM2/pkg/service"
@@ -31,11 +30,11 @@ func main() {
 			return fmt.Errorf("config types error")
 		}
 
-		svcCtx := svc.NewServiceContext(*c)
+		svcCtx := gwserver.NewServiceContext(*c)
 		wsServer = gwserver.NewGatewayServer(svcCtx)
 
 		// 注册路由
-		handler.RegisterHandlers(server, svcCtx)
+		transport.RegisterHandlers(server, svcCtx)
 		return nil
 	}
 

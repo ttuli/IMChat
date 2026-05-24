@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"IM2/internal/apps/websocket/gateway/internal/pubsub"
+	"IM2/internal/apps/websocket/gateway/router"
 
 	"IM2/pkg/proto/transport"
 
@@ -54,7 +54,7 @@ type DefaultManager struct {
 	userGroups map[uint64][]uint64
 
 	nodeID string
-	router MessageRouter
+	msgRouter MessageRouter
 }
 
 // MessageRouter 消息路由接口(用于跨节点通信)
@@ -62,14 +62,14 @@ type MessageRouter interface {
 	// RouteMessage 路由消息到目标用户
 	RouteMessage(ctx context.Context, targetUserID uint64, msg *transport.WSMessage) error
 	// BroadcastToAllNodes 广播消息到所有节点（BroadcastAll: 所有节点消费; BroadcastQueue: 仅一个节点消费）
-	BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode pubsub.BroadcastMode) error
+	BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode router.BroadcastMode) error
 }
 
 // NewDefaultManager 创建默认连接管理器
-func NewDefaultManager(nodeID string, router MessageRouter) *DefaultManager {
+func NewDefaultManager(nodeID string, msgRouter MessageRouter) *DefaultManager {
 	return &DefaultManager{
 		nodeID:       nodeID,
-		router:       router,
+		msgRouter:    msgRouter,
 		groupMembers: make(map[uint64]map[uint64]struct{}),
 		userGroups:   make(map[uint64][]uint64),
 	}
@@ -176,8 +176,8 @@ func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *tra
 	}
 
 	// 本地没有连接，通过路由器转发
-	if m.router != nil {
-		if err := m.router.RouteMessage(ctx, userID, msg); err != nil {
+	if m.msgRouter != nil {
+		if err := m.msgRouter.RouteMessage(ctx, userID, msg); err != nil {
 			return err
 		}
 		return nil
@@ -188,8 +188,8 @@ func (m *DefaultManager) SendToUser(ctx context.Context, userID uint64, msg *tra
 
 func (m *DefaultManager) SendToGroup(ctx context.Context, groupID uint64, msg *transport.WSMessage) error {
 	// 总是广播群消息到其他节点
-	if m.router != nil {
-		return m.router.BroadcastToAllNodes(ctx, msg, pubsub.BroadcastAll)
+	if m.msgRouter != nil {
+		return m.msgRouter.BroadcastToAllNodes(ctx, msg, router.BroadcastAll)
 	}
 	return errors.New("group message routing failed: router not configured")
 }

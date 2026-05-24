@@ -1,13 +1,14 @@
-package handler
+package transport
 
 import (
 	"context"
 	"net/http"
 
 	"IM2/internal/apps/websocket/gateway/config"
-	"IM2/internal/apps/websocket/gateway/internal/connection"
+	"IM2/internal/apps/websocket/gateway/connection"
+	"IM2/internal/apps/websocket/gateway/dispatch"
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
-	"IM2/internal/apps/websocket/gateway/svc"
+	"IM2/internal/apps/websocket/gateway/server"
 
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/resultx"
@@ -25,12 +26,12 @@ var upgrader = websocket.Upgrader{
 
 // WSHandler WebSocket 处理器
 type WSHandler struct {
-	svcCtx *svc.ServiceContext
+	svcCtx *server.ServiceContext
 	codec  protocol.Codec
 }
 
 // NewWSHandler 创建 WebSocket 处理器
-func NewWSHandler(svcCtx *svc.ServiceContext, codec protocol.Codec) *WSHandler {
+func NewWSHandler(svcCtx *server.ServiceContext, codec protocol.Codec) *WSHandler {
 	upgrader.ReadBufferSize = svcCtx.Config.WebSocket.ReadBufferSize
 	upgrader.WriteBufferSize = svcCtx.Config.WebSocket.WriteBufferSize
 	return &WSHandler{svcCtx: svcCtx, codec: codec}
@@ -99,7 +100,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 // createMessageHandler 创建消息处理函数
 func (h *WSHandler) createMessageHandler(ctx context.Context, conn *connection.Connection) func(*transport.WSMessage) error {
-	msgHandler := NewMessageHandler(h.svcCtx, conn)
+	msgHandler := dispatch.NewDispatcher(h.svcCtx, conn)
 	return func(msg *transport.WSMessage) error {
 		return msgHandler.Handle(ctx, msg)
 	}
