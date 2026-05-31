@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"IM2/pkg/resultx"
@@ -26,13 +27,16 @@ func WithRedisJwtAuth(validator TokenValidator) rest.Middleware {
 			// 1. 提取 token
 			tokenString := tokenmanager.ExtractToken(r)
 			if tokenString == "" {
-				resultx.ErrorCtx(ctx, w, xerr.New(xerr.ErrUnauthorized, "身份已过期"))
+				resultx.ErrorProtoCtx(ctx, w, r, xerr.New(xerr.ErrUnauthorized, "身份已过期"))
 				return
 			}
-
+			fmt.Println(tokenString)
 			// 2. 验证 token
 			userID, err := validator.ValidateToken(ctx, tokenString)
 			if err != nil {
+				fmt.Println("err")
+				fmt.Println(err)
+				fmt.Println("err")
 				if v, ok := err.(*xerr.Error); ok {
 					resultx.ErrorProtoCtx(ctx, w, r, v)
 					return

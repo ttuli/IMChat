@@ -216,8 +216,8 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 						Member: convID,
 					})
 				}
-				// 限制列表长度，保留最近 500 个活跃会话
-				pipe.ZRemRangeByRank(ctx, key, 0, -501)
+				// 为 timeline key 设置 30 天过期时间，避免死号长期占用内存
+				pipe.Expire(ctx, key, 30*24*time.Hour)
 			}
 			return nil
 		})

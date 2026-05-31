@@ -73,7 +73,7 @@ func GetTargetIdFromSessionId(sessionId string, currentUserId uint64) (uint64, e
 }
 
 func IsChatMessage(t transport.MessageType) bool {
-	return t >= transport.MessageType_CHAT_TEXT && t <= transport.MessageType_GROUP_NOTICE
+	return t >= transport.MessageType_CHAT_TEXT && t <= transport.MessageType_MSG_OP_RECALL
 }
 
 func IsNotifyMessage(t transport.MessageType) bool {

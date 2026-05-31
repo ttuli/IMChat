@@ -148,8 +148,8 @@ func (c *Connection) ReadPump(ctx context.Context, handler func(*transport.WSMes
 			return
 		}
 
-		msg, err := c.Codec.Decode(data)
-		if err != nil {
+		msg := &transport.WSMessage{}
+		if err := c.Codec.Decode(data, msg); err != nil {
 			logx.Errorf("[Connection] user %d decode error: %v", c.UserID, err)
 			continue
 		}

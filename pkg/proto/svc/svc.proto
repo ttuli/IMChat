@@ -23,9 +23,9 @@ message MessageSend {
   string conversation_id = 3;
   uint64 sender = 4;
   uint64 target = 5;
-  string content = 6;
-  string media_url = 7;
-  int64 create_time = 8;
-  int32 msg_type = 9;
+  int64 msg_type = 6;
+  int64 timestamp = 7;
+  string preview = 8;
+  bytes payload = 9;
 }
 

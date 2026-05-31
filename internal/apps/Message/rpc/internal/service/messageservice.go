@@ -15,8 +15,8 @@ type MessageService interface {
 	// startSeq/endSeq 负数表示无界；limit≤0 时服务内部兜底 100。
 	GetHistory(ctx context.Context, conversationID string, startSeq, endSeq int64, limit int) ([]*model.Message, error)
 
-	// SendMessage 发送消息、生成序号、广播事件、异步落库
-	SendMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error)
+	// PersistMessage 发送消息、生成序号、广播事件、异步落库
+	PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error)
 
 	// ========== 会话操作 ==========
 

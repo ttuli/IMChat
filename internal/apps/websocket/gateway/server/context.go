@@ -31,6 +31,7 @@ type ServiceContext struct {
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
 	SnowflakeNode     *snowflake.Node
+	Codec             protocol.Codec
 }
 
 // NewServiceContext 创建服务上下文
@@ -92,7 +93,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	connMgr := connection.NewDefaultManager(nodeID, r)
 
 	// 创建订阅者
-	sub := router.NewSubscriber(natsConn, codec, nodeID, bus)
+	sub := router.NewSubscriber(natsConn, nodeID, func(err error) {
+		bus.Publish(err)
+	})
 
 	svc := &ServiceContext{
 		Config:            c,
@@ -105,6 +108,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
 		SnowflakeNode:     sfNode,
+		Codec:             codec,
 	}
 
 	return svc

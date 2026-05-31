@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"IM2/pkg/proto/transport"
+	"fmt"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -14,8 +14,12 @@ func NewProtoCodec() *ProtoCodec {
 	return &ProtoCodec{}
 }
 
-// Encode 编码 WSMessage 为 protobuf 二进制
-func (c *ProtoCodec) Encode(msg *transport.WSMessage) ([]byte, error) {
+// Encode 编码 protobuf 消息为二进制
+func (c *ProtoCodec) Encode(v any) ([]byte, error) {
+	msg, ok := v.(proto.Message)
+	if !ok {
+		return nil, fmt.Errorf("ProtoCodec Encode: expected proto.Message, got %T", v)
+	}
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
@@ -23,11 +27,14 @@ func (c *ProtoCodec) Encode(msg *transport.WSMessage) ([]byte, error) {
 	return data, nil
 }
 
-// Decode 解码 protobuf 二进制为 WSMessage
-func (c *ProtoCodec) Decode(data []byte) (*transport.WSMessage, error) {
-	msg := &transport.WSMessage{}
-	if err := proto.Unmarshal(data, msg); err != nil {
-		return nil, err
+// Decode 解码 protobuf 二进制为目标消息
+func (c *ProtoCodec) Decode(data []byte, v any) error {
+	msg, ok := v.(proto.Message)
+	if !ok {
+		return fmt.Errorf("ProtoCodec Decode: expected proto.Message, got %T", v)
 	}
-	return msg, nil
+	if err := proto.Unmarshal(data, msg); err != nil {
+		return err
+	}
+	return nil
 }

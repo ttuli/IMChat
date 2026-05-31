@@ -103,57 +103,52 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 	if err := proto.Unmarshal(msg.Data, &m); err != nil {
 		return fmt.Errorf("[NatsListener] unmarshal error: %v", err)
 	}
-
 	ctx, cancel := context.WithTimeout(l.ctx, 5*time.Second)
 	defer cancel()
 
-	dbMsg, err := l.svc.SendMessage(ctx, &m)
+	dbMsg, err := l.svc.PersistMessage(ctx, &m)
 	if err != nil {
+		// 持久化失败：直接发裸 PersistAck bytes，由 WS 层的 QueueSubscribeRaw handler 解码
 		pack := &message.PersistAck{
 			MsgId:     m.MsgId,
 			ClientId:  m.ClientId,
 			SessionId: m.ConversationId,
-			SendTime:  m.CreateTime,
+			Target:    m.Sender,
 			AckStatus: message.AckStatus_ACK_STATUS_FAILED,
 		}
-		data, _ := proto.Marshal(pack)
-		rt := transport.TargetType_USER
-		if util.IsGroupSession(m.ConversationId) {
-			rt = transport.TargetType_GROUP
+		if data, err2 := proto.Marshal(pack); err2 == nil {
+			if pubErr := l.conn.Publish(l.c.Listener.AckSubject, data); pubErr != nil {
+				logger.Error(pubErr.Error())
+			}
 		}
-		wsmsg := &transport.WSMessage{
-			Type:            transport.MessageType_MSG_PERSIST_ACK,
-			Payload:         data,
-			RouteTarget:     []uint64{m.Target},
-			Timestamp:       m.CreateTime,
-			RouteTargetType: rt,
-			SenderId:        m.Sender,
-		}
-		data, _ = proto.Marshal(wsmsg)
-		err = l.conn.Publish(l.c.Listener.AckSubject, data)
-		if err != nil {
-			logger.Error(err.Error())
-		}
-		return fmt.Errorf("[NatsListener] SendMessage error: %v", err)
+		return fmt.Errorf("[NatsListener] PersistMessage error: %v", err)
 	} else {
+		// 1. 发二级 ACK 给发送方：直接发裸 PersistAck bytes（AckSubject 用 QueueSubscribeRaw 接收）
 		pack := &message.PersistAck{
 			MsgId:     dbMsg.MsgID,
 			ClientId:  dbMsg.ClientID,
 			SessionId: dbMsg.ConversationID,
-			Seq:       int64(dbMsg.Seq),
-			Content:   dbMsg.Content,
-			MediaUrl:  dbMsg.MediaURL,
-			MsgType:   int32(dbMsg.MsgType),
-			SendTime:  dbMsg.CreateTime.UnixMilli(),
-			Status:    int32(dbMsg.Status),
-			Sender:    dbMsg.FromUserID,
-			Target:    m.Target,
+			Target:    m.Sender,
 			AckStatus: message.AckStatus_ACK_STATUS_SUCCESS,
 		}
-		data, _ := proto.Marshal(pack)
-		err = l.conn.Publish(l.c.Listener.AckSubject, data)
-		if err != nil {
-			logger.Error(err.Error())
+		if ackData, err2 := proto.Marshal(pack); err2 == nil {
+			if pubErr := l.conn.Publish(l.c.Listener.AckSubject, ackData); pubErr != nil {
+				logger.Error(pubErr.Error())
+			}
+		}
+
+		// 2. 将消息投递给接收方：BroadcastSubject 依然用 WSMessage（所有 WS 节点广播转发）
+		deliverMsg := &transport.WSMessage{
+			Type:            transport.MessageType(m.MsgType),
+			Payload:         m.Payload,
+			RouteTarget:     []uint64{m.Target},
+			Timestamp:       dbMsg.CreateTime.UnixMilli(),
+			RouteTargetType: transport.TargetType(util.GetConversationType(m.ConversationId)),
+			SenderId:        dbMsg.FromUserID,
+		}
+		deliverMsgData, _ := proto.Marshal(deliverMsg)
+		if pubErr := l.conn.Publish(l.c.Listener.BroadcastSubject, deliverMsgData); pubErr != nil {
+			logger.Error(pubErr.Error())
 		}
 	}
 	return nil

@@ -84,7 +84,7 @@ func (r *Router) GetUserNode(ctx context.Context, userID uint64) (string, error)
 	nodeID, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return "", errors.New("user not connected")
+			return "", nil
 		}
 		r.telemetryBus.Publish(err)
 		return "", err
@@ -107,6 +107,10 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *tra
 	targetNodeID, err := r.GetUserNode(ctx, targetUserID)
 	if err != nil {
 		return err
+	}
+	if targetNodeID == "" {
+		
+		return nil
 	}
 
 	// 如果在本节点，返回错误让调用者处理本地发送

@@ -1,8 +1,11 @@
 package protocol
 
 import (
-	"IM2/pkg/proto/transport"
+	"fmt"
+
 	"IM2/pkg/xerr"
+
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -25,20 +28,27 @@ func NewJSONCodec() *JSONCodec {
 	}
 }
 
-// Encode 编码 WSMessage 为 JSON
-func (c *JSONCodec) Encode(msg *transport.WSMessage) ([]byte, error) {
+// Encode 编码消息为 JSON
+func (c *JSONCodec) Encode(v any) ([]byte, error) {
+	msg, ok := v.(proto.Message)
+	if !ok {
+		return nil, fmt.Errorf("JSONCodec Encode: expected proto.Message, got %T", v)
+	}
 	data, err := c.marshaler.Marshal(msg)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode WSMessage failed")
+		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode failed")
 	}
 	return data, nil
 }
 
-// Decode 解码 JSON 为 WSMessage
-func (c *JSONCodec) Decode(data []byte) (*transport.WSMessage, error) {
-	msg := &transport.WSMessage{}
-	if err := c.unmarshaler.Unmarshal(data, msg); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDecoding, "decode WSMessage failed")
+// Decode 解码 JSON 为目标消息
+func (c *JSONCodec) Decode(data []byte, v any) error {
+	msg, ok := v.(proto.Message)
+	if !ok {
+		return fmt.Errorf("JSONCodec Decode: expected proto.Message, got %T", v)
 	}
-	return msg, nil
+	if err := c.unmarshaler.Unmarshal(data, msg); err != nil {
+		return xerr.Wrap(err, xerr.ErrDecoding, "decode failed")
+	}
+	return nil
 }

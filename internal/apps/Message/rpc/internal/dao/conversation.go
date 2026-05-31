@@ -271,11 +271,16 @@ func (c *ConversationDAO) IncrSeq(ctx context.Context, conversationID string) (u
 		return 0, err
 	}
 
-	if cur <= newCeiling {
+	newBase := newCeiling - uint64(defaultSegmentStep) + 1
+	if cur >= newBase && cur <= newCeiling {
 		// 本次 HINCRBY 拿到的 cur 落在新号段内，直接使用。
 		return cur, nil
 	}
 
+	// cur 不在有效号段内，分两种情况：
+	// 1. cur < newBase：Redis 冷启动，allocSegment 已将 cur_seq 重置到 newBase，
+	//    本次拿到的 cur（如 1）是已用过的旧 seq，必须重试。
+	// 2. cur > newCeiling：并发竞争导致号段耗尽，同样重试。
 	return c.IncrSeq(ctx, conversationID)
 }
 

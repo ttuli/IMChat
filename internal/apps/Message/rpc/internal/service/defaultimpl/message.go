@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/proto/message"
+	"IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
-	"IM2/pkg/logger"
-	"IM2/pkg/proto/svc"
 	"IM2/pkg/xerr"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,9 +30,9 @@ func (s *messageService) GetHistory(ctx context.Context, conversationID string, 
 	return messages, nil
 }
 
-// SendMessage 消费NATS消息、生成序号、广播事件、同步落库
+// PersistMessage 消费NATS消息、生成序号、广播事件、同步落库
 // TODO 改为在消息消费后发送一个ack消息到nats，再由websocket消费发送
-func (s *messageService) SendMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
+func (s *messageService) PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
 	// 1. 生成或递增 Seq
 	seq, err := s.conversationDAO.IncrSeq(ctx, msg.ConversationId)
 	if err != nil {
@@ -44,7 +44,7 @@ func (s *messageService) SendMessage(ctx context.Context, msg *svc.MessageSend) 
 	// 3. 将完整会话状态推送到 SeqSyncer
 	s.conversationDAO.PushSeqUpdate(
 		msg.ConversationId, seq,
-		msg.Content, msg.Sender, msg.CreateTime,
+		msg.Preview, msg.Sender, msg.Timestamp,
 	)
 
 	// 4. 构建 db model 并落库
@@ -55,10 +55,59 @@ func (s *messageService) SendMessage(ctx context.Context, msg *svc.MessageSend) 
 		FromUserID:     msg.Sender,
 		MsgType:        int16(msg.MsgType),
 		Seq:            seq,
-		Content:        msg.Content,
-		MediaURL:       msg.MediaUrl,
 		Status:         int8(status),
-		CreateTime:     time.UnixMilli(msg.CreateTime),
+		CreateTime:     time.UnixMilli(msg.Timestamp),
+	}
+
+	if msg.MsgType == int64(transport.MessageType_CHAT_IMAGE) ||
+		msg.MsgType == int64(transport.MessageType_GROUP_IMAGE) ||
+		msg.MsgType == int64(transport.MessageType_CHAT_VIDEO) ||
+		msg.MsgType == int64(transport.MessageType_GROUP_VIDEO) ||
+		msg.MsgType == int64(transport.MessageType_CHAT_FILE) ||
+		msg.MsgType == int64(transport.MessageType_GROUP_FILE) {
+		switch msg.MsgType {
+		case int64(transport.MessageType_CHAT_IMAGE), int64(transport.MessageType_GROUP_IMAGE):
+			imageMsg := &message.ImageMessage{}
+			if err := proto.Unmarshal(msg.Payload, imageMsg); err != nil {
+				logger.Errorf("Failed to unmarshal image message: %v", err)
+				return nil, err
+			}
+			dbMsg.MediaURL = imageMsg.Url
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE.String()] = imageMsg.Size
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = imageMsg.FileName
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = imageMsg.Format
+
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH.String()] = imageMsg.Width
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT.String()] = imageMsg.Height
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE.String()] = imageMsg.ThumbnailWidth
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT.String()] = imageMsg.ThumbnailHeight
+		case int64(transport.MessageType_CHAT_VIDEO), int64(transport.MessageType_GROUP_VIDEO):
+			videoMsg := &message.VideoMessage{}
+			if err := proto.Unmarshal(msg.Payload, videoMsg); err != nil {
+				logger.Errorf("Failed to unmarshal video message: %v", err)
+				return nil, err
+			}
+			dbMsg.MediaURL = videoMsg.Url
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE.String()] = videoMsg.Size
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = videoMsg.FileName
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_DURATION.String()] = videoMsg.Duration
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = videoMsg.Format
+
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH.String()] = videoMsg.Width
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT.String()] = videoMsg.Height
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE.String()] = videoMsg.ThumbnailWidth
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT.String()] = videoMsg.ThumbnailHeight
+		case int64(transport.MessageType_CHAT_FILE), int64(transport.MessageType_GROUP_FILE):
+			fileMsg := &message.FileMessage{}
+			if err := proto.Unmarshal(msg.Payload, fileMsg); err != nil {
+				logger.Errorf("Failed to unmarshal file message: %v", err)
+				return nil, err
+			}
+			dbMsg.MediaURL = fileMsg.Url
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE.String()] = fileMsg.Size
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = fileMsg.FileName
+			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = fileMsg.Format
+		}
 	}
 
 	if err := s.messageDAO.InsertMessages(ctx, []*model.Message{dbMsg}); err != nil {

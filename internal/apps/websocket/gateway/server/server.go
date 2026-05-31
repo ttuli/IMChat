@@ -60,7 +60,7 @@ func (s *GatewayServer) Start() error {
 		return fmt.Errorf("subscribe notice failed: %w", err)
 	}
 	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.AckSubject,
-		s.svcCtx.Config.Nats.QueueName, s.handleQueueSubscribeMessage); err != nil {
+		s.svcCtx.Config.Nats.QueueName, s.handleAckSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe ack message failed: %w", err)
 	}
 
@@ -108,7 +108,13 @@ func (s *GatewayServer) Stop() error {
 	return nil
 }
 
-func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, msg *transport.WSMessage) error {
+func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte) error {
+	msg := &transport.WSMessage{}
+	if err := s.svcCtx.Codec.Decode(data, msg); err != nil {
+		s.svcCtx.TelemetryBus.Publish(err)
+		return nil
+	}
+
 	// 拦截内部的群组映射跨节点同步消息
 	if msg.Type == transport.MessageType_USER_GROUP_SYNC {
 		var syncMsg protosvc.UserGroupSync
@@ -179,7 +185,13 @@ func (s *GatewayServer) syncGroupMembership(msg *transport.WSMessage) error {
 	return nil
 }
 
-func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *transport.WSMessage) error {
+func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, data []byte) error {
+	msg := &transport.WSMessage{}
+	if err := s.svcCtx.Codec.Decode(data, msg); err != nil {
+		s.svcCtx.TelemetryBus.Publish(err)
+		return nil
+	}
+
 	switch msg.Type {
 	case transport.MessageType_GROUP_REQUEST:
 		var apply social.GroupApply
@@ -200,22 +212,30 @@ func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, msg *tr
 				s.svcCtx.TelemetryBus.Publish(err)
 			}
 		}
-
-	case transport.MessageType_MSG_PERSIST_ACK:
-		var ack message.PersistAck
-		if err := proto.Unmarshal(msg.Payload, &ack); err != nil {
-			s.svcCtx.TelemetryBus.Publish(err)
-			return nil
-		}
-		err := s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Target, msg)
-		if err != nil {
-			s.svcCtx.TelemetryBus.Publish(err)
-		}
-		err = s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Sender, msg)
-		if err != nil {
-			s.svcCtx.TelemetryBus.Publish(err)
-		}
 	}
 
+	return nil
+}
+
+// handleAckSubscribeMessage 处理来自 AckSubject 的裸 PersistAck bytes
+// 将其包装为 WSMessage 发送给目标用户
+func (s *GatewayServer) handleAckSubscribeMessage(ctx context.Context, data []byte) error {
+	var ack message.PersistAck
+	if err := proto.Unmarshal(data, &ack); err != nil {
+		return fmt.Errorf("[handleAckSubscribeMessage] unmarshal PersistAck failed: %w", err)
+	}
+
+	// 将 PersistAck 包成 WSMessage 再发送，客户端统一收 WSMessage 格式
+	ackPayload, err := proto.Marshal(&ack)
+	if err != nil {
+		return fmt.Errorf("[handleAckSubscribeMessage] marshal PersistAck failed: %w", err)
+	}
+	wsMsg := &transport.WSMessage{
+		Type:    transport.MessageType_MSG_PERSIST_ACK,
+		Payload: ackPayload,
+	}
+	if err := s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Target, wsMsg); err != nil {
+		s.svcCtx.TelemetryBus.Publish(err)
+	}
 	return nil
 }

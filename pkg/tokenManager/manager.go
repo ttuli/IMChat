@@ -290,7 +290,7 @@ func (t *TokenManager) ValidateToken(ctx context.Context, tokenString string) (u
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(t.c.JWTConfig.Secret), nil
-	})
+	}, jwt.WithoutClaimsValidation()) // 跳过库的自动 iat/nbf/exp 校验，由下方手动校验（兼容服务间时钟偏差）
 	if err != nil {
 		return 0, fmt.Errorf("invalid token: %w", err)
 	}
@@ -300,12 +300,13 @@ func (t *TokenManager) ValidateToken(ctx context.Context, tokenString string) (u
 		return 0, fmt.Errorf("invalid claims type")
 	}
 
-	// 2. 验证过期时间
+	// 2. 验证过期时间（允许 5s 时钟偏差，兼容本地开发 mirrord 场景）
 	exp, ok := claims["exp"].(float64)
 	if !ok {
 		return 0, fmt.Errorf("exp claim not found or invalid")
 	}
-	if time.Now().Unix() > int64(exp) {
+	const clockSkew = 5 // 秒，容忍服务间时钟偏差
+	if time.Now().Unix() > int64(exp)+clockSkew {
 		return 0, fmt.Errorf("token has expired")
 	}
 

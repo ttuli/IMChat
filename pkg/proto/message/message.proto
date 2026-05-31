@@ -29,6 +29,21 @@ message BaseMessage {
   map<string, string> ext = 10;    // 扩展字段
 }
 
+// 消息额外字段名定义
+enum MessageExtraKey {
+  MESSAGE_EXTRA_KEY_UNSPECIFIED = 0;
+  MESSAGE_EXTRA_KEY_SIZE = 1; // 大小
+  MESSAGE_EXTRA_KEY_NAME = 2; // 名字
+  MESSAGE_EXTRA_KEY_FORMAT = 3; // 格式
+
+  MESSAGE_EXTRA_KEY_WIDTH      = 10;
+  MESSAGE_EXTRA_KEY_HEIGHT     = 11;
+  MESSAGE_EXTRA_KEY_THUMB_WIDE = 12;
+  MESSAGE_EXTRA_KEY_THUMB_HEIGHT = 13;
+
+  MESSAGE_EXTRA_KEY_DURATION = 20;  
+}
+
 // 文本消息
 message TextMessage {
   BaseMessage base = 1;
@@ -47,12 +62,15 @@ message AtInfo {
 // 图片消息
 message ImageMessage {
   BaseMessage base = 1;
-  string url = 2;                 // 图片URL
-  string thumbnail_url = 3;       // 缩略图URL
-  int32 width = 4;                // 宽度
-  int32 height = 5;               // 高度
-  int64 size = 6;                 // 文件大小(字节)
-  string format = 7;              // 图片格式(jpg/png/gif等)
+  string url = 2;                   // 图片URL
+  string thumbnail_url = 3;         // 缩略图URL
+  int32 width = 4;                  // 原图宽度
+  int32 height = 5;                 // 原图高度
+  int32 thumbnail_width = 6;        // 缩略图宽度
+  int32 thumbnail_height = 7;       // 缩略图高度
+  int64 size = 8;                   // 文件大小(字节)
+  string format = 9;                // 图片格式(jpg/png/gif等)
+  string file_name = 10; 
 }
 
 // 视频消息
@@ -63,8 +81,11 @@ message VideoMessage {
   int32 duration = 4;             // 时长(秒)
   int32 width = 5;                // 宽度
   int32 height = 6;               // 高度
-  int64 size = 7;                 // 文件大小
-  string format = 8;              // 视频格式
+  int32 thumbnail_width = 7;        // 缩略图宽度
+  int32 thumbnail_height = 8;       // 缩略图高度
+  int64 size = 9;                 // 文件大小
+  string format = 10;              // 视频格式
+  string file_name = 11; 
 }
 
 // 语音消息
@@ -84,6 +105,7 @@ message FileMessage {
   string file_name = 3;           // 文件名
   int64 size = 4;                 // 文件大小
   string md5 = 6;                 // 文件MD5
+  string format = 7;
 }
 
 // 位置消息
@@ -115,15 +137,8 @@ message PersistAck {
   string msg_id = 1;               // 消息ID
   string client_id = 2;            // 客户端ID
   string session_id = 3;           // 会话ID
-  int64 seq = 4;
-  string content = 5;
-  string mediaUrl = 6;
-  int32 msg_type = 7;
-  int64 send_time = 8;
-  int32 status = 9;
-  uint64 sender = 10;
-  uint64 target = 11;
-  AckStatus ack_status = 12;       // 确认状态
+  uint64 target = 4;
+  AckStatus ack_status = 5;       // 确认状态
 }
 
 enum AckStatus {
