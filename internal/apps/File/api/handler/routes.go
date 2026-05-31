@@ -15,7 +15,6 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
-	server.Use(middleware.WithRedisJwtAuth(serverCtx.TokenManager))
 	server.AddRoutes(
 		[]rest.Route{
 			{
@@ -30,7 +29,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{},
+			[]rest.Middleware{middleware.WithRedisJwtAuth(serverCtx.TokenManager)},
 			[]rest.Route{
 				{
 					// 获取签名
