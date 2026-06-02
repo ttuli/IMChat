@@ -4,7 +4,7 @@ import (
 	"IM2/pkg/proto/message"
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // messageSpec 描述一种消息类型的反序列化规则

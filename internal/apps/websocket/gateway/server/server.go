@@ -231,8 +231,11 @@ func (s *GatewayServer) handleAckSubscribeMessage(ctx context.Context, data []by
 		return fmt.Errorf("[handleAckSubscribeMessage] marshal PersistAck failed: %w", err)
 	}
 	wsMsg := &transport.WSMessage{
-		Type:    transport.MessageType_MSG_PERSIST_ACK,
-		Payload: ackPayload,
+		Timestamp:       ack.Timestamp,
+		RouteTarget:     []uint64{ack.Target},
+		RouteTargetType: transport.TargetType_USER,
+		Type:            transport.MessageType_MSG_PERSIST_ACK,
+		Payload:         ackPayload,
 	}
 	if err := s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Target, wsMsg); err != nil {
 		s.svcCtx.TelemetryBus.Publish(err)

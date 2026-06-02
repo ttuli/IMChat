@@ -30,7 +30,7 @@ const (
 type Connection struct {
 	UserID   uint64
 	DeviceID string
-	Platform string
+	RemoveRT bool
 	Conn     *websocket.Conn
 	Codec    protocol.Codec
 	Version  int32
@@ -43,11 +43,11 @@ type Connection struct {
 }
 
 // NewConnection 创建新连接
-func NewConnection(userID uint64, deviceID, platform string, conn *websocket.Conn, codec protocol.Codec, version int32) *Connection {
+func NewConnection(userID uint64, deviceID string, removeRT bool, conn *websocket.Conn, codec protocol.Codec, version int32) *Connection {
 	return &Connection{
 		UserID:    userID,
 		DeviceID:  deviceID,
-		Platform:  platform,
+		RemoveRT:  removeRT,
 		Conn:      conn,
 		Codec:     codec,
 		Version:   version,

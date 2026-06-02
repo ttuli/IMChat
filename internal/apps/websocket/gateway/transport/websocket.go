@@ -45,7 +45,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	// 从 query 参数获取设备信息
 	deviceID := r.URL.Query().Get("device_id")
-	platform := r.URL.Query().Get("platform")
+	removeRT := r.URL.Query().Get("removeRT") == "true"
 
 	// 升级 HTTP 连接到 WebSocket
 	wsConn, err := upgrader.Upgrade(w, r, nil)
@@ -58,7 +58,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// 创建连接
-	conn := connection.NewConnection(userID, deviceID, platform, wsConn, h.codec, h.svcCtx.Config.WebSocket.Version)
+	conn := connection.NewConnection(userID, deviceID, removeRT, wsConn, h.codec, h.svcCtx.Config.WebSocket.Version)
 	// 注册连接
 	if err := h.svcCtx.ConnectionManager.AddConnection(conn.UserID, conn); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
@@ -83,6 +83,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		// 只删除自己：RemoveConnection 内部按指针比对，不会误删新连接
+		h.svcCtx.TokenManager.InvalidateTokenByUserID(conn.UserID, deviceID, removeRT)
 		h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID, conn)
 		// 只有当 map 中已不存在该 userID 的连接（即本连接确实是最后一个）时才注销路由
 		// 避免旧连接 defer 注销掉新连接刚注册上的路由

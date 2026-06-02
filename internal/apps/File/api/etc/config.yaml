@@ -6,4 +6,4 @@ nacos:
   user: '${NACOS_USER}'
   password: '${NACOS_PASSWORD}'
   dataid: 'file.api'
-  group: 'dev'
+  group: '${NACOS_GROUP}'

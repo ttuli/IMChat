@@ -130,6 +130,7 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 			SessionId: dbMsg.ConversationID,
 			Target:    m.Sender,
 			AckStatus: message.AckStatus_ACK_STATUS_SUCCESS,
+			Timestamp: time.Now().UnixMilli(),
 		}
 		if ackData, err2 := proto.Marshal(pack); err2 == nil {
 			if pubErr := l.conn.Publish(l.c.Listener.AckSubject, ackData); pubErr != nil {

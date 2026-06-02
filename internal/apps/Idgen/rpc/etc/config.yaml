@@ -6,5 +6,5 @@ nacos:
   user: '${NACOS_USER}'
   password: '${NACOS_PASSWORD}'
   dataid: 'idgen.rpc'
-  group: 'dev'
+  group: '${NACOS_GROUP}'
 

@@ -56,6 +56,7 @@ func (s *messageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		MsgType:        int16(msg.MsgType),
 		Seq:            seq,
 		Status:         int8(status),
+		Content:        msg.Preview,
 		CreateTime:     time.UnixMilli(msg.Timestamp),
 	}
 

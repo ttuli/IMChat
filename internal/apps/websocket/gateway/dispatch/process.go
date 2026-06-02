@@ -22,6 +22,7 @@ func (h *Dispatcher) processMessage(msg *transport.WSMessage) error {
 		logger.Errorf("[Dispatcher] prepare message failed: %v", err)
 		return err
 	}
+	fmt.Printf("\n%s\n", preview)
 
 	// 验证目标
 	if base.Target == 0 {

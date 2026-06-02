@@ -42,7 +42,7 @@ func NewErrorWSMessage(code int32, message string) *transport.WSMessage {
 
 func NewAckMessage(base *message.BaseMessage, st message.AckStatus) *transport.WSMessage {
 	wm := &transport.WSMessage{
-		Timestamp: time.Now().UnixMilli(),
+		Timestamp: base.SendTime,
 		Type:      transport.MessageType_MSG_ACK,
 	}
 	ack := &message.MessageAck{

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v3.19.4
-// source: pkg/proto/message/message.proto
+// source: IMChat/pkg/proto/message/message.proto
 
 package message
 
@@ -67,11 +67,11 @@ func (x MessageStatus) String() string {
 }
 
 func (MessageStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_pkg_proto_message_message_proto_enumTypes[0].Descriptor()
+	return file_IMChat_pkg_proto_message_message_proto_enumTypes[0].Descriptor()
 }
 
 func (MessageStatus) Type() protoreflect.EnumType {
-	return &file_pkg_proto_message_message_proto_enumTypes[0]
+	return &file_IMChat_pkg_proto_message_message_proto_enumTypes[0]
 }
 
 func (x MessageStatus) Number() protoreflect.EnumNumber {
@@ -80,7 +80,7 @@ func (x MessageStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MessageStatus.Descriptor instead.
 func (MessageStatus) EnumDescriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{0}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{0}
 }
 
 // 消息额外字段名定义
@@ -135,11 +135,11 @@ func (x MessageExtraKey) String() string {
 }
 
 func (MessageExtraKey) Descriptor() protoreflect.EnumDescriptor {
-	return file_pkg_proto_message_message_proto_enumTypes[1].Descriptor()
+	return file_IMChat_pkg_proto_message_message_proto_enumTypes[1].Descriptor()
 }
 
 func (MessageExtraKey) Type() protoreflect.EnumType {
-	return &file_pkg_proto_message_message_proto_enumTypes[1]
+	return &file_IMChat_pkg_proto_message_message_proto_enumTypes[1]
 }
 
 func (x MessageExtraKey) Number() protoreflect.EnumNumber {
@@ -148,7 +148,7 @@ func (x MessageExtraKey) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MessageExtraKey.Descriptor instead.
 func (MessageExtraKey) EnumDescriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{1}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{1}
 }
 
 type AckStatus int32
@@ -184,11 +184,11 @@ func (x AckStatus) String() string {
 }
 
 func (AckStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_pkg_proto_message_message_proto_enumTypes[2].Descriptor()
+	return file_IMChat_pkg_proto_message_message_proto_enumTypes[2].Descriptor()
 }
 
 func (AckStatus) Type() protoreflect.EnumType {
-	return &file_pkg_proto_message_message_proto_enumTypes[2]
+	return &file_IMChat_pkg_proto_message_message_proto_enumTypes[2]
 }
 
 func (x AckStatus) Number() protoreflect.EnumNumber {
@@ -197,7 +197,7 @@ func (x AckStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AckStatus.Descriptor instead.
 func (AckStatus) EnumDescriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{2}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{2}
 }
 
 type ConversationType int32
@@ -230,11 +230,11 @@ func (x ConversationType) String() string {
 }
 
 func (ConversationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_pkg_proto_message_message_proto_enumTypes[3].Descriptor()
+	return file_IMChat_pkg_proto_message_message_proto_enumTypes[3].Descriptor()
 }
 
 func (ConversationType) Type() protoreflect.EnumType {
-	return &file_pkg_proto_message_message_proto_enumTypes[3]
+	return &file_IMChat_pkg_proto_message_message_proto_enumTypes[3]
 }
 
 func (x ConversationType) Number() protoreflect.EnumNumber {
@@ -243,7 +243,7 @@ func (x ConversationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConversationType.Descriptor instead.
 func (ConversationType) EnumDescriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{3}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{3}
 }
 
 type NotificationType int32
@@ -282,11 +282,11 @@ func (x NotificationType) String() string {
 }
 
 func (NotificationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_pkg_proto_message_message_proto_enumTypes[4].Descriptor()
+	return file_IMChat_pkg_proto_message_message_proto_enumTypes[4].Descriptor()
 }
 
 func (NotificationType) Type() protoreflect.EnumType {
-	return &file_pkg_proto_message_message_proto_enumTypes[4]
+	return &file_IMChat_pkg_proto_message_message_proto_enumTypes[4]
 }
 
 func (x NotificationType) Number() protoreflect.EnumNumber {
@@ -295,7 +295,7 @@ func (x NotificationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NotificationType.Descriptor instead.
 func (NotificationType) EnumDescriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{4}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{4}
 }
 
 // 基础消息信息
@@ -316,7 +316,7 @@ type BaseMessage struct {
 
 func (x *BaseMessage) Reset() {
 	*x = BaseMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[0]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -328,7 +328,7 @@ func (x *BaseMessage) String() string {
 func (*BaseMessage) ProtoMessage() {}
 
 func (x *BaseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[0]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -341,7 +341,7 @@ func (x *BaseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseMessage.ProtoReflect.Descriptor instead.
 func (*BaseMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{0}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *BaseMessage) GetMsgId() string {
@@ -419,7 +419,7 @@ type TextMessage struct {
 
 func (x *TextMessage) Reset() {
 	*x = TextMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[1]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -431,7 +431,7 @@ func (x *TextMessage) String() string {
 func (*TextMessage) ProtoMessage() {}
 
 func (x *TextMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[1]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -444,7 +444,7 @@ func (x *TextMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextMessage.ProtoReflect.Descriptor instead.
 func (*TextMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{1}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TextMessage) GetBase() *BaseMessage {
@@ -481,7 +481,7 @@ type AtInfo struct {
 
 func (x *AtInfo) Reset() {
 	*x = AtInfo{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[2]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -493,7 +493,7 @@ func (x *AtInfo) String() string {
 func (*AtInfo) ProtoMessage() {}
 
 func (x *AtInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[2]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -506,7 +506,7 @@ func (x *AtInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AtInfo.ProtoReflect.Descriptor instead.
 func (*AtInfo) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{2}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AtInfo) GetUserId() uint64 {
@@ -556,7 +556,7 @@ type ImageMessage struct {
 
 func (x *ImageMessage) Reset() {
 	*x = ImageMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[3]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -568,7 +568,7 @@ func (x *ImageMessage) String() string {
 func (*ImageMessage) ProtoMessage() {}
 
 func (x *ImageMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[3]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -581,7 +581,7 @@ func (x *ImageMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageMessage.ProtoReflect.Descriptor instead.
 func (*ImageMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{3}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ImageMessage) GetBase() *BaseMessage {
@@ -674,7 +674,7 @@ type VideoMessage struct {
 
 func (x *VideoMessage) Reset() {
 	*x = VideoMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[4]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -686,7 +686,7 @@ func (x *VideoMessage) String() string {
 func (*VideoMessage) ProtoMessage() {}
 
 func (x *VideoMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[4]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -699,7 +699,7 @@ func (x *VideoMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VideoMessage.ProtoReflect.Descriptor instead.
 func (*VideoMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{4}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *VideoMessage) GetBase() *BaseMessage {
@@ -794,7 +794,7 @@ type AudioMessage struct {
 
 func (x *AudioMessage) Reset() {
 	*x = AudioMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[5]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -806,7 +806,7 @@ func (x *AudioMessage) String() string {
 func (*AudioMessage) ProtoMessage() {}
 
 func (x *AudioMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[5]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -819,7 +819,7 @@ func (x *AudioMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AudioMessage.ProtoReflect.Descriptor instead.
 func (*AudioMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{5}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AudioMessage) GetBase() *BaseMessage {
@@ -879,7 +879,7 @@ type FileMessage struct {
 
 func (x *FileMessage) Reset() {
 	*x = FileMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[6]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -891,7 +891,7 @@ func (x *FileMessage) String() string {
 func (*FileMessage) ProtoMessage() {}
 
 func (x *FileMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[6]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -904,7 +904,7 @@ func (x *FileMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileMessage.ProtoReflect.Descriptor instead.
 func (*FileMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{6}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *FileMessage) GetBase() *BaseMessage {
@@ -963,7 +963,7 @@ type LocationMessage struct {
 
 func (x *LocationMessage) Reset() {
 	*x = LocationMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[7]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -975,7 +975,7 @@ func (x *LocationMessage) String() string {
 func (*LocationMessage) ProtoMessage() {}
 
 func (x *LocationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[7]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -988,7 +988,7 @@ func (x *LocationMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LocationMessage.ProtoReflect.Descriptor instead.
 func (*LocationMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{7}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *LocationMessage) GetBase() *BaseMessage {
@@ -1038,7 +1038,7 @@ type CustomMessage struct {
 
 func (x *CustomMessage) Reset() {
 	*x = CustomMessage{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[8]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1050,7 +1050,7 @@ func (x *CustomMessage) String() string {
 func (*CustomMessage) ProtoMessage() {}
 
 func (x *CustomMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[8]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1063,7 +1063,7 @@ func (x *CustomMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CustomMessage.ProtoReflect.Descriptor instead.
 func (*CustomMessage) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{8}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *CustomMessage) GetBase() *BaseMessage {
@@ -1100,7 +1100,7 @@ type MessageAck struct {
 
 func (x *MessageAck) Reset() {
 	*x = MessageAck{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[9]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1112,7 +1112,7 @@ func (x *MessageAck) String() string {
 func (*MessageAck) ProtoMessage() {}
 
 func (x *MessageAck) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[9]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1125,7 +1125,7 @@ func (x *MessageAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageAck.ProtoReflect.Descriptor instead.
 func (*MessageAck) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{9}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MessageAck) GetMsgId() string {
@@ -1164,13 +1164,14 @@ type PersistAck struct {
 	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // 会话ID
 	Target        uint64                 `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
 	AckStatus     AckStatus              `protobuf:"varint,5,opt,name=ack_status,json=ackStatus,proto3,enum=message.AckStatus" json:"ack_status,omitempty"` // 确认状态
+	Timestamp     int64                  `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                         // 时间戳
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PersistAck) Reset() {
 	*x = PersistAck{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[10]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1182,7 +1183,7 @@ func (x *PersistAck) String() string {
 func (*PersistAck) ProtoMessage() {}
 
 func (x *PersistAck) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[10]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,7 +1196,7 @@ func (x *PersistAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PersistAck.ProtoReflect.Descriptor instead.
 func (*PersistAck) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{10}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PersistAck) GetMsgId() string {
@@ -1233,6 +1234,13 @@ func (x *PersistAck) GetAckStatus() AckStatus {
 	return AckStatus_ACK_STATUS_SUCCESS
 }
 
+func (x *PersistAck) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
 // 消息已读
 type MessageRead struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -1246,7 +1254,7 @@ type MessageRead struct {
 
 func (x *MessageRead) Reset() {
 	*x = MessageRead{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[11]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1258,7 +1266,7 @@ func (x *MessageRead) String() string {
 func (*MessageRead) ProtoMessage() {}
 
 func (x *MessageRead) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[11]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1271,7 +1279,7 @@ func (x *MessageRead) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageRead.ProtoReflect.Descriptor instead.
 func (*MessageRead) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{11}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MessageRead) GetUserId() uint64 {
@@ -1316,7 +1324,7 @@ type MessageRecall struct {
 
 func (x *MessageRecall) Reset() {
 	*x = MessageRecall{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[12]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1328,7 +1336,7 @@ func (x *MessageRecall) String() string {
 func (*MessageRecall) ProtoMessage() {}
 
 func (x *MessageRecall) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[12]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1341,7 +1349,7 @@ func (x *MessageRecall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageRecall.ProtoReflect.Descriptor instead.
 func (*MessageRecall) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{12}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MessageRecall) GetMsgId() string {
@@ -1398,7 +1406,7 @@ type Conversation struct {
 
 func (x *Conversation) Reset() {
 	*x = Conversation{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[13]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1410,7 +1418,7 @@ func (x *Conversation) String() string {
 func (*Conversation) ProtoMessage() {}
 
 func (x *Conversation) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[13]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1423,7 +1431,7 @@ func (x *Conversation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
 func (*Conversation) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{13}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Conversation) GetConversationId() string {
@@ -1518,7 +1526,7 @@ type SystemNotification struct {
 
 func (x *SystemNotification) Reset() {
 	*x = SystemNotification{}
-	mi := &file_pkg_proto_message_message_proto_msgTypes[14]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1530,7 +1538,7 @@ func (x *SystemNotification) String() string {
 func (*SystemNotification) ProtoMessage() {}
 
 func (x *SystemNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_message_message_proto_msgTypes[14]
+	mi := &file_IMChat_pkg_proto_message_message_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1543,7 +1551,7 @@ func (x *SystemNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemNotification.ProtoReflect.Descriptor instead.
 func (*SystemNotification) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{14}
+	return file_IMChat_pkg_proto_message_message_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SystemNotification) GetNotificationId() string {
@@ -1588,11 +1596,11 @@ func (x *SystemNotification) GetData() map[string]string {
 	return nil
 }
 
-var File_pkg_proto_message_message_proto protoreflect.FileDescriptor
+var File_IMChat_pkg_proto_message_message_proto protoreflect.FileDescriptor
 
-const file_pkg_proto_message_message_proto_rawDesc = "" +
+const file_IMChat_pkg_proto_message_message_proto_rawDesc = "" +
 	"\n" +
-	"\x1fpkg/proto/message/message.proto\x12\amessage\"\xef\x02\n" +
+	"&IMChat/pkg/proto/message/message.proto\x12\amessage\"\xef\x02\n" +
 	"\vBaseMessage\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
@@ -1674,7 +1682,7 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x03 \x01(\tR\tsessionId\x12*\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x12.message.AckStatusR\x06status\"\xaa\x01\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x12.message.AckStatusR\x06status\"\xc8\x01\n" +
 	"\n" +
 	"PersistAck\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
@@ -1683,7 +1691,8 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"session_id\x18\x03 \x01(\tR\tsessionId\x12\x16\n" +
 	"\x06target\x18\x04 \x01(\x04R\x06target\x121\n" +
 	"\n" +
-	"ack_status\x18\x05 \x01(\x0e2\x12.message.AckStatusR\tackStatus\"\x85\x01\n" +
+	"ack_status\x18\x05 \x01(\x0e2\x12.message.AckStatusR\tackStatus\x12\x1c\n" +
+	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\"\x85\x01\n" +
 	"\vMessageRead\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x17\n" +
@@ -1757,20 +1766,20 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\x1aNOTIFICATION_TYPE_SECURITY\x10\x03B\x17Z\x15IM2/pkg/proto/messageb\x06proto3"
 
 var (
-	file_pkg_proto_message_message_proto_rawDescOnce sync.Once
-	file_pkg_proto_message_message_proto_rawDescData []byte
+	file_IMChat_pkg_proto_message_message_proto_rawDescOnce sync.Once
+	file_IMChat_pkg_proto_message_message_proto_rawDescData []byte
 )
 
-func file_pkg_proto_message_message_proto_rawDescGZIP() []byte {
-	file_pkg_proto_message_message_proto_rawDescOnce.Do(func() {
-		file_pkg_proto_message_message_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkg_proto_message_message_proto_rawDesc), len(file_pkg_proto_message_message_proto_rawDesc)))
+func file_IMChat_pkg_proto_message_message_proto_rawDescGZIP() []byte {
+	file_IMChat_pkg_proto_message_message_proto_rawDescOnce.Do(func() {
+		file_IMChat_pkg_proto_message_message_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_IMChat_pkg_proto_message_message_proto_rawDesc), len(file_IMChat_pkg_proto_message_message_proto_rawDesc)))
 	})
-	return file_pkg_proto_message_message_proto_rawDescData
+	return file_IMChat_pkg_proto_message_message_proto_rawDescData
 }
 
-var file_pkg_proto_message_message_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_pkg_proto_message_message_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
-var file_pkg_proto_message_message_proto_goTypes = []any{
+var file_IMChat_pkg_proto_message_message_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_IMChat_pkg_proto_message_message_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_IMChat_pkg_proto_message_message_proto_goTypes = []any{
 	(MessageStatus)(0),         // 0: message.MessageStatus
 	(MessageExtraKey)(0),       // 1: message.MessageExtraKey
 	(AckStatus)(0),             // 2: message.AckStatus
@@ -1794,7 +1803,7 @@ var file_pkg_proto_message_message_proto_goTypes = []any{
 	nil,                        // 20: message.BaseMessage.ExtEntry
 	nil,                        // 21: message.SystemNotification.DataEntry
 }
-var file_pkg_proto_message_message_proto_depIdxs = []int32{
+var file_IMChat_pkg_proto_message_message_proto_depIdxs = []int32{
 	0,  // 0: message.BaseMessage.status:type_name -> message.MessageStatus
 	20, // 1: message.BaseMessage.ext:type_name -> message.BaseMessage.ExtEntry
 	5,  // 2: message.TextMessage.base:type_name -> message.BaseMessage
@@ -1817,27 +1826,27 @@ var file_pkg_proto_message_message_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_pkg_proto_message_message_proto_init() }
-func file_pkg_proto_message_message_proto_init() {
-	if File_pkg_proto_message_message_proto != nil {
+func init() { file_IMChat_pkg_proto_message_message_proto_init() }
+func file_IMChat_pkg_proto_message_message_proto_init() {
+	if File_IMChat_pkg_proto_message_message_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_message_message_proto_rawDesc), len(file_pkg_proto_message_message_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_IMChat_pkg_proto_message_message_proto_rawDesc), len(file_IMChat_pkg_proto_message_message_proto_rawDesc)),
 			NumEnums:      5,
 			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_pkg_proto_message_message_proto_goTypes,
-		DependencyIndexes: file_pkg_proto_message_message_proto_depIdxs,
-		EnumInfos:         file_pkg_proto_message_message_proto_enumTypes,
-		MessageInfos:      file_pkg_proto_message_message_proto_msgTypes,
+		GoTypes:           file_IMChat_pkg_proto_message_message_proto_goTypes,
+		DependencyIndexes: file_IMChat_pkg_proto_message_message_proto_depIdxs,
+		EnumInfos:         file_IMChat_pkg_proto_message_message_proto_enumTypes,
+		MessageInfos:      file_IMChat_pkg_proto_message_message_proto_msgTypes,
 	}.Build()
-	File_pkg_proto_message_message_proto = out.File
-	file_pkg_proto_message_message_proto_goTypes = nil
-	file_pkg_proto_message_message_proto_depIdxs = nil
+	File_IMChat_pkg_proto_message_message_proto = out.File
+	file_IMChat_pkg_proto_message_message_proto_goTypes = nil
+	file_IMChat_pkg_proto_message_message_proto_depIdxs = nil
 }

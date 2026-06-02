@@ -79,8 +79,8 @@ jobs:
           chmod +x ./scripts/docker.sh
 
           # ---- 1. 全局公共代码改动 -> 全量构建 ----
-          # 注意：go.sum 不在触发条件内，仅 go.mod 变动才触发全量构建
-          if echo "$CHANGED_FILES" | grep -qE "^(pkg/|internal/|go\.mod|scripts/)"; then
+          # 触发条件：pkg/、middleware、interceptor、internal/model、go.mod
+          if echo "$CHANGED_FILES" | grep -qE "^(pkg/|internal/middleware/|internal/interceptor/|internal/model/|go\.mod)"; then
               echo "检测到公共依赖或配置被修改，触发全量构建..."
               TAG=$TAG REGISTRY=$REGISTRY ./scripts/docker.sh build-push
               exit 0
@@ -93,6 +93,10 @@ jobs:
               if [[ $file =~ ^cmd/websocket/ ]]; then
                   SERVICES+=("websocket")
               elif [[ $file =~ ^cmd/([a-zA-Z0-9_]+)/(api|rpc|python)/ ]]; then
+                  DOMAIN=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
+                  TYPE="${BASH_REMATCH[2]}"
+                  SERVICES+=("${DOMAIN}-${TYPE}")
+              elif [[ $file =~ ^internal/apps/([a-zA-Z0-9_]+)/(api|rpc)/ ]]; then
                   DOMAIN=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
                   TYPE="${BASH_REMATCH[2]}"
                   SERVICES+=("${DOMAIN}-${TYPE}")

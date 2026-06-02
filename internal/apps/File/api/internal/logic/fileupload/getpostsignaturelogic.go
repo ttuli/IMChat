@@ -143,9 +143,6 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	if err != nil {
 		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取签名失败")
 	}
-	fmt.Println()
-	fmt.Println(callbackParam)
-	fmt.Println()
 	callbackBase64 := base64.StdEncoding.EncodeToString(callback_str)
 	// 构建返回给前端的表单
 	policyToken := &types.PolicyToken{
