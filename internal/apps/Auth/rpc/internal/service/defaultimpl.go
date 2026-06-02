@@ -213,15 +213,6 @@ func (s *AuthServiceImpl) Login(ctx context.Context, req *LoginRequest) (*LoginR
 	return resp, nil
 }
 
-func (s *AuthServiceImpl) Logout(ctx context.Context, req *LogoutRequest) (*LogoutResponse, error) {
-	// 同时删除 access token 和 refresh token
-	err := s.TokenManager.InvalidateTokenByUserID(req.UserID, req.DeviceID, req.RemoveRT)
-	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrTokenGenerate, "登出失败")
-	}
-	return &LogoutResponse{}, nil
-}
-
 func (s *AuthServiceImpl) Refresh(ctx context.Context, req *RefreshReq) (*RefreshResp, error) {
 	resp := &RefreshResp{}
 

@@ -39,7 +39,6 @@ func (s *messageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.ConversationId, err)
 		return nil, err
 	}
-	status := int32(message.MessageStatus_MESSAGE_STATUS_SENT)
 
 	// 3. 将完整会话状态推送到 SeqSyncer
 	s.conversationDAO.PushSeqUpdate(
@@ -55,9 +54,10 @@ func (s *messageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		FromUserID:     msg.Sender,
 		MsgType:        int16(msg.MsgType),
 		Seq:            seq,
-		Status:         int8(status),
+		Status:         int8(message.MessageStatus_MESSAGE_STATUS_DELIVERED),
 		Content:        msg.Preview,
 		CreateTime:     time.UnixMilli(msg.Timestamp),
+		Extra:          make(map[string]any),
 	}
 
 	if msg.MsgType == int64(transport.MessageType_CHAT_IMAGE) ||

@@ -42,11 +42,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		}, []rest.Route{
 			{
 				Method:  http.MethodPost,
-				Path:    "/logout",
-				Handler: jwt.LogoutHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodPost,
 				Path:    "/refresh",
 				Handler: jwt.RefreshHandler(serverCtx),
 			},
