@@ -1,10 +1,10 @@
-package defaultimpl
+package service
 
 import (
 	"context"
 	"time"
 
-	"IM2/internal/model"
+	model "IM2/internal/Entity"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/svc"
@@ -18,21 +18,21 @@ import (
 
 // GetHistory 获取历史消息（基于 Seq 区间分页）
 // startSeq/endSeq 负数表示无界，limit 兜底最大 100。
-func (s *messageService) GetHistory(ctx context.Context, conversationID string, startSeq, endSeq int64, limit int) ([]*model.Message, error) {
+func (s *MessageService) GetHistory(ctx context.Context, conversationID string, startSeq, endSeq int64, limit int) ([]*model.Message, error) {
 	const maxLimit = 100
 	if limit <= 0 || limit > maxLimit {
 		limit = maxLimit
 	}
 	messages, err := s.messageDAO.FindByConversation(ctx, conversationID, startSeq, endSeq, limit)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrDatabase, "查询历史消息失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询历史消息失败")
 	}
 	return messages, nil
 }
 
 // PersistMessage 消费NATS消息、生成序号、广播事件、同步落库
 // TODO 改为在消息消费后发送一个ack消息到nats，再由websocket消费发送
-func (s *messageService) PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
+func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
 	// 1. 生成或递增 Seq
 	seq, err := s.conversationDAO.IncrSeq(ctx, msg.ConversationId)
 	if err != nil {
@@ -124,36 +124,36 @@ func (s *messageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 // 2. 校验是否为发送者本人
 // 3. 校验是否在 2 分钟内
 // 4. 更新消息状态为已撤回
-func (s *messageService) RecallMessage(ctx context.Context, userID uint64, msgID string, sessionID string) error {
+func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID string, sessionID string) error {
 	const recallWindowSeconds = 120 // 撤回时间窗口：2分钟
 
 	// 1. 查询消息
 	msg, err := s.messageDAO.FindByMsgID(ctx, msgID)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return xerr.Wrap(err, xerr.ErrNotFound, "消息不存在")
+			return xerr.Wrap(err, transport.ErrorCode_ERR_NOT_FOUND, "消息不存在")
 		}
-		return xerr.Wrap(err, xerr.ErrDatabase, "查询消息失败")
+		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询消息失败")
 	}
 
 	// 2. 校验发送者
 	if msg.FromUserID != userID {
-		return xerr.Wrap(nil, xerr.ErrForbidden, "只能撤回自己发送的消息")
+		return xerr.Wrap(nil, transport.ErrorCode_ERR_FORBIDDEN, "只能撤回自己发送的消息")
 	}
 
 	// 3. 校验撤回时间窗口
 	if time.Since(msg.CreateTime).Seconds() > recallWindowSeconds {
-		return xerr.Wrap(nil, xerr.ErrForbidden, "超过撤回时间限制")
+		return xerr.Wrap(nil, transport.ErrorCode_ERR_FORBIDDEN, "超过撤回时间限制")
 	}
 
 	// 4. 校验消息状态（避免重复撤回）
 	if msg.Status != 0 {
-		return xerr.Wrap(nil, xerr.ErrForbidden, "该消息已被撤回或删除")
+		return xerr.Wrap(nil, transport.ErrorCode_ERR_FORBIDDEN, "该消息已被撤回或删除")
 	}
 
 	// 5. 更新消息状态为已撤回 (status=1)
 	if err := s.messageDAO.UpdateMessageStatus(ctx, msgID, 1); err != nil {
-		return xerr.Wrap(err, xerr.ErrDatabase, "撤回消息失败")
+		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "撤回消息失败")
 	}
 
 	ws, err := util.NewMessageOperationMsg(transport.MessageType_MSG_OP_RECALL, userID, msg)
@@ -174,7 +174,7 @@ func (s *messageService) RecallMessage(ctx context.Context, userID uint64, msgID
 }
 
 // BulkPersistMessages 批量持久化消息，由 NATS Listener 消费后调用。
-func (s *messageService) BulkPersistMessages(ctx context.Context, msgs []*model.Message) error {
+func (s *MessageService) BulkPersistMessages(ctx context.Context, msgs []*model.Message) error {
 	if len(msgs) == 0 {
 		return nil
 	}

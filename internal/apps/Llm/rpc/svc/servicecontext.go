@@ -9,7 +9,7 @@ import (
 
 type ServiceContext struct {
 	Config     config.Config
-	LlmManager *service.LlmManager
+	LlmService *service.LlmService
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -18,14 +18,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		timeout = 60 * time.Second
 	}
 
-	// Initialize LlmManager
-	manager := service.NewLlmManager()
-
-	doubaoSvc := service.NewDoubaoLlmService(c.Llm.SuggestLlmProvider)
-	manager.Register(service.LlmServiceType_Suggest, doubaoSvc)
+	// Initialize LlmService
+	doubaoSvc := service.NewLlmService(c.Llm.SuggestLlmProvider)
 
 	return &ServiceContext{
 		Config:     c,
-		LlmManager: manager,
+		LlmService: doubaoSvc,
 	}
 }

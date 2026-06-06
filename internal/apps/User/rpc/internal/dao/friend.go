@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 
-	"IM2/internal/model"
+	model "IM2/internal/Entity"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

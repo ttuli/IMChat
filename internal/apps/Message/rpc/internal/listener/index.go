@@ -31,13 +31,13 @@ type NatsListener struct {
 	conn   *nats.Conn
 	js     nats.JetStreamContext
 	c      config.Config
-	svc    service.MessageService
+	svc    *service.MessageService
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
 
-func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext, svc service.MessageService) *NatsListener {
+func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext, svc *service.MessageService) *NatsListener {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &NatsListener{
 		conn:   conn,

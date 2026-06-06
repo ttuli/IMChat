@@ -36,3 +36,43 @@ const (
 	ApplySourceGroup         uint8 = 4 // 群聊
 	ApplySourceRecommend     uint8 = 5 // 推荐
 )
+
+// ==================== 领域方法 ====================
+
+// NewFriendApply 创建新的好友申请
+func NewFriendApply(fromUserID, toUserID uint64, msg string, source uint8) *FriendApply {
+	now := time.Now()
+	return &FriendApply{
+		FromUserID: fromUserID,
+		ToUserID:   toUserID,
+		ApplyMsg:   msg,
+		Status:     ApplyStatusPending,
+		Source:     source,
+		CreateTime: now,
+		HandleTime: now,
+	}
+}
+
+// Accept 同意好友申请
+func (f *FriendApply) Accept() {
+	f.Status = ApplyStatusAccepted
+	f.HandleTime = time.Now()
+}
+
+// Reject 拒绝好友申请
+func (f *FriendApply) Reject(reason string) {
+	f.Status = ApplyStatusRejected
+	f.RejectReason = reason
+	f.HandleTime = time.Now()
+}
+
+// Ignore 忽略好友申请
+func (f *FriendApply) Ignore() {
+	f.Status = ApplyStatusIgnored
+	f.HandleTime = time.Now()
+}
+
+// IsPending 判断是否为待处理状态
+func (f *FriendApply) IsPending() bool {
+	return f.Status == ApplyStatusPending
+}

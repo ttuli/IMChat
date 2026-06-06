@@ -10,7 +10,7 @@ import (
 type Config struct {
 	zrpc.RpcServerConf
 
-	UserRpc zrpc.RpcClientConf
+	AuthDAO string // DSN, e.g. "user:pass@tcp(host:3306)/dbname?parseTime=true"
 
 	TokenConfig tokenmanager.TokenConfig
 

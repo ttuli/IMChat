@@ -23,3 +23,36 @@ const (
 	GroupInviteStatusAccepted uint8 = 2 // 已接受
 	GroupInviteStatusRejected uint8 = 3 // 已拒绝
 )
+
+// ==================== 领域方法 ====================
+
+// NewGroupInvite 创建群邀请
+func NewGroupInvite(groupID, inviterID, inviteeID uint64, msg string) *GroupInvite {
+	now := time.Now()
+	return &GroupInvite{
+		GroupID:    groupID,
+		InviterID:  inviterID,
+		InviteeID:  inviteeID,
+		Status:     GroupInviteStatusPending,
+		InviteMsg:  msg,
+		CreateTime: now,
+		UpdateTime: now,
+	}
+}
+
+// Accept 接受邀请
+func (g *GroupInvite) Accept() {
+	g.Status = GroupInviteStatusAccepted
+	g.UpdateTime = time.Now()
+}
+
+// Reject 拒绝邀请
+func (g *GroupInvite) Reject() {
+	g.Status = GroupInviteStatusRejected
+	g.UpdateTime = time.Now()
+}
+
+// IsPending 是否为待处理状态
+func (g *GroupInvite) IsPending() bool {
+	return g.Status == GroupInviteStatusPending
+}

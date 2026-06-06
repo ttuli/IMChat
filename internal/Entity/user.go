@@ -1,6 +1,11 @@
 package model
 
-import "time"
+import (
+	"errors"
+	"time"
+
+	"IM2/pkg/encrypt"
+)
 
 type UserInfo struct {
 	UserID            uint64    `gorm:"column:user_id;primaryKey;autoIncrement;comment:用户ID (主键)" json:"user_id"`
@@ -21,6 +26,43 @@ func (UserInfo) TableName() string {
 	return "user_info"
 }
 
+// ==================== 工厂方法 ====================
+
+// NewUser 创建新用户（封装字段初始化规则和密码哈希，替代 UserService.CreateUser 的业务逻辑）
+func NewUser(name, rawPassword, phone string) (*UserInfo, error) {
+	if name == "" || rawPassword == "" || phone == "" {
+		return nil, errors.New("name, password and phone are required")
+	}
+	hashedPwd, err := encrypt.GenPasswordHash([]byte(rawPassword))
+	if err != nil {
+		return nil, err
+	}
+	return &UserInfo{
+		UserName:          name,
+		Password:          string(hashedPwd),
+		Phone:             phone,
+		Gender:            GenderUnknown,
+		JoinType:          JoinTypeVerify,
+		Avatar:            "",
+		PersonalSignature: "",
+		Status:            UserStatusNormal,
+	}, nil
+}
+
+// ==================== 领域方法 ====================
+
+// VerifyPassword 验证密码是否匹配（替代 UserService.VerifyPassword 的业务逻辑）
+func (u *UserInfo) VerifyPassword(rawPassword string) bool {
+	return encrypt.ValidatePasswordHash(rawPassword, u.Password)
+}
+
+// IsActive 判断用户是否处于正常状态
+func (u *UserInfo) IsActive() bool {
+	return u.Status == UserStatusNormal
+}
+
+// ==================== 常量 ====================
+
 // 性别常量
 const (
 	GenderMale    uint8 = 1 // 男
@@ -30,8 +72,8 @@ const (
 
 // 注册方式常量
 const (
-	JoinTypeVerify  uint8 = 1 // 需要验证
-	JoinTypeDirect  uint8 = 2 // 直接同意
+	JoinTypeVerify uint8 = 1 // 需要验证
+	JoinTypeDirect uint8 = 2 // 直接同意
 )
 
 // 用户状态常量

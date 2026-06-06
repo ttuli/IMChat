@@ -25,3 +25,35 @@ const (
 	FriendSourceGroup     uint8 = 2 // 群聊
 	FriendSourceRecommend uint8 = 3 // 推荐
 )
+
+// ==================== 领域方法 ====================
+
+// NewUserFriend 创建好友关系
+func NewUserFriend(userID, friendID uint64, source uint8) *UserFriend {
+	return &UserFriend{
+		UserID:     userID,
+		FriendID:   friendID,
+		Source:     source,
+		CreateTime: time.Now(),
+	}
+}
+
+// SetRemark 设置备注
+func (u *UserFriend) SetRemark(remark string) {
+	u.Remark = remark
+}
+
+// SetStarred 设置星标
+func (u *UserFriend) SetStarred(starred bool) {
+	u.Starred = starred
+}
+
+// SetBlocked 设置拉黑
+func (u *UserFriend) SetBlocked(blocked bool) {
+	u.Blocked = blocked
+}
+
+// IsBlocked 是否已拉黑
+func (u *UserFriend) IsBlocked() bool {
+	return u.Blocked
+}

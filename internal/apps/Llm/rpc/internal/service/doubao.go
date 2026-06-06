@@ -11,20 +11,20 @@ import (
 	armodel "github.com/volcengine/volcengine-go-sdk/service/arkruntime/model"
 )
 
-type doubaoLlmService struct {
+type LlmService struct {
 	client *arkruntime.Client
 	c      config.LlmProviderConfig
 }
 
-func NewDoubaoLlmService(c config.LlmProviderConfig) LlmService {
+func NewLlmService(c config.LlmProviderConfig) *LlmService {
 	client := arkruntime.NewClientWithApiKey(
 		c.ApiKey,
 		arkruntime.WithBaseUrl(c.BaseURL),
 	)
-	return &doubaoLlmService{client: client, c: c}
+	return &LlmService{client: client, c: c}
 }
 
-func (s *doubaoLlmService) Suggestions(
+func (s *LlmService) Suggestions(
 	ctx context.Context,
 	messages []Message,
 ) ([]string, error) {

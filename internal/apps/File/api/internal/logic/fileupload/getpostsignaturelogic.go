@@ -15,6 +15,7 @@ import (
 
 	"IM2/internal/apps/File/api/svc"
 	"IM2/internal/apps/File/api/types"
+	"IM2/pkg/proto/transport"
 	tokenmanager "IM2/pkg/tokenManager"
 	"IM2/pkg/xerr"
 
@@ -55,13 +56,13 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 		callbackUrl = l.svcCtx.Config.Oss.ChatImage.CallbackURL
 		product = l.svcCtx.Config.Oss.ChatImage.Product
 	case int32(types.FileType_FileTypeChatFile):
-		region = l.svcCtx.Config.Oss.ChatFile.Region
+		region = l.svcCtx.Config.Oss.ChatFile.Region	
 		bucketName = l.svcCtx.Config.Oss.ChatFile.BucketName
 		dir = l.svcCtx.Config.Oss.ChatFile.Dir
 		callbackUrl = l.svcCtx.Config.Oss.ChatFile.CallbackURL
 		product = l.svcCtx.Config.Oss.ChatFile.Product
 	default:
-		return nil, xerr.New(xerr.ErrInvalidParams, "文件类型不合法")
+		return nil, xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "文件类型不合法")
 	}
 
 	host := fmt.Sprintf("https://%s.oss-%s.aliyuncs.com", bucketName, region)
@@ -78,13 +79,13 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	// 根据配置创建凭证提供器
 	provider, err := credentials.NewCredential(config)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取签名失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取签名失败")
 	}
 
 	// 从凭证提供器获取凭证
 	cred, err := provider.GetCredential()
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取签名失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取签名失败")
 	}
 
 	// 构建policy
@@ -105,7 +106,7 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	// 将policy转换为 JSON 格式
 	policy, err := json.Marshal(policyMap)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取签名失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取签名失败")
 	}
 
 	// 构造待签名字符串（StringToSign）
@@ -141,7 +142,7 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	callbackParam.CallbackBodyType = "application/x-www-form-urlencoded"
 	callback_str, err := json.Marshal(callbackParam)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取签名失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取签名失败")
 	}
 	callbackBase64 := base64.StdEncoding.EncodeToString(callback_str)
 	// 构建返回给前端的表单

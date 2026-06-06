@@ -6,6 +6,7 @@ import (
 	logic "IM2/internal/apps/Auth/api/internal/logic/jwt"
 	"IM2/internal/apps/Auth/api/svc"
 	"IM2/internal/apps/Auth/api/types"
+	"IM2/pkg/proto/transport"
 	tokenmanager "IM2/pkg/tokenManager"
 	"IM2/pkg/xerr"
 
@@ -18,7 +19,7 @@ func RefreshHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.RefreshReq
 		if err := resultx.ParseProto(r, &req); err != nil {
-			resultx.ErrorProtoCtx(r.Context(), w, r, xerr.New(xerr.ErrInvalidParams, "参数错误"))
+			resultx.ErrorProtoCtx(r.Context(), w, r, xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "参数错误"))
 			return
 		}
 

@@ -7,12 +7,12 @@ import (
 
 type ServiceContext struct {
 	Config      config.Config
-	AuthService service.AuthService
+	AuthService *service.AuthService
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:      c,
-		AuthService: service.NewAuthServiceImpl(c),
+		AuthService: service.NewAuthService(c),
 	}
 }

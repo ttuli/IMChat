@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"IM2/internal/model"
+	model "IM2/internal/Entity"
 	"IM2/pkg/logger"
 	"IM2/pkg/redisx"
 
@@ -226,7 +226,6 @@ func (m *UserDAO) setUserCache(ctx context.Context, user *model.UserInfo) {
 	dataStr := string(data)
 	userIDStr := strconv.FormatUint(user.UserID, 10)
 
-	
 	// 使用 Pipeline 原子性批量设置
 	err = m.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
 		p.SetEx(ctx, idKey, dataStr, time.Duration(cacheExpireSeconds)*time.Second)

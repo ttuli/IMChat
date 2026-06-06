@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"IM2/internal/model"
-	"IM2/pkg/proto/util"
+	"IM2/internal/Entity"
 	"IM2/pkg/logger"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/redisx"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"

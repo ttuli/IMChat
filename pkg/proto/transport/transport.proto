@@ -96,13 +96,34 @@ message ErrorMessage {
 
 // 常见错误码定义
 enum ErrorCode {
-  OK = 0;
-  INVALID_PARAM = 1001;           // 参数无效
-  UNAUTHORIZED = 1002;            // 未授权
-  TOKEN_EXPIRED = 1003;           // Token过期
-  USER_NOT_FOUND = 1004;          // 用户不存在
-  MESSAGE_TOO_LARGE = 1005;       // 消息过大
-  RATE_LIMIT = 1006;              // 频率限制
-  SERVER_ERROR = 5000;            // 服务器错误
-  SERVICE_UNAVAILABLE = 5001;     // 服务不可用
+  ERR_UNKNOWN = 0;
+  
+  ERR_INVALID_PARAMS = 1001;
+  ERR_NOT_FOUND = 1002;
+  ERR_PASSWORD_ERROR = 1003;
+  ERR_ALREADY_EXISTS = 1004;
+  ERR_FORBIDDEN = 1005;
+  ERR_UNAUTHORIZED = 1006;
+  ERR_INTERNAL_SERVER = 1007;
+  ERR_TIMEOUT = 1008;
+  ERR_SERVICE_BUSY = 1009;
+  ERR_KICKED_OUT = 1010; // 账号在其他设备登录，被强制下线
+
+  // 业务错误码 2xxx
+  ERR_DATABASE = 2001;
+  ERR_CACHE = 2002;
+  ERR_RPC = 2003;
+  ERR_WEBSOCKET = 2004;
+  ERR_ENCODING = 2005;
+  ERR_DECODING = 2006;
+  ERR_TOKEN_GENERATE = 2007;
+  ERR_AUTH_CODE_ERROR = 2008;
+  ERR_INVALID_ID_TYPE = 2009;
+
+  // WebSocket 错误码 3xxx
+  ERR_WS_UPGRADE = 3001;   // WebSocket 升级失败
+  ERR_WS_SEND = 3002;      // WebSocket 发送消息失败
+  ERR_WS_CLOSED = 3003;    // WebSocket 连接已关闭
+  ERR_WS_NOT_FOUND = 3004; // WebSocket 用户连接不存在
+  ERR_WS_CONN_ADD = 3005;  // WebSocket 连接添加失败
 }

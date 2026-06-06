@@ -24,3 +24,45 @@ const (
 	GroupRoleAdmin  int8 = 2 // 管理员
 	GroupRoleMember int8 = 3 // 普通成员
 )
+
+// ==================== 领域方法 ====================
+
+// NewGroupMember 创建新的群成员
+func NewGroupMember(groupID, userID uint64, role int8) *GroupMember {
+	return &GroupMember{
+		GroupID:  groupID,
+		UserID:   userID,
+		Role:     role,
+		JoinedAt: time.Now(),
+	}
+}
+
+// SetRole 设置成员角色
+func (m *GroupMember) SetRole(role int8) {
+	m.Role = role
+}
+
+// Mute 禁言成员
+func (m *GroupMember) Mute(untilUnix int64) {
+	m.MuteUntil = untilUnix
+}
+
+// Unmute 解除禁言
+func (m *GroupMember) Unmute() {
+	m.MuteUntil = 0
+}
+
+// IsMuted 判断是否被禁言
+func (m *GroupMember) IsMuted() bool {
+	return m.MuteUntil > time.Now().Unix()
+}
+
+// IsOwner 是否为群主
+func (m *GroupMember) IsOwner() bool {
+	return m.Role == GroupRoleOwner
+}
+
+// IsAdmin 是否为管理员
+func (m *GroupMember) IsAdmin() bool {
+	return m.Role == GroupRoleAdmin
+}

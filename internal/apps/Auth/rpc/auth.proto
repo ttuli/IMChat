@@ -5,10 +5,10 @@ package auth;
 option go_package = "./auth";
 
 message LoginRequest {
-  uint64 account   = 1;
-  string password  = 2;
-  string device_id = 3;
-  string platform  = 4;
+  uint64 account    = 1;
+  string password   = 2;
+  string device_id  = 3;
+  bool   remeber_me = 4;
 }
 
 message LoginReply {

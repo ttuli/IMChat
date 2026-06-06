@@ -26,7 +26,7 @@ type LoginRequest struct {
 	Account       uint64                 `protobuf:"varint,1,opt,name=account,proto3" json:"account,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	DeviceId      string                 `protobuf:"bytes,3,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
-	Platform      string                 `protobuf:"bytes,4,opt,name=platform,proto3" json:"platform,omitempty"`
+	RemeberMe     bool                   `protobuf:"varint,4,opt,name=remeber_me,json=remeberMe,proto3" json:"remeber_me,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -82,11 +82,11 @@ func (x *LoginRequest) GetDeviceId() string {
 	return ""
 }
 
-func (x *LoginRequest) GetPlatform() string {
+func (x *LoginRequest) GetRemeberMe() bool {
 	if x != nil {
-		return x.Platform
+		return x.RemeberMe
 	}
-	return ""
+	return false
 }
 
 type LoginReply struct {
@@ -449,12 +449,13 @@ var File_rpc_auth_proto protoreflect.FileDescriptor
 
 const file_rpc_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x0erpc/auth.proto\x12\x04auth\"}\n" +
+	"\x0erpc/auth.proto\x12\x04auth\"\x80\x01\n" +
 	"\fLoginRequest\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\x04R\aaccount\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x1b\n" +
-	"\tdevice_id\x18\x03 \x01(\tR\bdeviceId\x12\x1a\n" +
-	"\bplatform\x18\x04 \x01(\tR\bplatform\"F\n" +
+	"\tdevice_id\x18\x03 \x01(\tR\bdeviceId\x12\x1d\n" +
+	"\n" +
+	"remeber_me\x18\x04 \x01(\bR\tremeberMe\"F\n" +
 	"\n" +
 	"LoginReply\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\"\n" +

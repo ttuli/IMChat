@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"IM2/internal/model"
+	model "IM2/internal/Entity"
 	"IM2/pkg/env"
 
 	"gorm.io/driver/mysql"

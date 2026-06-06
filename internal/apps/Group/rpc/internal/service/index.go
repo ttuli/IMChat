@@ -1,18 +1,17 @@
-package defaultimpl
+package service
 
 import (
 	"IM2/interceptor"
 	"IM2/internal/apps/Group/rpc/config"
 	"IM2/internal/apps/Group/rpc/internal/dao"
-	"IM2/internal/apps/Group/rpc/internal/service"
 	"IM2/internal/apps/Idgen/rpc/idgenclient"
 
 	"github.com/nats-io/nats.go"
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
-// groupService 群组服务实现
-type groupService struct {
+// GroupService 群组服务实现
+type GroupService struct {
 	config      config.Config
 	groupDAO    *dao.GroupDAO
 	applyDAO    *dao.ApplyDAO
@@ -22,7 +21,7 @@ type groupService struct {
 }
 
 // NewGroupService 创建群组服务
-func NewGroupService(c config.Config) service.GroupService {
+func NewGroupService(c config.Config) *GroupService {
 	nc, err := nats.Connect(c.NATS.Url)
 	if err != nil {
 		panic(err)
@@ -31,7 +30,7 @@ func NewGroupService(c config.Config) service.GroupService {
 	if err != nil {
 		panic(err)
 	}
-	return &groupService{
+	return &GroupService{
 		config:   c,
 		groupDAO: dao.NewGroupDAO(c.DAO.GroupDAO.DataSource, c.DAO.GroupDAO.RedisSource),
 		applyDAO: dao.NewApplyDAO(c.DAO.ApplyDAO),

@@ -9,6 +9,7 @@ import (
 
 	"IM2/internal/apps/File/api/svc"
 	"IM2/internal/apps/File/api/types"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/signer"
 	"IM2/pkg/xerr"
 
@@ -41,7 +42,7 @@ func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*type
 		bucketName = l.svcCtx.Config.Oss.ChatFile.BucketName
 		product = l.svcCtx.Config.Oss.ChatFile.Product
 	default:
-		return nil, xerr.New(xerr.ErrInvalidParams, "文件类型不合法")
+		return nil, xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "文件类型不合法")
 	}
 
 	// 2. 获取 STS 临时凭证
@@ -56,12 +57,12 @@ func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*type
 
 	provider, err := stscredentials.NewCredential(config)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取凭证失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取凭证失败")
 	}
 
 	cred, err := provider.GetCredential()
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "获取凭证失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取凭证失败")
 	}
 
 	method:="GET"
@@ -78,7 +79,7 @@ func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*type
 	ossURL := fmt.Sprintf("%s/%s", host, req.FileKey)
 	httpReq, err := http.NewRequest(method, ossURL, nil)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "构造请求失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "构造请求失败")
 	}
 
 	// 3.5 如果有 OSS 图片处理参数，在签名前注入（必须在签名前加入，否则签名校验失败）
@@ -106,7 +107,7 @@ func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*type
 	}
 
 	if err := signerV4.Sign(l.ctx, signingCtx); err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrInternalServer, "签名失败")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "签名失败")
 	}
 
 	// 5. 返回预签名 URL

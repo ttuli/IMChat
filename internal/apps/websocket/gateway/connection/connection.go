@@ -29,8 +29,6 @@ const (
 // Connection WebSocket 连接
 type Connection struct {
 	UserID   uint64
-	DeviceID string
-	RemoveRT bool
 	Conn     *websocket.Conn
 	Codec    protocol.Codec
 	Version  int32
@@ -43,11 +41,9 @@ type Connection struct {
 }
 
 // NewConnection 创建新连接
-func NewConnection(userID uint64, deviceID string, removeRT bool, conn *websocket.Conn, codec protocol.Codec, version int32) *Connection {
+func NewConnection(userID uint64, conn *websocket.Conn, codec protocol.Codec, version int32) *Connection {
 	return &Connection{
 		UserID:    userID,
-		DeviceID:  deviceID,
-		RemoveRT:  removeRT,
 		Conn:      conn,
 		Codec:     codec,
 		Version:   version,

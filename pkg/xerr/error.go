@@ -1,14 +1,14 @@
 package xerr
 
 import (
+	"IM2/pkg/proto/transport"
 	"encoding/json"
 	"fmt"
-	"net/http"
 )
 
 // Error 统一错误结构
 type Error struct {
-	Code    ErrorCode              `json:"code"`
+	Code    transport.ErrorCode    `json:"code"`
 	Message string                 `json:"message"`
 	Details map[string]interface{} `json:"details,omitempty"`
 	Err     error                  `json:"-"` // 原始错误,不序列化
@@ -43,7 +43,7 @@ func (e *Error) WithError(err error) *Error {
 }
 
 // New 创建新错误
-func New(code ErrorCode, message string) *Error {
+func New(code transport.ErrorCode, message string) *Error {
 	return &Error{
 		Code:    code,
 		Message: message,
@@ -51,35 +51,11 @@ func New(code ErrorCode, message string) *Error {
 }
 
 // Wrap 包装已有错误
-func Wrap(err error, code ErrorCode, message string) *Error {
+func Wrap(err error, code transport.ErrorCode, message string) *Error {
 	return &Error{
 		Code:    code,
 		Message: message,
 		Err:     err,
-	}
-}
-
-// HTTPStatus 返回对应的 HTTP 状态码
-func (e *Error) HTTPStatus() int {
-	switch e.Code {
-	case ErrSuccess:
-		return http.StatusOK
-	case ErrInvalidParams:
-		return http.StatusBadRequest
-	case ErrNotFound:
-		return http.StatusNotFound
-	case ErrAlreadyExists:
-		return http.StatusConflict
-	case ErrForbidden:
-		return http.StatusForbidden
-	case ErrUnauthorized:
-		return http.StatusUnauthorized
-	case ErrTimeout:
-		return http.StatusRequestTimeout
-	case ErrServiceBusy:
-		return http.StatusServiceUnavailable
-	default:
-		return http.StatusInternalServerError
 	}
 }
 
@@ -103,7 +79,3 @@ func (e *Error) Reset() {
 func (e *Error) String() string {
 	return e.Error()
 }
-
-// ProtoMessage 实现 protoiface.MessageV1 接口
-// 标记方法，用于标识这是一个 protobuf 消息
-func (e *Error) ProtoMessage() {}

@@ -1,18 +1,17 @@
-package defaultimpl
+package service
 
 import (
 	"IM2/interceptor"
 	"IM2/internal/apps/Idgen/rpc/idgenclient"
 	"IM2/internal/apps/User/rpc/config"
 	"IM2/internal/apps/User/rpc/internal/dao"
-	"IM2/internal/apps/User/rpc/internal/service"
 
 	"github.com/nats-io/nats.go"
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
 // userService 用户服务实现
-type userService struct {
+type UserService struct {
 	config.Config
 	userDAO        *dao.UserDAO
 	friendDAO      *dao.FriendDAO
@@ -23,7 +22,7 @@ type userService struct {
 }
 
 // NewUserService 创建用户服务
-func NewUserService(c config.Config) service.UserService {
+func NewUserService(c config.Config) *UserService {
 	nast, err := nats.Connect(c.NATS.Url)
 	if err != nil {
 		panic(err)
@@ -32,7 +31,7 @@ func NewUserService(c config.Config) service.UserService {
 	if err != nil {
 		panic(err)
 	}
-	return &userService{
+	return &UserService{
 		userDAO:        dao.NewUserDAO(c.DAO.UserDAO.DataSource, c.DAO.UserDAO.RedisSource),
 		friendDAO:      dao.NewFriendDAO(c.DAO.FriendDAO),
 		friendApplyDAO: dao.NewFriendApplyDAO(c.DAO.FriendApplyDAO),

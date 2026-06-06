@@ -7,11 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"IM2/pkg/resultx"
 
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/rest"
-	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 // APISIXConfig APISIX 注册配置
@@ -108,10 +106,6 @@ func (rs *RestService) Load(cfg any) error {
 			rs.apisixCfg.RouteID = uuid.New().String()
 		}
 	}
-
-	// 设置全局响应处理器
-	httpx.SetOkHandler(resultx.OkHandler)
-	httpx.SetErrorHandlerCtx(resultx.ErrorHandler)
 
 	return nil
 }

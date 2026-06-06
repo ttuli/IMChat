@@ -2,15 +2,15 @@ package resultx
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"IM2/pkg/proto/transport"
 	"IM2/pkg/logger"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/xerr"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -23,20 +23,31 @@ type Response struct {
 	Details map[string]interface{} `json:"details,omitempty"` // 错误详情（失败时）
 }
 
-// Success 成功响应
-func Success(data interface{}) *Response {
-	return &Response{
+// OkJsonCtx 成功响应（带数据，带上下文）
+func OkJsonCtx(ctx context.Context, w http.ResponseWriter, data interface{}) {
+	resp := &Response{
 		Code:    200,
 		Message: "success",
 		Data:    data,
 	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		if logger.IsInitialized {
+			logger.Error(fmt.Sprintf("json encode error: %v", err))
+		}
+	}
 }
 
-// Failure 失败响应
-func Failure(err *xerr.Error) (int, *Response) {
-	httpCode := xerr.HTTPStatusFromErrorCode(err.Code)
+// ErrorJsonCtx 错误响应（带上下文）
+func ErrorJsonCtx(ctx context.Context, w http.ResponseWriter, err *xerr.Error) {
+	if err == nil {
+		err = xerr.New(transport.ErrorCode_ERR_UNKNOWN, "未知错误")
+	}
+
 	resp := &Response{
-		Code:    httpCode,
+		Code:    int(err.Code),
 		Message: err.Message,
 	}
 	if len(err.Details) > 0 {
@@ -49,41 +60,14 @@ func Failure(err *xerr.Error) (int, *Response) {
 			fmt.Println(err.Err)
 		}
 	}
-	return httpCode, resp
-}
 
-// OkJsonCtx 成功响应（带数据，带上下文）
-func OkJsonCtx(ctx context.Context, w http.ResponseWriter, data interface{}) {
-	httpx.OkJsonCtx(ctx, w, Success(data))
-}
-
-// ErrorCtx 错误响应（带上下文）
-func ErrorCtx(ctx context.Context, w http.ResponseWriter, err *xerr.Error) {
-	if err == nil {
-		// 如果错误为nil，返回未知错误
-		xerrErr := xerr.New(xerr.ErrUnknown, "未知错误")
-		httpCode, resp := Failure(xerrErr)
-		httpx.WriteJsonCtx(ctx, w, httpCode, resp)
-		return
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(int(err.Code))
+	if e := json.NewEncoder(w).Encode(resp); e != nil {
+		if logger.IsInitialized {
+			logger.Error(fmt.Sprintf("json encode error: %v", e))
+		}
 	}
-
-	httpCode, resp := Failure(err)
-	httpx.WriteJsonCtx(ctx, w, httpCode, resp)
-}
-
-// OkHandler go-zero httpx.SetOkHandler 使用的处理函数
-// 用于统一处理所有成功响应
-func OkHandler(ctx context.Context, data any) any {
-	return Success(data)
-}
-
-// ErrorHandler go-zero 错误处理函数
-// 用于统一处理所有错误响应
-func ErrorHandler(ctx context.Context, err error) (int, any) {
-	if e, ok := err.(*xerr.Error); ok {
-		return Failure(e)
-	}
-	return Failure(xerr.New(xerr.ErrUnknown, "unknown error"))
 }
 
 // OkProtoCtx 根据 Accept 头协商响应格式
@@ -93,10 +77,7 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 	if strings.Contains(r.Header.Get("Accept"), "application/x-protobuf") {
 		data, err := proto.Marshal(msg)
 		if err != nil {
-			httpx.WriteJsonCtx(ctx, w, http.StatusInternalServerError, &Response{
-				Code:    500,
-				Message: "proto marshal failed",
-			})
+			ErrorJsonCtx(ctx, w, xerr.New(transport.ErrorCode_ERR_INTERNAL_SERVER, "proto marshal failed"))
 			return
 		}
 
@@ -107,10 +88,7 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 		}
 		respData, err := proto.Marshal(apiResp)
 		if err != nil {
-			httpx.WriteJsonCtx(ctx, w, http.StatusInternalServerError, &Response{
-				Code:    500,
-				Message: "api response marshal failed",
-			})
+			ErrorJsonCtx(ctx, w, xerr.New(transport.ErrorCode_ERR_INTERNAL_SERVER, "api response marshal failed"))
 			return
 		}
 
@@ -119,7 +97,7 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 		w.Write(respData)
 		return
 	}
-	httpx.OkJsonCtx(ctx, w, msg)
+	OkJsonCtx(ctx, w, msg)
 }
 
 // ErrorProtoCtx 根据 Accept 头协商错误响应格式
@@ -132,9 +110,9 @@ func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 		if customErr, ok := err.(*xerr.Error); ok {
 			e = customErr
 		} else {
-			e = xerr.New(xerr.ErrUnknown, err.Error())
+			e = xerr.New(transport.ErrorCode_ERR_UNKNOWN, err.Error())
 		}
-		ErrorCtx(ctx, w, e)
+		ErrorJsonCtx(ctx, w, e)
 		return
 	}
 
@@ -142,26 +120,31 @@ func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 	if e, ok := err.(*xerr.Error); ok {
 		xerrErr = e
 	} else {
-		xerrErr = xerr.New(xerr.ErrUnknown, err.Error())
+		xerrErr = xerr.New(transport.ErrorCode_ERR_UNKNOWN, err.Error())
 	}
 
-	httpCode := xerr.HTTPStatusFromErrorCode(xerrErr.Code)
 	apiResp := &transport.ApiResponse{
-		Code:    int32(httpCode),
+		Code:    int32(xerrErr.Code),
 		Message: xerrErr.Message,
 		Data:    nil,
+	}
+	if xerrErr.Details != nil {
+		data, err := json.Marshal(xerrErr.Details)
+		if err != nil {
+			// 应该不会发生
+			ErrorJsonCtx(ctx, w, xerr.New(transport.ErrorCode_ERR_INTERNAL_SERVER, "proto marshal failed"))
+			return
+		}
+		apiResp.Data = data
 	}
 
 	respData, marshalErr := proto.Marshal(apiResp)
 	if marshalErr != nil {
-		httpx.WriteJsonCtx(ctx, w, http.StatusInternalServerError, &Response{
-			Code:    500,
-			Message: "api response marshal failed",
-		})
+		ErrorJsonCtx(ctx, w, xerr.New(transport.ErrorCode_ERR_INTERNAL_SERVER, "api response marshal failed"))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/x-protobuf")
-	w.WriteHeader(httpCode)
+	w.WriteHeader(int(xerrErr.Code))
 	w.Write(respData)
 }

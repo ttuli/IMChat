@@ -33,7 +33,7 @@ func (l *SuggestionsLogic) Suggestions(in *llm.SuggestionReq) (*llm.SuggestionRe
 		})
 	}
 
-	reply, err := l.svcCtx.LlmManager.Suggestions(l.ctx, messages)
+	reply, err := l.svcCtx.LlmService.Suggestions(l.ctx, messages)
 	if err != nil {
 		return nil, err
 	}

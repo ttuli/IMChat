@@ -3,6 +3,7 @@ package protocol
 import (
 	"fmt"
 
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/xerr"
 
 	"google.golang.org/protobuf/proto"
@@ -36,7 +37,7 @@ func (c *JSONCodec) Encode(v any) ([]byte, error) {
 	}
 	data, err := c.marshaler.Marshal(msg)
 	if err != nil {
-		return nil, xerr.Wrap(err, xerr.ErrEncoding, "encode failed")
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_ENCODING, "encode failed")
 	}
 	return data, nil
 }
@@ -48,7 +49,7 @@ func (c *JSONCodec) Decode(data []byte, v any) error {
 		return fmt.Errorf("JSONCodec Decode: expected proto.Message, got %T", v)
 	}
 	if err := c.unmarshaler.Unmarshal(data, msg); err != nil {
-		return xerr.Wrap(err, xerr.ErrDecoding, "decode failed")
+		return xerr.Wrap(err, transport.ErrorCode_ERR_DECODING, "decode failed")
 	}
 	return nil
 }

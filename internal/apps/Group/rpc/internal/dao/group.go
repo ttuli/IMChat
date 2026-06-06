@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"IM2/internal/model"
+	model "IM2/internal/Entity"
 	"IM2/pkg/logger"
 	"IM2/pkg/redisx"
 
@@ -16,7 +16,6 @@ import (
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
-
 
 // 缓存过期时间
 const (

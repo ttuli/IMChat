@@ -7,7 +7,7 @@ import (
 
 type ServiceContext struct {
 	Config    config.Config
-	IDService service.IDService
+	IDService *service.IDService
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {

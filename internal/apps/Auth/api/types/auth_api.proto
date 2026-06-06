@@ -12,8 +12,8 @@ message LoginReq {
   string password = 2;
   // @gotags: json:"device_id"
   string device_id = 3;
-  // @gotags: json:"platform"
-  string platform = 4;
+  // @gotags: json:"remeber_me"
+  bool remeber_me = 4;
 }
 
 // LoginResp

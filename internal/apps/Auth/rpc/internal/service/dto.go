@@ -8,10 +8,10 @@ type GetAuthCodeResponse struct {
 }
 
 type LoginRequest struct {
-	Account  uint64
-	Password string
-	DeviceID string
-	Platform string
+	Account   uint64
+	Password  string
+	DeviceID  string
+	RemeberMe bool
 }
 
 type LoginResponse struct {

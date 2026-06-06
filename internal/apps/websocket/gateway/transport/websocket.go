@@ -43,14 +43,10 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// 从 context 中提取用户ID（JWT 已在 HTTP 中间件层验证）
 	userID := tokenmanager.ExtractIDFromCtx(r.Context())
 
-	// 从 query 参数获取设备信息
-	deviceID := r.URL.Query().Get("device_id")
-	removeRT := r.URL.Query().Get("removeRT") == "true"
-
 	// 升级 HTTP 连接到 WebSocket
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		resultx.ErrorCtx(r.Context(), w, xerr.Wrap(err, xerr.ErrWSUpgrade, "建立连接失败"))
+		resultx.ErrorJsonCtx(r.Context(), w, xerr.Wrap(err, transport.ErrorCode_ERR_WS_UPGRADE, "建立连接失败"))
 		return
 	}
 
@@ -58,12 +54,12 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// 创建连接
-	conn := connection.NewConnection(userID, deviceID, removeRT, wsConn, h.codec, h.svcCtx.Config.WebSocket.Version)
+	conn := connection.NewConnection(userID, wsConn, h.codec, h.svcCtx.Config.WebSocket.Version)
 	// 注册连接
 	if err := h.svcCtx.ConnectionManager.AddConnection(conn.UserID, conn); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
 		conn.SendError(&transport.ErrorMessage{
-			ErrorCode: int32(transport.ErrorCode_SERVER_ERROR),
+			ErrorCode: int32(transport.ErrorCode_ERR_INTERNAL_SERVER),
 			ErrorMsg:  "与服务器建立连接失败",
 		})
 		conn.Close()
@@ -74,7 +70,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
 		conn.SendError(&transport.ErrorMessage{
-			ErrorCode: int32(transport.ErrorCode_SERVER_ERROR),
+			ErrorCode: int32(transport.ErrorCode_ERR_INTERNAL_SERVER),
 			ErrorMsg:  "与服务器建立连接失败",
 		})
 		conn.Close()
@@ -83,7 +79,6 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		// 只删除自己：RemoveConnection 内部按指针比对，不会误删新连接
-		h.svcCtx.TokenManager.InvalidateTokenByUserID(conn.UserID, deviceID, removeRT)
 		h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID, conn)
 		// 只有当 map 中已不存在该 userID 的连接（即本连接确实是最后一个）时才注销路由
 		// 避免旧连接 defer 注销掉新连接刚注册上的路由

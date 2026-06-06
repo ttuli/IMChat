@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"IM2/pkg/proto/svc"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/xerr"
 	"context"
 	"errors"
@@ -16,7 +17,7 @@ func ServerErrorInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 	resp, err = handler(ctx, req)
 	if err != nil {
 		if cusErr, ok := err.(*xerr.Error); ok {
-			st := status.New(xerr.ToGRPCCode(cusErr.Code), cusErr.Message)
+			st := status.New(codes.Unknown, cusErr.Message)
 			con := &svc.ErrorResp{
 				Code:    int32(cusErr.Code),
 				Message: cusErr.Message,
@@ -41,18 +42,18 @@ func ClientErrorInterceptor(ctx context.Context, method string, req, reply any, 
 	if err != nil {
 		st, ok := status.FromError(err)
 		if !ok {
-			return xerr.Wrap(err, xerr.ErrInternalServer, "服务器内部错误")
+			return xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "服务器内部错误")
 		} else {
 			for _, detail := range st.Details() {
 				if cusErr, ok := detail.(*svc.ErrorResp); ok {
 					if cusErr.RawError != "" {
-						return xerr.Wrap(errors.New(cusErr.RawError), xerr.ErrorCode(cusErr.Code), cusErr.Message)
+						return xerr.Wrap(errors.New(cusErr.RawError), transport.ErrorCode(cusErr.Code), cusErr.Message)
 					} else {
-						return xerr.Wrap(errors.New(st.Message()), xerr.ErrorCode(cusErr.Code), cusErr.Message)
+						return xerr.Wrap(errors.New(st.Message()), transport.ErrorCode(cusErr.Code), cusErr.Message)
 					}
 				}
 			}
-			return xerr.Wrap(errors.New(st.Message()), xerr.ErrInternalServer, "服务器内部错误")
+			return xerr.Wrap(errors.New(st.Message()), transport.ErrorCode_ERR_INTERNAL_SERVER, "服务器内部错误")
 		}
 	}
 	return nil

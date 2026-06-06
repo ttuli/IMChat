@@ -226,40 +226,90 @@ func (MessageType) EnumDescriptor() ([]byte, []int) {
 type ErrorCode int32
 
 const (
-	ErrorCode_OK                  ErrorCode = 0
-	ErrorCode_INVALID_PARAM       ErrorCode = 1001 // 参数无效
-	ErrorCode_UNAUTHORIZED        ErrorCode = 1002 // 未授权
-	ErrorCode_TOKEN_EXPIRED       ErrorCode = 1003 // Token过期
-	ErrorCode_USER_NOT_FOUND      ErrorCode = 1004 // 用户不存在
-	ErrorCode_MESSAGE_TOO_LARGE   ErrorCode = 1005 // 消息过大
-	ErrorCode_RATE_LIMIT          ErrorCode = 1006 // 频率限制
-	ErrorCode_SERVER_ERROR        ErrorCode = 5000 // 服务器错误
-	ErrorCode_SERVICE_UNAVAILABLE ErrorCode = 5001 // 服务不可用
+	ErrorCode_ERR_UNKNOWN         ErrorCode = 0
+	ErrorCode_ERR_INVALID_PARAMS  ErrorCode = 1001
+	ErrorCode_ERR_NOT_FOUND       ErrorCode = 1002
+	ErrorCode_ERR_PASSWORD_ERROR  ErrorCode = 1003
+	ErrorCode_ERR_ALREADY_EXISTS  ErrorCode = 1004
+	ErrorCode_ERR_FORBIDDEN       ErrorCode = 1005
+	ErrorCode_ERR_UNAUTHORIZED    ErrorCode = 1006
+	ErrorCode_ERR_INTERNAL_SERVER ErrorCode = 1007
+	ErrorCode_ERR_TIMEOUT         ErrorCode = 1008
+	ErrorCode_ERR_SERVICE_BUSY    ErrorCode = 1009
+	ErrorCode_ERR_KICKED_OUT      ErrorCode = 1010 // 账号在其他设备登录，被强制下线
+	// 业务错误码 2xxx
+	ErrorCode_ERR_DATABASE        ErrorCode = 2001
+	ErrorCode_ERR_CACHE           ErrorCode = 2002
+	ErrorCode_ERR_RPC             ErrorCode = 2003
+	ErrorCode_ERR_WEBSOCKET       ErrorCode = 2004
+	ErrorCode_ERR_ENCODING        ErrorCode = 2005
+	ErrorCode_ERR_DECODING        ErrorCode = 2006
+	ErrorCode_ERR_TOKEN_GENERATE  ErrorCode = 2007
+	ErrorCode_ERR_AUTH_CODE_ERROR ErrorCode = 2008
+	ErrorCode_ERR_INVALID_ID_TYPE ErrorCode = 2009
+	// WebSocket 错误码 3xxx
+	ErrorCode_ERR_WS_UPGRADE   ErrorCode = 3001 // WebSocket 升级失败
+	ErrorCode_ERR_WS_SEND      ErrorCode = 3002 // WebSocket 发送消息失败
+	ErrorCode_ERR_WS_CLOSED    ErrorCode = 3003 // WebSocket 连接已关闭
+	ErrorCode_ERR_WS_NOT_FOUND ErrorCode = 3004 // WebSocket 用户连接不存在
+	ErrorCode_ERR_WS_CONN_ADD  ErrorCode = 3005 // WebSocket 连接添加失败
 )
 
 // Enum value maps for ErrorCode.
 var (
 	ErrorCode_name = map[int32]string{
-		0:    "OK",
-		1001: "INVALID_PARAM",
-		1002: "UNAUTHORIZED",
-		1003: "TOKEN_EXPIRED",
-		1004: "USER_NOT_FOUND",
-		1005: "MESSAGE_TOO_LARGE",
-		1006: "RATE_LIMIT",
-		5000: "SERVER_ERROR",
-		5001: "SERVICE_UNAVAILABLE",
+		0:    "ERR_UNKNOWN",
+		1001: "ERR_INVALID_PARAMS",
+		1002: "ERR_NOT_FOUND",
+		1003: "ERR_PASSWORD_ERROR",
+		1004: "ERR_ALREADY_EXISTS",
+		1005: "ERR_FORBIDDEN",
+		1006: "ERR_UNAUTHORIZED",
+		1007: "ERR_INTERNAL_SERVER",
+		1008: "ERR_TIMEOUT",
+		1009: "ERR_SERVICE_BUSY",
+		1010: "ERR_KICKED_OUT",
+		2001: "ERR_DATABASE",
+		2002: "ERR_CACHE",
+		2003: "ERR_RPC",
+		2004: "ERR_WEBSOCKET",
+		2005: "ERR_ENCODING",
+		2006: "ERR_DECODING",
+		2007: "ERR_TOKEN_GENERATE",
+		2008: "ERR_AUTH_CODE_ERROR",
+		2009: "ERR_INVALID_ID_TYPE",
+		3001: "ERR_WS_UPGRADE",
+		3002: "ERR_WS_SEND",
+		3003: "ERR_WS_CLOSED",
+		3004: "ERR_WS_NOT_FOUND",
+		3005: "ERR_WS_CONN_ADD",
 	}
 	ErrorCode_value = map[string]int32{
-		"OK":                  0,
-		"INVALID_PARAM":       1001,
-		"UNAUTHORIZED":        1002,
-		"TOKEN_EXPIRED":       1003,
-		"USER_NOT_FOUND":      1004,
-		"MESSAGE_TOO_LARGE":   1005,
-		"RATE_LIMIT":          1006,
-		"SERVER_ERROR":        5000,
-		"SERVICE_UNAVAILABLE": 5001,
+		"ERR_UNKNOWN":         0,
+		"ERR_INVALID_PARAMS":  1001,
+		"ERR_NOT_FOUND":       1002,
+		"ERR_PASSWORD_ERROR":  1003,
+		"ERR_ALREADY_EXISTS":  1004,
+		"ERR_FORBIDDEN":       1005,
+		"ERR_UNAUTHORIZED":    1006,
+		"ERR_INTERNAL_SERVER": 1007,
+		"ERR_TIMEOUT":         1008,
+		"ERR_SERVICE_BUSY":    1009,
+		"ERR_KICKED_OUT":      1010,
+		"ERR_DATABASE":        2001,
+		"ERR_CACHE":           2002,
+		"ERR_RPC":             2003,
+		"ERR_WEBSOCKET":       2004,
+		"ERR_ENCODING":        2005,
+		"ERR_DECODING":        2006,
+		"ERR_TOKEN_GENERATE":  2007,
+		"ERR_AUTH_CODE_ERROR": 2008,
+		"ERR_INVALID_ID_TYPE": 2009,
+		"ERR_WS_UPGRADE":      3001,
+		"ERR_WS_SEND":         3002,
+		"ERR_WS_CLOSED":       3003,
+		"ERR_WS_NOT_FOUND":    3004,
+		"ERR_WS_CONN_ADD":     3005,
 	}
 )
 
@@ -598,18 +648,33 @@ const file_pkg_proto_transport_transport_proto_rawDesc = "" +
 	"\x0eUPDATE_SESSION\x10\xbc\x05\x12\x14\n" +
 	"\x0fUSER_GROUP_SYNC\x10\xbd\x05\x12\n" +
 	"\n" +
-	"\x05ERROR\x10\x84\a*\xb9\x01\n" +
-	"\tErrorCode\x12\x06\n" +
-	"\x02OK\x10\x00\x12\x12\n" +
-	"\rINVALID_PARAM\x10\xe9\a\x12\x11\n" +
-	"\fUNAUTHORIZED\x10\xea\a\x12\x12\n" +
-	"\rTOKEN_EXPIRED\x10\xeb\a\x12\x13\n" +
-	"\x0eUSER_NOT_FOUND\x10\xec\a\x12\x16\n" +
-	"\x11MESSAGE_TOO_LARGE\x10\xed\a\x12\x0f\n" +
-	"\n" +
-	"RATE_LIMIT\x10\xee\a\x12\x11\n" +
-	"\fSERVER_ERROR\x10\x88'\x12\x18\n" +
-	"\x13SERVICE_UNAVAILABLE\x10\x89'B\x19Z\x17IM2/pkg/proto/transportb\x06proto3"
+	"\x05ERROR\x10\x84\a*\x9e\x04\n" +
+	"\tErrorCode\x12\x0f\n" +
+	"\vERR_UNKNOWN\x10\x00\x12\x17\n" +
+	"\x12ERR_INVALID_PARAMS\x10\xe9\a\x12\x12\n" +
+	"\rERR_NOT_FOUND\x10\xea\a\x12\x17\n" +
+	"\x12ERR_PASSWORD_ERROR\x10\xeb\a\x12\x17\n" +
+	"\x12ERR_ALREADY_EXISTS\x10\xec\a\x12\x12\n" +
+	"\rERR_FORBIDDEN\x10\xed\a\x12\x15\n" +
+	"\x10ERR_UNAUTHORIZED\x10\xee\a\x12\x18\n" +
+	"\x13ERR_INTERNAL_SERVER\x10\xef\a\x12\x10\n" +
+	"\vERR_TIMEOUT\x10\xf0\a\x12\x15\n" +
+	"\x10ERR_SERVICE_BUSY\x10\xf1\a\x12\x13\n" +
+	"\x0eERR_KICKED_OUT\x10\xf2\a\x12\x11\n" +
+	"\fERR_DATABASE\x10\xd1\x0f\x12\x0e\n" +
+	"\tERR_CACHE\x10\xd2\x0f\x12\f\n" +
+	"\aERR_RPC\x10\xd3\x0f\x12\x12\n" +
+	"\rERR_WEBSOCKET\x10\xd4\x0f\x12\x11\n" +
+	"\fERR_ENCODING\x10\xd5\x0f\x12\x11\n" +
+	"\fERR_DECODING\x10\xd6\x0f\x12\x17\n" +
+	"\x12ERR_TOKEN_GENERATE\x10\xd7\x0f\x12\x18\n" +
+	"\x13ERR_AUTH_CODE_ERROR\x10\xd8\x0f\x12\x18\n" +
+	"\x13ERR_INVALID_ID_TYPE\x10\xd9\x0f\x12\x13\n" +
+	"\x0eERR_WS_UPGRADE\x10\xb9\x17\x12\x10\n" +
+	"\vERR_WS_SEND\x10\xba\x17\x12\x12\n" +
+	"\rERR_WS_CLOSED\x10\xbb\x17\x12\x15\n" +
+	"\x10ERR_WS_NOT_FOUND\x10\xbc\x17\x12\x14\n" +
+	"\x0fERR_WS_CONN_ADD\x10\xbd\x17B\x19Z\x17IM2/pkg/proto/transportb\x06proto3"
 
 var (
 	file_pkg_proto_transport_transport_proto_rawDescOnce sync.Once

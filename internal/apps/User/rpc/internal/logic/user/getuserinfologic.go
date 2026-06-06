@@ -5,7 +5,7 @@ import (
 
 	"IM2/internal/apps/User/rpc/svc"
 	"IM2/internal/apps/User/rpc/user"
-	"IM2/internal/model"
+	"IM2/internal/Entity"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

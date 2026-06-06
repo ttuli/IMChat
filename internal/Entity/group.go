@@ -17,3 +17,34 @@ type Group struct {
 func (Group) TableName() string {
 	return "group"
 }
+
+// ==================== 领域方法 ====================
+
+// NewGroup 创建新群组
+func NewGroup(ownerID uint64, name, avatar, notice string, joinType int) *Group {
+	now := time.Now()
+	return &Group{
+		OwnerID:     ownerID,
+		Name:        name,
+		Avatar:      avatar,
+		Notice:      notice,
+		MemberCount: 1, // 默认包含群主自己
+		JoinType:    joinType,
+		CreateTime:  now,
+		UpdateTime:  now,
+	}
+}
+
+// UpdateInfo 更新群基本信息
+func (g *Group) UpdateInfo(name, avatar, notice string) {
+	g.Name = name
+	g.Avatar = avatar
+	g.Notice = notice
+	g.UpdateTime = time.Now()
+}
+
+// IncreMember 增加群成员数
+func (g *Group) IncreMember(delta int) {
+	g.MemberCount += delta
+	g.UpdateTime = time.Now()
+}

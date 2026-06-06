@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/resultx"
 	tokenmanager "IM2/pkg/tokenManager"
 	"IM2/pkg/xerr"
@@ -26,7 +27,7 @@ func WithRedisJwtAuth(validator TokenValidator) rest.Middleware {
 			// 1. 提取 token
 			tokenString := tokenmanager.ExtractToken(r)
 			if tokenString == "" {
-				resultx.ErrorProtoCtx(ctx, w, r, xerr.New(xerr.ErrUnauthorized, "身份已过期"))
+				resultx.ErrorProtoCtx(ctx, w, r, xerr.New(transport.ErrorCode_ERR_UNAUTHORIZED, "身份已过期"))
 				return
 			}
 			// 2. 验证 token
@@ -36,7 +37,7 @@ func WithRedisJwtAuth(validator TokenValidator) rest.Middleware {
 					resultx.ErrorProtoCtx(ctx, w, r, v)
 					return
 				}
-				resultx.ErrorProtoCtx(ctx, w, r, xerr.Wrap(err, xerr.ErrUnauthorized, "身份已过期"))
+				resultx.ErrorProtoCtx(ctx, w, r, xerr.Wrap(err, transport.ErrorCode_ERR_UNAUTHORIZED, "身份已过期"))
 				return
 			}
 

@@ -5,7 +5,6 @@ import (
 	"IM2/internal/apps/Message/rpc/internal/dao"
 	"IM2/internal/apps/Message/rpc/internal/listener"
 	"IM2/internal/apps/Message/rpc/internal/service"
-	"IM2/internal/apps/Message/rpc/internal/service/defaultimpl"
 	"IM2/pkg/redisx"
 
 	"github.com/nats-io/nats.go"
@@ -13,7 +12,7 @@ import (
 
 type ServiceContext struct {
 	Config         config.Config
-	MessageService service.MessageService
+	MessageService *service.MessageService
 	ListenService  *listener.NatsListener
 	NatsConn       *nats.Conn
 	Js             nats.JetStreamContext
@@ -37,7 +36,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	msgDao := dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource)
 	convDao := dao.NewConversationDAO(c.DAO.ConversationDAO.Dbsource, c.DAO.ConversationDAO.Redisx)
 
-	msgSvc := defaultimpl.NewMessageService(c, js, conn, msgDao, convDao, redisClient)
+	msgSvc := service.NewMessageService(c, js, conn, msgDao, convDao, redisClient)
 
 	return &ServiceContext{
 		Config:         c,

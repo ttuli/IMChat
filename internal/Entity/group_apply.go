@@ -24,3 +24,44 @@ const (
 	GroupApplyStatusRejected uint8 = 3 // 已拒绝
 	GroupApplyStatusIgnored  uint8 = 4 // 已忽略
 )
+
+// ==================== 领域方法 ====================
+
+// NewGroupApply 创建群组申请
+func NewGroupApply(fromUserID, groupID uint64, msg string) *GroupApply {
+	now := time.Now()
+	return &GroupApply{
+		FromUserID: fromUserID,
+		GroupID:    groupID,
+		ApplyMsg:   msg,
+		Status:     GroupApplyStatusPending,
+		CreateTime: now,
+		UpdateTime: now,
+	}
+}
+
+// Accept 接受群申请
+func (g *GroupApply) Accept(handlerID uint64) {
+	g.Status = GroupApplyStatusAccepted
+	g.HandlerID = handlerID
+	g.UpdateTime = time.Now()
+}
+
+// Reject 拒绝群申请
+func (g *GroupApply) Reject(handlerID uint64) {
+	g.Status = GroupApplyStatusRejected
+	g.HandlerID = handlerID
+	g.UpdateTime = time.Now()
+}
+
+// Ignore 忽略群申请
+func (g *GroupApply) Ignore(handlerID uint64) {
+	g.Status = GroupApplyStatusIgnored
+	g.HandlerID = handlerID
+	g.UpdateTime = time.Now()
+}
+
+// IsPending 是否为待处理状态
+func (g *GroupApply) IsPending() bool {
+	return g.Status == GroupApplyStatusPending
+}

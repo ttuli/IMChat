@@ -7,6 +7,7 @@ import (
 	"IM2/internal/apps/File/api/svc"
 	"IM2/internal/apps/File/api/types"
 	"IM2/internal/apps/User/rpc/user"
+	"IM2/pkg/proto/transport"
 	"IM2/pkg/xerr"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -29,10 +30,10 @@ func NewUploadCallbackLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Up
 
 func (l *UploadCallbackLogic) UploadCallback(req *types.CallbackData) error {
 	if req.FileName == "" {
-		return xerr.New(xerr.ErrInvalidParams, "empty filename")
+		return xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "empty filename")
 	}
 	if req.Id == 0 {
-		return xerr.New(xerr.ErrInvalidParams, "empty id")
+		return xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "empty id")
 	}
 
 	switch types.FileType(req.FileType) {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"IM2/internal/model"
+	model "IM2/internal/Entity"
 	"IM2/pkg/proto/group"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/social"

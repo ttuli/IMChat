@@ -1,16 +1,15 @@
-package defaultimpl
+package service
 
 import (
 	"IM2/internal/apps/Message/rpc/config"
 	"IM2/internal/apps/Message/rpc/internal/dao"
-	"IM2/internal/apps/Message/rpc/internal/service"
 	"IM2/pkg/redisx"
 
 	"github.com/nats-io/nats.go"
 )
 
-// messageService 消息服务实现
-type messageService struct {
+// MessageService 消息服务实现
+type MessageService struct {
 	config.Config
 	messageDAO      *dao.MessageDAO
 	conversationDAO *dao.ConversationDAO
@@ -20,8 +19,8 @@ type messageService struct {
 }
 
 // NewMessageService 创建消息服务
-func NewMessageService(c config.Config, js nats.JetStreamContext, nc *nats.Conn, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO, redisClient *redisx.Client) service.MessageService {
-	return &messageService{
+func NewMessageService(c config.Config, js nats.JetStreamContext, nc *nats.Conn, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO, redisClient *redisx.Client) *MessageService {
+	return &MessageService{
 		Config:          c,
 		messageDAO:      msgDao,
 		conversationDAO: convDao,

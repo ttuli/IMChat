@@ -42,3 +42,68 @@ const (
 func (UserConversation) TableName() string {
 	return "user_conversation"
 }
+
+// ==================== Conversation 领域方法 ====================
+
+// NewConversation 创建新的会话
+func NewConversation(conversationID string, convType int8) *Conversation {
+	now := time.Now()
+	return &Conversation{
+		ConversationID: conversationID,
+		Type:           convType,
+		CreateTime:     now,
+		UpdateTime:     now,
+	}
+}
+
+// IsSingle 判断是否为单聊
+func (c *Conversation) IsSingle() bool {
+	return c.Type == ConvTypeSingle
+}
+
+// IsGroup 判断是否为群聊
+func (c *Conversation) IsGroup() bool {
+	return c.Type == ConvTypeGroup
+}
+
+// UpdateLastMessage 更新最后一条消息状态
+func (c *Conversation) UpdateLastMessage(content string, sender uint64, seq uint64, updateTime time.Time) {
+	c.LastContent = content
+	c.LastSender = sender
+	c.MaxSeq = seq
+	c.UpdateTime = updateTime
+}
+
+// ==================== UserConversation 领域方法 ====================
+
+// NewUserConversation 创建用户会话关系
+func NewUserConversation(userID uint64, conversationID string, maxSeq uint64) *UserConversation {
+	now := time.Now()
+	return &UserConversation{
+		UserID:         userID,
+		ConversationID: conversationID,
+		IsTop:          1, // 默认 1
+		IsDisturb:      1, // 默认 1
+		LastReadSeq:    maxSeq,
+		CreateTime:     now,
+		UpdateTime:     now,
+	}
+}
+
+// SetTop 设置置顶状态
+func (u *UserConversation) SetTop(isTop int8) {
+	u.IsTop = isTop
+	u.UpdateTime = time.Now()
+}
+
+// SetDisturb 设置免打扰状态
+func (u *UserConversation) SetDisturb(isDisturb int8) {
+	u.IsDisturb = isDisturb
+	u.UpdateTime = time.Now()
+}
+
+// ClearUnread 清除未读并更新已读序号
+func (u *UserConversation) ClearUnread(lastReadSeq uint64) {
+	u.LastReadSeq = lastReadSeq
+	u.UpdateTime = time.Now()
+}
