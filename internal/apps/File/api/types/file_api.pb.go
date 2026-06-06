@@ -119,23 +119,23 @@ func (GetMethod) EnumDescriptor() ([]byte, []int) {
 type PolicyToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"policy"
-	Policy string `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	Policy string `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy"`
 	// @gotags: json:"security_token"
-	SecurityToken string `protobuf:"bytes,2,opt,name=security_token,json=securityToken,proto3" json:"security_token,omitempty"`
+	SecurityToken string `protobuf:"bytes,2,opt,name=security_token,json=securityToken,proto3" json:"security_token"`
 	// @gotags: json:"x_oss_signature_version"
-	XOssSignatureVersion string `protobuf:"bytes,3,opt,name=x_oss_signature_version,json=xOssSignatureVersion,proto3" json:"x_oss_signature_version,omitempty"`
+	XOssSignatureVersion string `protobuf:"bytes,3,opt,name=x_oss_signature_version,json=xOssSignatureVersion,proto3" json:"x_oss_signature_version"`
 	// @gotags: json:"x_oss_credential"
-	XOssCredential string `protobuf:"bytes,4,opt,name=x_oss_credential,json=xOssCredential,proto3" json:"x_oss_credential,omitempty"`
+	XOssCredential string `protobuf:"bytes,4,opt,name=x_oss_credential,json=xOssCredential,proto3" json:"x_oss_credential"`
 	// @gotags: json:"x_oss_date"
-	XOssDate string `protobuf:"bytes,5,opt,name=x_oss_date,json=xOssDate,proto3" json:"x_oss_date,omitempty"`
+	XOssDate string `protobuf:"bytes,5,opt,name=x_oss_date,json=xOssDate,proto3" json:"x_oss_date"`
 	// @gotags: json:"signature"
-	Signature string `protobuf:"bytes,6,opt,name=signature,proto3" json:"signature,omitempty"`
+	Signature string `protobuf:"bytes,6,opt,name=signature,proto3" json:"signature"`
 	// @gotags: json:"host"
-	Host string `protobuf:"bytes,7,opt,name=host,proto3" json:"host,omitempty"`
+	Host string `protobuf:"bytes,7,opt,name=host,proto3" json:"host"`
 	// @gotags: json:"dir"
-	Dir string `protobuf:"bytes,8,opt,name=dir,proto3" json:"dir,omitempty"`
+	Dir string `protobuf:"bytes,8,opt,name=dir,proto3" json:"dir"`
 	// @gotags: json:"callback"
-	Callback      string `protobuf:"bytes,9,opt,name=callback,proto3" json:"callback,omitempty"`
+	Callback      string `protobuf:"bytes,9,opt,name=callback,proto3" json:"callback"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -236,11 +236,11 @@ func (x *PolicyToken) GetCallback() string {
 type CallbackParam struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"callbackUrl"
-	CallbackUrl string `protobuf:"bytes,1,opt,name=callbackUrl,proto3" json:"callbackUrl,omitempty"`
+	CallbackUrl string `protobuf:"bytes,1,opt,name=callbackUrl,proto3" json:"callbackUrl"`
 	// @gotags: json:"callbackBody"
-	CallbackBody string `protobuf:"bytes,2,opt,name=callbackBody,proto3" json:"callbackBody,omitempty"`
+	CallbackBody string `protobuf:"bytes,2,opt,name=callbackBody,proto3" json:"callbackBody"`
 	// @gotags: json:"callbackBodyType"
-	CallbackBodyType string `protobuf:"bytes,3,opt,name=callbackBodyType,proto3" json:"callbackBodyType,omitempty"`
+	CallbackBodyType string `protobuf:"bytes,3,opt,name=callbackBodyType,proto3" json:"callbackBodyType"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -299,19 +299,19 @@ func (x *CallbackParam) GetCallbackBodyType() string {
 type CallbackData struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"id,optional" json:"id,optional"
-	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,optional" form:"id,optional"`
 	// @gotags: form:"file_type,optional" json:"file_type,optional"
-	FileType int32 `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty"`
+	FileType int32 `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3" json:"file_type,optional" form:"file_type,optional"`
 	// @gotags: form:"width,optional" json:"width,optional"
-	Width int32 `protobuf:"varint,3,opt,name=width,proto3" json:"width,omitempty"`
+	Width int32 `protobuf:"varint,3,opt,name=width,proto3" json:"width,optional" form:"width,optional"`
 	// @gotags: form:"height,optional" json:"height,optional"
-	Height int32 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
+	Height int32 `protobuf:"varint,4,opt,name=height,proto3" json:"height,optional" form:"height,optional"`
 	// @gotags: form:"size,optional" json:"size,optional"
-	Size uint64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	Size uint64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,optional" form:"size,optional"`
 	// @gotags: form:"file_name,optional" json:"file_name,optional"
-	FileName string `protobuf:"bytes,6,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileName string `protobuf:"bytes,6,opt,name=file_name,json=fileName,proto3" json:"file_name,optional" form:"file_name,optional"`
 	// @gotags: form:"mime_type,optional" json:"mime_type,optional"
-	MimeType      string `protobuf:"bytes,7,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	MimeType      string `protobuf:"bytes,7,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,optional" form:"mime_type,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -398,7 +398,7 @@ func (x *CallbackData) GetMimeType() string {
 type GetPostSignatureReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"file_type,optional" json:"file_type,optional"
-	FileType      int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty"`
+	FileType      int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type,optional" form:"file_type,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -443,13 +443,13 @@ func (x *GetPostSignatureReq) GetFileType() int32 {
 type GetAccessUrlReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"file_key,optional" json:"file_key,optional"
-	FileKey string `protobuf:"bytes,1,opt,name=file_key,json=fileKey,proto3" json:"file_key,omitempty"`
+	FileKey string `protobuf:"bytes,1,opt,name=file_key,json=fileKey,proto3" json:"file_key,optional" form:"file_key,optional"`
 	// @gotags: form:"file_type,optional" json:"file_type,optional"
-	FileType FileType `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,omitempty"`
+	FileType FileType `protobuf:"varint,2,opt,name=file_type,json=fileType,proto3,enum=types.FileType" json:"file_type,optional" form:"file_type,optional"`
 	// @gotags: form:"oss_process,optional" json:"oss_process,optional"
-	OssProcess string `protobuf:"bytes,3,opt,name=oss_process,json=ossProcess,proto3" json:"oss_process,omitempty"`
+	OssProcess string `protobuf:"bytes,3,opt,name=oss_process,json=ossProcess,proto3" json:"oss_process,optional" form:"oss_process,optional"`
 	// @gotags: form:"method,optional" json:"method,optional"
-	Method        GetMethod `protobuf:"varint,4,opt,name=method,proto3,enum=types.GetMethod" json:"method,omitempty"`
+	Method        GetMethod `protobuf:"varint,4,opt,name=method,proto3,enum=types.GetMethod" json:"method,optional" form:"method,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -515,7 +515,7 @@ func (x *GetAccessUrlReq) GetMethod() GetMethod {
 type GetAccessUrlResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"access_url"
-	AccessUrl     string `protobuf:"bytes,1,opt,name=access_url,json=accessUrl,proto3" json:"access_url,omitempty"`
+	AccessUrl     string `protobuf:"bytes,1,opt,name=access_url,json=accessUrl,proto3" json:"access_url"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

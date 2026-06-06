@@ -1,4 +1,8 @@
 #!/bin/bash
+set -e
+
+# 确保 Go 工具链的 bin 目录在 PATH 中（protoc-go-inject-tag 安装在此处）
+export PATH="$PATH:$(go env GOPATH)/bin"
 
 # 获取脚本所在目录及项目根目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,9 +27,10 @@ done
 
 echo "Injecting tags..."
 # 同样限定在 api、pkg 和 internal/types 目录里注入 Tags
-PB_FILES=$(find internal/apps/*/api pkg internal/types -type f -name "*.pb.go" 2>/dev/null)
+PB_FILES=$(find internal/apps/*/api pkg -type f -name "*.pb.go" 2>/dev/null || true)
 for pb in $PB_FILES; do
-    protoc-go-inject-tag -input="$pb" >/dev/null 2>&1
+    echo "  Injecting tags: $pb"
+    protoc-go-inject-tag -input="$pb"
 done
 
 echo "Proto generation completed successfully!"

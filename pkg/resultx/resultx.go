@@ -62,7 +62,7 @@ func ErrorJsonCtx(ctx context.Context, w http.ResponseWriter, err *xerr.Error) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(int(err.Code))
+	w.WriteHeader(500)
 	if e := json.NewEncoder(w).Encode(resp); e != nil {
 		if logger.IsInitialized {
 			logger.Error(fmt.Sprintf("json encode error: %v", e))
@@ -145,6 +145,6 @@ func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 	}
 
 	w.Header().Set("Content-Type", "application/x-protobuf")
-	w.WriteHeader(int(xerrErr.Code))
+	w.WriteHeader(500)
 	w.Write(respData)
 }

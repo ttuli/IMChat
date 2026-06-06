@@ -25,13 +25,13 @@ const (
 type LoginReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"account"
-	Account int64 `protobuf:"varint,1,opt,name=account,proto3" json:"account,omitempty"`
+	Account int64 `protobuf:"varint,1,opt,name=account,proto3" json:"account"`
 	// @gotags: json:"password"
-	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password"`
 	// @gotags: json:"device_id"
-	DeviceId string `protobuf:"bytes,3,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	DeviceId string `protobuf:"bytes,3,opt,name=device_id,json=deviceId,proto3" json:"device_id"`
 	// @gotags: json:"remeber_me"
-	RemeberMe     bool `protobuf:"varint,4,opt,name=remeber_me,json=remeberMe,proto3" json:"remeber_me,omitempty"`
+	RemeberMe     bool `protobuf:"varint,4,opt,name=remeber_me,json=remeberMe,proto3" json:"remeber_me"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -98,9 +98,9 @@ func (x *LoginReq) GetRemeberMe() bool {
 type LoginResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"token"
-	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token"`
 	// @gotags: json:"refresh_token"
-	RefreshToken  string `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	RefreshToken  string `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -153,9 +153,9 @@ func (x *LoginResp) GetRefreshToken() string {
 type LogoutReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"remove_rt"
-	RemoveRt bool `protobuf:"varint,1,opt,name=remove_rt,json=removeRt,proto3" json:"remove_rt,omitempty"`
+	RemoveRt bool `protobuf:"varint,1,opt,name=remove_rt,json=removeRt,proto3" json:"remove_rt"`
 	// @gotags: json:"device_id"
-	DeviceId      string `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	DeviceId      string `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -208,13 +208,13 @@ func (x *LogoutReq) GetDeviceId() string {
 type RegisterReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"name"
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
 	// @gotags: json:"password"
-	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password"`
 	// @gotags: json:"phone"
-	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,omitempty"`
+	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone"`
 	// @gotags: json:"auth_code"
-	AuthCode      string `protobuf:"bytes,4,opt,name=auth_code,json=authCode,proto3" json:"auth_code,omitempty"`
+	AuthCode      string `protobuf:"bytes,4,opt,name=auth_code,json=authCode,proto3" json:"auth_code"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -281,7 +281,7 @@ func (x *RegisterReq) GetAuthCode() string {
 type RegisterResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"id"
-	Id            uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -327,7 +327,7 @@ func (x *RegisterResp) GetId() uint64 {
 type GetAuthCodeReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"phone"
-	Phone         string `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone,omitempty"`
+	Phone         string `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -410,9 +410,9 @@ func (*GetAuthCodeResp) Descriptor() ([]byte, []int) {
 type RefreshReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"device_id"
-	DeviceId string `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	DeviceId string `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id"`
 	// @gotags: json:"platform"
-	Platform string `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform,omitempty"`
+	Platform string `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform"`
 	// @gotags: json:"refresh_token,omitempty"
 	RefreshToken  string `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -474,9 +474,9 @@ func (x *RefreshReq) GetRefreshToken() string {
 type RefreshResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"token"
-	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token"`
 	// @gotags: json:"refresh_token"
-	RefreshToken  string `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	RefreshToken  string `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -25,27 +25,27 @@ const (
 type Message struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"msg_id"
-	MsgId string `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
+	MsgId string `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id"`
 	// @gotags: json:"client_id"
-	ClientId string `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	ClientId string `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id"`
 	// @gotags: json:"conversation_id"
-	ConversationId string `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	ConversationId string `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id"`
 	// @gotags: json:"from_user_id"
-	FromUserId uint64 `protobuf:"varint,4,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id,omitempty"`
+	FromUserId uint64 `protobuf:"varint,4,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id"`
 	// @gotags: json:"msg_type"
-	MsgType int32 `protobuf:"varint,5,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`
+	MsgType int32 `protobuf:"varint,5,opt,name=msg_type,json=msgType,proto3" json:"msg_type"`
 	// @gotags: json:"seq"
-	Seq uint64 `protobuf:"varint,6,opt,name=seq,proto3" json:"seq,omitempty"`
+	Seq uint64 `protobuf:"varint,6,opt,name=seq,proto3" json:"seq"`
 	// @gotags: json:"content"
-	Content string `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
+	Content string `protobuf:"bytes,7,opt,name=content,proto3" json:"content"`
 	// @gotags: json:"media_url"
-	MediaUrl string `protobuf:"bytes,8,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
+	MediaUrl string `protobuf:"bytes,8,opt,name=media_url,json=mediaUrl,proto3" json:"media_url"`
 	// @gotags: json:"extra"
-	Extra string `protobuf:"bytes,9,opt,name=extra,proto3" json:"extra,omitempty"`
+	Extra string `protobuf:"bytes,9,opt,name=extra,proto3" json:"extra"`
 	// @gotags: json:"status"
-	Status int32 `protobuf:"varint,10,opt,name=status,proto3" json:"status,omitempty"`
+	Status int32 `protobuf:"varint,10,opt,name=status,proto3" json:"status"`
 	// @gotags: json:"create_time"
-	CreateTime    int64 `protobuf:"varint,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime    int64 `protobuf:"varint,11,opt,name=create_time,json=createTime,proto3" json:"create_time"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -253,19 +253,19 @@ func (x *Conversation) GetLastSender() uint64 {
 type UserConversation struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"user_id"
-	UserId uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id"`
 	// @gotags: json:"conversation_id"
-	ConversationId string `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	ConversationId string `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id"`
 	// @gotags: json:"is_top"
-	IsTop int32 `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`
+	IsTop int32 `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top"`
 	// @gotags: json:"is_disturb"
-	IsDisturb int32 `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`
+	IsDisturb int32 `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb"`
 	// @gotags: json:"last_read_seq"
-	LastReadSeq uint64 `protobuf:"varint,5,opt,name=last_read_seq,json=lastReadSeq,proto3" json:"last_read_seq,omitempty"`
+	LastReadSeq uint64 `protobuf:"varint,5,opt,name=last_read_seq,json=lastReadSeq,proto3" json:"last_read_seq"`
 	// @gotags: json:"create_time"
-	CreateTime int64 `protobuf:"varint,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime int64 `protobuf:"varint,6,opt,name=create_time,json=createTime,proto3" json:"create_time"`
 	// @gotags: json:"update_time"
-	UpdateTime    int64 `protobuf:"varint,8,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	UpdateTime    int64 `protobuf:"varint,8,opt,name=update_time,json=updateTime,proto3" json:"update_time"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -353,13 +353,13 @@ func (x *UserConversation) GetUpdateTime() int64 {
 type GetHistoryReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"conversation_id,optional" json:"conversation_id,optional"
-	ConversationId string `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	ConversationId string `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,optional" form:"conversation_id,optional"`
 	// @gotags: form:"start_seq,optional" json:"start_seq,optional"
-	StartSeq int64 `protobuf:"varint,2,opt,name=start_seq,json=startSeq,proto3" json:"start_seq,omitempty"`
+	StartSeq int64 `protobuf:"varint,2,opt,name=start_seq,json=startSeq,proto3" json:"start_seq,optional" form:"start_seq,optional"`
 	// @gotags: form:"end_seq,optional" json:"end_seq,optional"
-	EndSeq int64 `protobuf:"varint,3,opt,name=end_seq,json=endSeq,proto3" json:"end_seq,omitempty"`
+	EndSeq int64 `protobuf:"varint,3,opt,name=end_seq,json=endSeq,proto3" json:"end_seq,optional" form:"end_seq,optional"`
 	// @gotags: form:"limit,optional,default=20" json:"limit,optional"
-	Limit         int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit         int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,optional" form:"limit,optional,default=20"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -426,7 +426,7 @@ func (x *GetHistoryReq) GetLimit() int32 {
 type GetHistoryResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"list"
-	List          []*Message `protobuf:"bytes,1,rep,name=list,proto3" json:"list,omitempty"`
+	List          []*Message `protobuf:"bytes,1,rep,name=list,proto3" json:"list"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -472,9 +472,9 @@ func (x *GetHistoryResp) GetList() []*Message {
 type ReadMessageReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"conversation_id"
-	ConversationId string `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	ConversationId string `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id"`
 	// @gotags: json:"seq"
-	Seq           uint64 `protobuf:"varint,2,opt,name=seq,proto3" json:"seq,omitempty"`
+	Seq           uint64 `protobuf:"varint,2,opt,name=seq,proto3" json:"seq"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -527,11 +527,11 @@ func (x *ReadMessageReq) GetSeq() uint64 {
 type UpdateConversationReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"conversation_id"
-	ConversationId string `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	ConversationId string `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id"`
 	// @gotags: json:"is_top,optional"
-	IsTop int32 `protobuf:"varint,2,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`
+	IsTop int32 `protobuf:"varint,2,opt,name=is_top,json=isTop,proto3" json:"is_top,optional"`
 	// @gotags: json:"is_disturb,optional"
-	IsDisturb     int32 `protobuf:"varint,3,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`
+	IsDisturb     int32 `protobuf:"varint,3,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -591,7 +591,7 @@ func (x *UpdateConversationReq) GetIsDisturb() int32 {
 type GetUserConversationsResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"conversations"
-	Conversations []*UserConversation `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations,omitempty"`
+	Conversations []*UserConversation `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -636,7 +636,7 @@ func (x *GetUserConversationsResp) GetConversations() []*UserConversation {
 type GetUserActiveConversationsReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"timestamp,optional" json:"timestamp,optional"
-	Timestamp     int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Timestamp     int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,optional" form:"timestamp,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -681,7 +681,7 @@ func (x *GetUserActiveConversationsReq) GetTimestamp() int64 {
 type GetUserActiveConversationsResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"conversations"
-	Conversations []*Conversation `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations,omitempty"`
+	Conversations []*Conversation `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -726,9 +726,9 @@ func (x *GetUserActiveConversationsResp) GetConversations() []*Conversation {
 type RecallMessageReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"msg_id"
-	MsgId string `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
+	MsgId string `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id"`
 	// @gotags: json:"session_id"
-	SessionId     string `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     string `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

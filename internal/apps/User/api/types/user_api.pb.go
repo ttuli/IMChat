@@ -25,25 +25,25 @@ const (
 type UserInfo struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"user_id"
-	UserId uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id"`
 	// @gotags: json:"user_name"
-	UserName string `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	UserName string `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name"`
 	// @gotags: json:"avatar"
-	Avatar string `protobuf:"bytes,3,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	Avatar string `protobuf:"bytes,3,opt,name=avatar,proto3" json:"avatar"`
 	// @gotags: json:"gender"
-	Gender int32 `protobuf:"varint,4,opt,name=gender,proto3" json:"gender,omitempty"`
+	Gender int32 `protobuf:"varint,4,opt,name=gender,proto3" json:"gender"`
 	// @gotags: json:"phone"
-	Phone string `protobuf:"bytes,5,opt,name=phone,proto3" json:"phone,omitempty"`
+	Phone string `protobuf:"bytes,5,opt,name=phone,proto3" json:"phone"`
 	// @gotags: json:"join_type"
-	JoinType int32 `protobuf:"varint,6,opt,name=join_type,json=joinType,proto3" json:"join_type,omitempty"`
+	JoinType int32 `protobuf:"varint,6,opt,name=join_type,json=joinType,proto3" json:"join_type"`
 	// @gotags: json:"personal_signature"
-	PersonalSignature string `protobuf:"bytes,7,opt,name=personal_signature,json=personalSignature,proto3" json:"personal_signature,omitempty"`
+	PersonalSignature string `protobuf:"bytes,7,opt,name=personal_signature,json=personalSignature,proto3" json:"personal_signature"`
 	// @gotags: json:"status"
-	Status int32 `protobuf:"varint,8,opt,name=status,proto3" json:"status,omitempty"`
+	Status int32 `protobuf:"varint,8,opt,name=status,proto3" json:"status"`
 	// @gotags: json:"create_time"
-	CreateTime int64 `protobuf:"varint,9,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime int64 `protobuf:"varint,9,opt,name=create_time,json=createTime,proto3" json:"create_time"`
 	// @gotags: json:"update_time"
-	UpdateTime    int64 `protobuf:"varint,10,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	UpdateTime    int64 `protobuf:"varint,10,opt,name=update_time,json=updateTime,proto3" json:"update_time"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -152,21 +152,21 @@ func (x *UserInfo) GetUpdateTime() int64 {
 type Friend struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"user_id"
-	UserId uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id"`
 	// @gotags: json:"friend_id"
-	FriendId uint64 `protobuf:"varint,2,opt,name=friend_id,json=friendId,proto3" json:"friend_id,omitempty"`
+	FriendId uint64 `protobuf:"varint,2,opt,name=friend_id,json=friendId,proto3" json:"friend_id"`
 	// @gotags: json:"remark"
-	Remark string `protobuf:"bytes,3,opt,name=remark,proto3" json:"remark,omitempty"`
+	Remark string `protobuf:"bytes,3,opt,name=remark,proto3" json:"remark"`
 	// @gotags: json:"source"
-	Source int32 `protobuf:"varint,4,opt,name=source,proto3" json:"source,omitempty"`
+	Source int32 `protobuf:"varint,4,opt,name=source,proto3" json:"source"`
 	// @gotags: json:"blocked"
-	Blocked bool `protobuf:"varint,5,opt,name=blocked,proto3" json:"blocked,omitempty"`
+	Blocked bool `protobuf:"varint,5,opt,name=blocked,proto3" json:"blocked"`
 	// @gotags: json:"starred"
-	Starred bool `protobuf:"varint,6,opt,name=starred,proto3" json:"starred,omitempty"`
+	Starred bool `protobuf:"varint,6,opt,name=starred,proto3" json:"starred"`
 	// @gotags: json:"create_time"
-	CreateTime int64 `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime int64 `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time"`
 	// @gotags: json:"extra"
-	Extra         string `protobuf:"bytes,8,opt,name=extra,proto3" json:"extra,omitempty"`
+	Extra         string `protobuf:"bytes,8,opt,name=extra,proto3" json:"extra"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -261,23 +261,23 @@ func (x *Friend) GetExtra() string {
 type FriendRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"id"
-	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id"`
 	// @gotags: json:"from_user_id"
-	FromUserId uint64 `protobuf:"varint,2,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id,omitempty"`
+	FromUserId uint64 `protobuf:"varint,2,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id"`
 	// @gotags: json:"to_user_id"
-	ToUserId uint64 `protobuf:"varint,3,opt,name=to_user_id,json=toUserId,proto3" json:"to_user_id,omitempty"`
+	ToUserId uint64 `protobuf:"varint,3,opt,name=to_user_id,json=toUserId,proto3" json:"to_user_id"`
 	// @gotags: json:"apply_msg"
-	ApplyMsg string `protobuf:"bytes,4,opt,name=apply_msg,json=applyMsg,proto3" json:"apply_msg,omitempty"`
+	ApplyMsg string `protobuf:"bytes,4,opt,name=apply_msg,json=applyMsg,proto3" json:"apply_msg"`
 	// @gotags: json:"status"
-	Status int32 `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`
+	Status int32 `protobuf:"varint,5,opt,name=status,proto3" json:"status"`
 	// @gotags: json:"source"
-	Source int32 `protobuf:"varint,6,opt,name=source,proto3" json:"source,omitempty"`
+	Source int32 `protobuf:"varint,6,opt,name=source,proto3" json:"source"`
 	// @gotags: json:"request_time"
-	RequestTime int64 `protobuf:"varint,7,opt,name=request_time,json=requestTime,proto3" json:"request_time,omitempty"`
+	RequestTime int64 `protobuf:"varint,7,opt,name=request_time,json=requestTime,proto3" json:"request_time"`
 	// @gotags: json:"handle_time"
-	HandleTime int64 `protobuf:"varint,8,opt,name=handle_time,json=handleTime,proto3" json:"handle_time,omitempty"`
+	HandleTime int64 `protobuf:"varint,8,opt,name=handle_time,json=handleTime,proto3" json:"handle_time"`
 	// @gotags: json:"reject_reason"
-	RejectReason  string `protobuf:"bytes,9,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason,omitempty"`
+	RejectReason  string `protobuf:"bytes,9,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -379,15 +379,15 @@ func (x *FriendRequest) GetRejectReason() string {
 type GetUserInfoReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"ids,optional" json:"ids,optional"
-	Ids []uint64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
+	Ids []uint64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,optional" form:"ids,optional"`
 	// @gotags: form:"phone,optional" json:"phone,optional"
-	Phone string `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,omitempty"`
+	Phone string `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,optional" form:"phone,optional"`
 	// @gotags: form:"name,optional" json:"name,optional"
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,optional" form:"name,optional"`
 	// @gotags: form:"limit,optional,default=20" json:"limit,optional,default=20"
-	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,optional,default=20" form:"limit,optional,default=20"`
 	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`
+	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -506,15 +506,15 @@ func (x *GetUserInfoResp) GetData() []*UserInfo {
 type UpdateInfoReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"user_name,optional"
-	UserName string `protobuf:"bytes,1,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	UserName string `protobuf:"bytes,1,opt,name=user_name,json=userName,proto3" json:"user_name,optional"`
 	// @gotags: json:"gender,optional"
-	Gender int32 `protobuf:"varint,2,opt,name=gender,proto3" json:"gender,omitempty"`
+	Gender int32 `protobuf:"varint,2,opt,name=gender,proto3" json:"gender,optional"`
 	// @gotags: json:"avatar,optional"
-	Avatar string `protobuf:"bytes,3,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	Avatar string `protobuf:"bytes,3,opt,name=avatar,proto3" json:"avatar,optional"`
 	// @gotags: json:"join_type,optional"
-	JoinType int32 `protobuf:"varint,4,opt,name=join_type,json=joinType,proto3" json:"join_type,omitempty"`
+	JoinType int32 `protobuf:"varint,4,opt,name=join_type,json=joinType,proto3" json:"join_type,optional"`
 	// @gotags: json:"personal_signature,optional"
-	PersonalSignature string `protobuf:"bytes,5,opt,name=personal_signature,json=personalSignature,proto3" json:"personal_signature,omitempty"`
+	PersonalSignature string `protobuf:"bytes,5,opt,name=personal_signature,json=personalSignature,proto3" json:"personal_signature,optional"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -670,11 +670,11 @@ func (x *GetFriendsResp) GetData() []*Friend {
 type CreateFriendReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"friend_id"
-	FriendId uint64 `protobuf:"varint,1,opt,name=friend_id,json=friendId,proto3" json:"friend_id,omitempty"`
+	FriendId uint64 `protobuf:"varint,1,opt,name=friend_id,json=friendId,proto3" json:"friend_id"`
 	// @gotags: json:"source,optional"
-	Source int32 `protobuf:"varint,2,opt,name=source,proto3" json:"source,omitempty"`
+	Source int32 `protobuf:"varint,2,opt,name=source,proto3" json:"source,optional"`
 	// @gotags: json:"remark,optional"
-	Remark        string `protobuf:"bytes,3,opt,name=remark,proto3" json:"remark,omitempty"`
+	Remark        string `protobuf:"bytes,3,opt,name=remark,proto3" json:"remark,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -734,7 +734,7 @@ func (x *CreateFriendReq) GetRemark() string {
 type CreateFriendResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"data"
-	Data          *Friend `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Data          *Friend `protobuf:"bytes,1,opt,name=data,proto3" json:"data"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -780,13 +780,13 @@ func (x *CreateFriendResp) GetData() *Friend {
 type UpdateFriendReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"friend_id"
-	FriendId uint64 `protobuf:"varint,1,opt,name=friend_id,json=friendId,proto3" json:"friend_id,omitempty"`
+	FriendId uint64 `protobuf:"varint,1,opt,name=friend_id,json=friendId,proto3" json:"friend_id"`
 	// @gotags: json:"remark,optional"
-	Remark string `protobuf:"bytes,2,opt,name=remark,proto3" json:"remark,omitempty"`
+	Remark string `protobuf:"bytes,2,opt,name=remark,proto3" json:"remark,optional"`
 	// @gotags: json:"blocked,optional"
-	Blocked bool `protobuf:"varint,3,opt,name=blocked,proto3" json:"blocked,omitempty"`
+	Blocked bool `protobuf:"varint,3,opt,name=blocked,proto3" json:"blocked,optional"`
 	// @gotags: json:"starred,optional"
-	Starred       bool `protobuf:"varint,4,opt,name=starred,proto3" json:"starred,omitempty"`
+	Starred       bool `protobuf:"varint,4,opt,name=starred,proto3" json:"starred,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -852,7 +852,7 @@ func (x *UpdateFriendReq) GetStarred() bool {
 type UpdateFriendResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"data"
-	Data          *Friend `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Data          *Friend `protobuf:"bytes,1,opt,name=data,proto3" json:"data"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -898,7 +898,7 @@ func (x *UpdateFriendResp) GetData() *Friend {
 type DeleteFriendReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"friend_id"
-	FriendId      uint64 `protobuf:"varint,1,opt,name=friend_id,json=friendId,proto3" json:"friend_id,omitempty"`
+	FriendId      uint64 `protobuf:"varint,1,opt,name=friend_id,json=friendId,proto3" json:"friend_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -944,11 +944,11 @@ func (x *DeleteFriendReq) GetFriendId() uint64 {
 type NewFriendApplyReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"to_user_id"
-	ToUserId uint64 `protobuf:"varint,1,opt,name=to_user_id,json=toUserId,proto3" json:"to_user_id,omitempty"`
+	ToUserId uint64 `protobuf:"varint,1,opt,name=to_user_id,json=toUserId,proto3" json:"to_user_id"`
 	// @gotags: json:"apply_msg,optional"
-	ApplyMsg string `protobuf:"bytes,2,opt,name=apply_msg,json=applyMsg,proto3" json:"apply_msg,omitempty"`
+	ApplyMsg string `protobuf:"bytes,2,opt,name=apply_msg,json=applyMsg,proto3" json:"apply_msg,optional"`
 	// @gotags: json:"source,optional"
-	Source        int32 `protobuf:"varint,3,opt,name=source,proto3" json:"source,omitempty"`
+	Source        int32 `protobuf:"varint,3,opt,name=source,proto3" json:"source,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1062,11 +1062,11 @@ func (x *NewFriendApplyResp) GetFriend() *Friend {
 type HandleFriendApplyReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"request_id"
-	RequestId uint64 `protobuf:"varint,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	RequestId uint64 `protobuf:"varint,1,opt,name=request_id,json=requestId,proto3" json:"request_id"`
 	// @gotags: json:"result"
-	Result int32 `protobuf:"varint,2,opt,name=result,proto3" json:"result,omitempty"`
+	Result int32 `protobuf:"varint,2,opt,name=result,proto3" json:"result"`
 	// @gotags: json:"reject_reason,optional"
-	RejectReason  string `protobuf:"bytes,3,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason,omitempty"`
+	RejectReason  string `protobuf:"bytes,3,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1126,7 +1126,7 @@ func (x *HandleFriendApplyReq) GetRejectReason() string {
 type HandleFriendApplyResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: json:"data"
-	Data          *FriendRequest `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Data          *FriendRequest `protobuf:"bytes,1,opt,name=data,proto3" json:"data"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1254,15 +1254,15 @@ func (x *GetPendingFriendAppliesResp) GetData() []*FriendRequest {
 type SearchFriendReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"name,optional" json:"name,optional"
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,optional" form:"name,optional"`
 	// @gotags: form:"id,optional" json:"id,optional"
-	Id uint64 `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
+	Id uint64 `protobuf:"varint,2,opt,name=id,proto3" json:"id,optional" form:"id,optional"`
 	// @gotags: form:"phone,optional" json:"phone,optional"
-	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,omitempty"`
+	Phone string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,optional" form:"phone,optional"`
 	// @gotags: form:"limit,optional,default=30" json:"limit,optional,default=30"
-	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,optional,default=30" form:"limit,optional,default=30"`
 	// @gotags: form:"offset,optional,default=0" json:"offset,optional,default=0"
-	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`
+	Offset        int32 `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,optional,default=0" form:"offset,optional,default=0"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
