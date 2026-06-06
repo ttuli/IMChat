@@ -56,7 +56,7 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 		callbackUrl = l.svcCtx.Config.Oss.ChatImage.CallbackURL
 		product = l.svcCtx.Config.Oss.ChatImage.Product
 	case int32(types.FileType_FileTypeChatFile):
-		region = l.svcCtx.Config.Oss.ChatFile.Region	
+		region = l.svcCtx.Config.Oss.ChatFile.Region
 		bucketName = l.svcCtx.Config.Oss.ChatFile.BucketName
 		dir = l.svcCtx.Config.Oss.ChatFile.Dir
 		callbackUrl = l.svcCtx.Config.Oss.ChatFile.CallbackURL
@@ -130,12 +130,10 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	h4 := hmac.New(hmacHash, h3Key)
 	io.WriteString(h4, "aliyun_v4_request")
 	h4Key := h4.Sum(nil)
-
 	// 生成签名
 	h := hmac.New(hmacHash, h4Key)
 	io.WriteString(h, stringToSign)
 	signature := hex.EncodeToString(h.Sum(nil))
-
 	var callbackParam types.CallbackParam
 	callbackParam.CallbackUrl = callbackUrl
 	callbackParam.CallbackBody = fmt.Sprintf("file_name=${object}&size=${size}&mime_type=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}&id=%v&file_type=%v", id, req.FileType)

@@ -211,17 +211,7 @@ func (s *AuthService) Refresh(ctx context.Context, req *RefreshReq) (*RefreshRes
 		return nil, xerr.New(transport.ErrorCode_ERR_TOKEN_GENERATE, "refresh token 无效")
 	}
 
-	// 2. 校验请求设备是否与 session 中的 machine_id 一致
-	//    session.machine_id != req.DeviceId 说明是其他设备在刷 RT，拒绝
-	session, err := s.TokenManager.GetSession(ctx, userID)
-	if err != nil {
-		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_TOKEN_GENERATE, "刷新token失败")
-	}
-	if session.MachineID != req.DeviceId {
-		return nil, xerr.New(transport.ErrorCode_ERR_KICKED_OUT, "设备不匹配，拒绝刷新")
-	}
-
-	// 3. 检查 Redis 中是否存在 rt 键，决定是否为 remember_me 路径：
+	// 2. 检查 Redis 中是否存在 rt 键，决定是否为 remember_me 路径：
 	//    - rt 键存在：登录时勾选了 remember_me（一键登录），刷新时同步更新 RT 键
 	//    - rt 键不存在：普通登录，不写 RT 键，避免干扰登录时的 session 键值
 	rememberMe, err := s.TokenManager.HasRefreshToken(ctx, userID, deviceID)
@@ -229,7 +219,7 @@ func (s *AuthService) Refresh(ctx context.Context, req *RefreshReq) (*RefreshRes
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_TOKEN_GENERATE, "刷新token失败")
 	}
 
-	// 4. 通过 OnLogin 续期 session（version+1）并重新生成 AT/RT
+	// 3. 通过 OnLogin 续期 session（version+1）并重新生成 AT/RT
 	accessToken, refreshToken, err := s.TokenManager.OnLogin(ctx, userID, tokenmanager.LoginOptions{
 		MachineID:  req.DeviceId,
 		RememberMe: rememberMe,
