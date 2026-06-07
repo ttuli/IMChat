@@ -61,15 +61,71 @@ func (c *ConversationDAO) PushSeqUpdate(conversationID string, seq uint64, lastC
 	})
 }
 
-// FindConversationsByIDs 批量查询会话
+// FindConversationsByIDs 批量查询会话。
+// 策略：先通过 Lua 脚本批量读取 Redis conv:info:{id} Hash 中的快照字段，
+//
+//		Redis 没命中的会话再退化批量查询 MySQL。
 func (c *ConversationDAO) FindConversationsByIDs(ctx context.Context, conversationIDs []string) ([]*model.Conversation, error) {
-	var convs []*model.Conversation
-	if err := c.db.WithContext(ctx).
-		Where("conversation_id IN ?", conversationIDs).
-		Find(&convs).Error; err != nil {
-		return nil, err
+	if len(conversationIDs) == 0 {
+		return nil, nil
 	}
-	return convs, nil
+
+	// 1. 批量读 Redis：从 conv:info:{id} Hash 中读取 actual_seq / last_content / last_sender
+	// conv:info 是号段模式下已有的 Key，全局最新，不必新增决策 Key
+	batchScript := `
+		local results = {}
+		for i = 1, #KEYS do
+			local v = redis.call('HMGET', KEYS[i], 'actual_seq', 'last_content', 'last_sender')
+			results[i] = v
+		end
+		return results
+	`
+	keys := make([]string, len(conversationIDs))
+	for i, id := range conversationIDs {
+		keys[i] = convInfoPrefix + id
+	}
+	luaRaw, err := c.cache.EvalCtx(ctx, batchScript, keys)
+
+	result := make([]*model.Conversation, 0, len(conversationIDs))
+	missingIDs := make([]string, 0)
+
+	if err == nil {
+		rows, ok := luaRaw.([]interface{})
+		if ok && len(rows) == len(conversationIDs) {
+			for i, row := range rows {
+				fields, ok := row.([]interface{})
+				if !ok || len(fields) != 3 || fields[0] == nil {
+					missingIDs = append(missingIDs, conversationIDs[i])
+					continue
+				}
+				actualSeq, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[0]), 10, 64)
+				lastSender, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[2]), 10, 64)
+				result = append(result, &model.Conversation{
+					ConversationID: conversationIDs[i],
+					ActualSeq:      actualSeq,
+					LastContent:    fmt.Sprintf("%s", fields[1]),
+					LastSender:     lastSender,
+				})
+			}
+		} else {
+			missingIDs = append(missingIDs, conversationIDs...)
+		}
+	} else {
+		// Redis 全量失败，全部去查 DB
+		missingIDs = append(missingIDs, conversationIDs...)
+	}
+
+	// 2. 对于 Redis 没命中的批量查 DB
+	if len(missingIDs) > 0 {
+		var dbConvs []*model.Conversation
+		if err := c.db.WithContext(ctx).
+			Where("conversation_id IN ?", missingIDs).
+			Find(&dbConvs).Error; err != nil {
+			return nil, err
+		}
+		result = append(result, dbConvs...)
+	}
+	return result, nil
 }
 
 // FindUserConversations 查询用户的会话列表 (按最后消息时间倒序)
@@ -195,9 +251,27 @@ func (c *ConversationDAO) BatchInsertUserConversations(ctx context.Context, user
 
 // GetActiveConversationIDs 获取活跃的会话 ID 列表，按时间戳过滤大于 sinceTimestamp 的记录
 func (c *ConversationDAO) GetActiveConversationIDs(ctx context.Context, userID uint64, sinceTimestamp int64) ([]string, error) {
+	snaps, err := c.getActiveConvSnapshots(ctx, userID, sinceTimestamp)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(snaps))
+	for _, s := range snaps {
+		ids = append(ids, s.ConvID)
+	}
+	return ids, nil
+}
 
+// getActiveConvSnapshots 获取在 sinceTimestamp 后有更新的会话快照列表。
+//
+// 流程：
+//  1. 从 ZSET user:conv:timeline:{uid} 读取活跃会话 ID 列表（member = convID，score = updateTime）
+//  2. 批量 HMGET Redis conv:info:{id} 获取快照字段（actual_seq / last_content / last_sender）
+//  3. Redis 没命中的删退化批量查询 MySQL
+func (c *ConversationDAO) getActiveConvSnapshots(ctx context.Context, userID uint64, sinceTimestamp int64) ([]ConvSnapshot, error) {
 	key := fmt.Sprintf("%s%d", convTimelinePrefix, userID)
 
+	// Step 1: 从 ZSET 获取会话 ID
 	pairs, err := c.cache.ZRangeByScoreWithScoresCtx(ctx, key, sinceTimestamp+1, time.Now().UnixMilli()+100000)
 	if err != nil {
 		if err.Error() == "redis: nil" {
@@ -206,15 +280,76 @@ func (c *ConversationDAO) GetActiveConversationIDs(ctx context.Context, userID u
 		logger.Errorf("get updated conversations failed for user %d: %v", userID, err)
 		return nil, err
 	}
-
-	res := make([]string, 0, len(pairs))
-	// ZrangebyscoreWithScoresCtx 返回的是升序排列，为了和一般时间线逻辑一致，客户端可能需要降序，
-	// 但协议只是返回列表，这里我们倒序放入结果，保证最新的排最前
-	for i := len(pairs) - 1; i >= 0; i-- {
-		res = append(res, pairs[i].Key)
+	if len(pairs) == 0 {
+		return nil, nil
 	}
 
-	return res, nil
+	// 降序排列（最新的排在前面）
+	convIDs := make([]string, 0, len(pairs))
+	for i := len(pairs) - 1; i >= 0; i-- {
+		convIDs = append(convIDs, pairs[i].Key)
+	}
+
+	// Step 2: 批量 HMGET conv:info Hash
+	batchScript := `
+		local results = {}
+		for i = 1, #KEYS do
+			results[i] = redis.call('HMGET', KEYS[i], 'actual_seq', 'last_content', 'last_sender')
+		end
+		return results
+	`
+	luaKeys := make([]string, len(convIDs))
+	for i, id := range convIDs {
+		luaKeys[i] = convInfoPrefix + id
+	}
+	luaRaw, luaErr := c.cache.EvalCtx(ctx, batchScript, luaKeys)
+
+	result := make([]ConvSnapshot, 0, len(convIDs))
+	missingIDs := make([]string, 0)
+
+	if luaErr == nil {
+		rows, ok := luaRaw.([]interface{})
+		if ok && len(rows) == len(convIDs) {
+			for i, row := range rows {
+				fields, ok := row.([]interface{})
+				if !ok || len(fields) != 3 || fields[0] == nil {
+					missingIDs = append(missingIDs, convIDs[i])
+					continue
+				}
+				actualSeq, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[0]), 10, 64)
+				lastSender, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[2]), 10, 64)
+				result = append(result, ConvSnapshot{
+					ConvID:      convIDs[i],
+					Seq:         actualSeq,
+					LastContent: fmt.Sprintf("%s", fields[1]),
+					LastSender:  lastSender,
+				})
+			}
+		} else {
+			missingIDs = append(missingIDs, convIDs...)
+		}
+	} else {
+		missingIDs = append(missingIDs, convIDs...)
+	}
+
+	// Step 3: DB 退化查询
+	if len(missingIDs) > 0 {
+		var dbConvs []*model.Conversation
+		if dbErr := c.db.WithContext(ctx).
+			Where("conversation_id IN ?", missingIDs).
+			Find(&dbConvs).Error; dbErr != nil {
+			return nil, dbErr
+		}
+		for _, conv := range dbConvs {
+			result = append(result, ConvSnapshot{
+				ConvID:      conv.ConversationID,
+				Seq:         conv.ActualSeq,
+				LastContent: conv.LastContent,
+				LastSender:  conv.LastSender,
+			})
+		}
+	}
+	return result, nil
 }
 
 // IncrSeq 以号段模式递增会话的 seq。
@@ -228,18 +363,25 @@ func (c *ConversationDAO) GetActiveConversationIDs(ctx context.Context, userID u
 //     去 MySQL 原子扩容 max_seq += step，
 //     用 Lua 将 seg_ceiling 更新至新上限并保证 cur_seq 不低于新号段起点，
 //     从而彻底消除 Redis 宕机/重启导致的 seq 回退。
-func (c *ConversationDAO) IncrSeq(ctx context.Context, conversationID string) (uint64, error) {
+func (c *ConversationDAO) IncrSeq(ctx context.Context, conversationID string, lastContent string, lastSender uint64) (uint64, error) {
 	cacheKey := convInfoPrefix + conversationID
 	expireSecs := strconv.Itoa(int(convInfoExpire.Seconds()))
+	lastSenderStr := strconv.FormatUint(lastSender, 10)
 
 	// 快路径：HINCRBY cur_seq，同时读 seg_ceiling，判断是否在号段内。
+	// 若在号段内，在同一个 Lua 内将 actual_seq / last_content / last_sender 同步写入，共一次网络往返。
 	fastScript := `
 		local cur = redis.call("HINCRBY", KEYS[1], "cur_seq", 1)
 		local ceil = tonumber(redis.call("HGET", KEYS[1], "seg_ceiling")) or 0
+		redis.call("HSET", KEYS[1],
+			"actual_seq",   tostring(cur),
+			"last_content", ARGV[2],
+			"last_sender",  ARGV[3])
+
 		redis.call("EXPIRE", KEYS[1], ARGV[1])
 		return {cur, ceil}
 	`
-	fastVal, err := c.cache.EvalCtx(ctx, fastScript, []string{cacheKey}, expireSecs)
+	fastVal, err := c.cache.EvalCtx(ctx, fastScript, []string{cacheKey}, expireSecs, lastContent, lastSenderStr)
 	if err != nil {
 		return 0, fmt.Errorf("redis eval fast script failed: %w", err)
 	}
@@ -281,7 +423,7 @@ func (c *ConversationDAO) IncrSeq(ctx context.Context, conversationID string) (u
 	// 1. cur < newBase：Redis 冷启动，allocSegment 已将 cur_seq 重置到 newBase，
 	//    本次拿到的 cur（如 1）是已用过的旧 seq，必须重试。
 	// 2. cur > newCeiling：并发竞争导致号段耗尽，同样重试。
-	return c.IncrSeq(ctx, conversationID)
+	return c.IncrSeq(ctx, conversationID, lastContent, lastSender)
 }
 
 // allocSegment 原子地向 MySQL 申请下一个号段，并更新 Redis 中的 seg_ceiling 和 cur_seq。

@@ -2,6 +2,7 @@ package messagerpclogic
 
 import (
 	"context"
+	"encoding/json"
 
 	"IM2/internal/apps/Message/rpc/message"
 	"IM2/internal/apps/Message/rpc/svc"
@@ -31,6 +32,14 @@ func (l *GetHistoryLogic) GetHistory(in *message.GetHistoryReq) (*message.GetHis
 
 	var list []*message.Message
 	for _, m := range msgs {
+		var byteData []byte
+		if len(m.Extra) > 0 {
+			var err error
+			byteData, err = json.Marshal(m.Extra)
+			if err != nil {
+				return nil, err
+			}
+		}
 		list = append(list, &message.Message{
 			MsgId:          m.MsgID,
 			ConversationId: m.ConversationID,
@@ -41,6 +50,7 @@ func (l *GetHistoryLogic) GetHistory(in *message.GetHistoryReq) (*message.GetHis
 			Status:         int32(m.Status),
 			CreateTime:     m.CreateTime.UnixMilli(),
 			Seq:            m.Seq,
+			Extra:          byteData,
 		})
 	}
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -23,14 +24,26 @@ const (
 )
 
 // seqUpdate 代表一条完整的会话状态更新事件。
-// 号段模式下 MySQL max_seq 已由 allocSegment 实时写入，SeqSyncer 只负责异步批量刷下面三个元数据字段。
+// 号段模式下 MySQL max_seq 已由 allocSegment 实时写入，SeqSyncer 只负责异步批量刷下面元数据字段。
 // 聚合时同一 conversationID 只保留 seq 最大的那条（视为最新状态）。
 type seqUpdate struct {
 	conversationID string
-	seq            uint64 // 仅用于内部聚合去重，不写入 MySQL max_seq
+	seq            uint64 // 写入 MySQL actual_seq 和 Redis 快照
 	lastContent    string
 	lastSender     uint64
 	updateTime     int64
+}
+
+// ConvSnapshot 会话快照，同时用作:
+//  1. ZSET user:conv:timeline:{uid} 的 member（JSON 序列化）
+//  2. Hash conv:snapshot:{convID} 的读取输入
+//
+// 字段缩写以减少 Redis 内存占用。
+type ConvSnapshot struct {
+	ConvID      string `json:"c"`
+	Seq         uint64 `json:"s"`
+	LastContent string `json:"lc"`
+	LastSender  uint64 `json:"ls"`
 }
 
 // SeqSyncer 进程内 channel + 定时/定量批量刷盘器
@@ -161,19 +174,29 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	now := time.Now()
 	var failed []string
 
-	// 用于收集需要刷入 Redis 的 timeline 数据
-	userTimelines := make(map[uint64]map[string]int64)
+	// 用于收集需要刷入 Redis timeline 的数据
+	userTimelines := make(map[uint64]map[string]int64) // uid -> convID -> updateTime
 
 	for convID, u := range latest {
-		// 1. MySQL 条件写：只更新 last_content / last_sender / update_time。
-		// 号段模式下 max_seq 已由 allocSegment 实时写入 MySQL，无需在此同步。
+		convType := model.ConvTypeSingle
+		if util.IsGroupSession(convID) {
+			convType = model.ConvTypeGroup
+		}
+
+		// 1. MySQL Upsert：不存在则创建，存在则只更新 actual_seq / last_content / last_sender / update_time。
+		// 不触碰 max_seq（号段上限，由 allocSegment 管理）。
 		res := s.db.WithContext(ctx).
-			Model(&model.Conversation{}).
-			Where("conversation_id = ?", convID).
-			Updates(map[string]interface{}{
-				"last_content": u.lastContent,
-				"last_sender":  u.lastSender,
-				"update_time":  now,
+			Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "conversation_id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"actual_seq", "last_content", "last_sender", "update_time"}),
+			}).
+			Create(&model.Conversation{
+				ConversationID: convID,
+				Type:           convType,
+				LastContent:    u.lastContent,
+				LastSender:     u.lastSender,
+				ActualSeq:      u.seq,
+				UpdateTime:     now,
 			})
 		if res.Error != nil {
 			failed = append(failed, fmt.Sprintf("%s(seq=%d,err=%v)", convID, u.seq, res.Error))
@@ -205,9 +228,12 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 		}
 	}
 
-	// 3. 批量更新 Redis Timeline
+	// 3. 批量更新 Redis：
+	//    a) user:conv:timeline:{uid} ZSET：成员存 JSON 快照，分数存 updateTime
+	//    b) conv:info:{convID} Hash：将 actual_seq / last_content / last_sender 追加写入已有的号段 Key。
 	if len(userTimelines) > 0 {
 		err := s.cache.PipelinedCtx(ctx, func(pipe redis.Pipeliner) error {
+			// a) 更新用户时间线：ZSET member = convID，score = updateTime
 			for uid, convs := range userTimelines {
 				key := fmt.Sprintf("user:conv:timeline:%d", uid)
 				for convID, updateTime := range convs {
@@ -216,13 +242,13 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 						Member: convID,
 					})
 				}
-				// 为 timeline key 设置 30 天过期时间，避免死号长期占用内存
+				// 30 天过期，避免死号长期占用内存
 				pipe.Expire(ctx, key, 30*24*time.Hour)
 			}
 			return nil
 		})
 		if err != nil {
-			logger.Errorf("SeqSyncer update redis timeline failed: %v", err)
+			logger.Errorf("SeqSyncer update redis failed: %v", err)
 		}
 	}
 

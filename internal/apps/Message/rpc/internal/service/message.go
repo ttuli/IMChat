@@ -34,7 +34,7 @@ func (s *MessageService) GetHistory(ctx context.Context, conversationID string, 
 // TODO 改为在消息消费后发送一个ack消息到nats，再由websocket消费发送
 func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
 	// 1. 生成或递增 Seq
-	seq, err := s.conversationDAO.IncrSeq(ctx, msg.ConversationId)
+	seq, err := s.conversationDAO.IncrSeq(ctx, msg.ConversationId, msg.Preview, msg.Sender)
 	if err != nil {
 		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.ConversationId, err)
 		return nil, err

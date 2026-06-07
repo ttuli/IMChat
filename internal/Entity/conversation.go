@@ -8,7 +8,8 @@ type Conversation struct {
 	Type           int8      `gorm:"column:type;type:tinyint;not null;comment:会话类型: 1-单聊 2-群聊" json:"type"`
 	LastContent    string    `gorm:"column:last_content;type:varchar(1024);not null;default:'';comment:最后一条消息内容" json:"last_content"`
 	LastSender     uint64    `gorm:"column:last_sender;type:bigint unsigned;not null;default:0;comment:最后发送者ID" json:"last_sender"`
-	MaxSeq         uint64    `gorm:"column:max_seq;type:bigint unsigned;not null;default:0;comment:最大消息序号" json:"max_seq"`
+	MaxSeq         uint64    `gorm:"column:max_seq;type:bigint unsigned;not null;default:0;comment:最大消息序号（号段上限）" json:"max_seq"`
+	ActualSeq      uint64    `gorm:"column:actual_seq;type:bigint unsigned;not null;default:0;comment:实际已分配的最大消息序号" json:"actual_seq"`
 	CreateTime     time.Time `gorm:"column:create_time;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"create_time"`
 	UpdateTime     time.Time `gorm:"column:update_time;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3);autoUpdateTime;comment:更新时间" json:"update_time"`
 }

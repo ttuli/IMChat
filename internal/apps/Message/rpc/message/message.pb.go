@@ -31,7 +31,7 @@ type Message struct {
 	Seq            uint64                 `protobuf:"varint,6,opt,name=seq,proto3" json:"seq,omitempty"`
 	Content        string                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
 	MediaUrl       string                 `protobuf:"bytes,8,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
-	Extra          string                 `protobuf:"bytes,9,opt,name=extra,proto3" json:"extra,omitempty"`
+	Extra          []byte                 `protobuf:"bytes,9,opt,name=extra,proto3" json:"extra,omitempty"`
 	Status         int32                  `protobuf:"varint,10,opt,name=status,proto3" json:"status,omitempty"`
 	CreateTime     int64                  `protobuf:"varint,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	unknownFields  protoimpl.UnknownFields
@@ -124,11 +124,11 @@ func (x *Message) GetMediaUrl() string {
 	return ""
 }
 
-func (x *Message) GetExtra() string {
+func (x *Message) GetExtra() []byte {
 	if x != nil {
 		return x.Extra
 	}
-	return ""
+	return nil
 }
 
 func (x *Message) GetStatus() int32 {
@@ -1025,7 +1025,7 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\x03seq\x18\x06 \x01(\x04R\x03seq\x12\x18\n" +
 	"\acontent\x18\a \x01(\tR\acontent\x12\x1b\n" +
 	"\tmedia_url\x18\b \x01(\tR\bmediaUrl\x12\x14\n" +
-	"\x05extra\x18\t \x01(\tR\x05extra\x12\x16\n" +
+	"\x05extra\x18\t \x01(\fR\x05extra\x12\x16\n" +
 	"\x06status\x18\n" +
 	" \x01(\x05R\x06status\x12\x1f\n" +
 	"\vcreate_time\x18\v \x01(\x03R\n" +

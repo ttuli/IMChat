@@ -45,9 +45,10 @@ func (l *GetHistoryLogic) GetHistory(req *types.GetHistoryReq) (resp *types.GetH
 			MsgType:        m.MsgType,
 			Content:        m.Content,
 			MediaUrl:       m.MediaUrl,
-			Extra:          m.Extra,
+			Extra:          string(m.Extra),
 			CreateTime:     m.CreateTime,
 			Seq:            m.Seq,
+			Status:         m.Status,
 		})
 	}
 
