@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -103,6 +104,10 @@ func ExtractToken(r *http.Request) string {
 func ExtractIDFromCtx(ctx context.Context) uint64 {
 	if id, ok := ctx.Value(ContextKeyUserID).(uint64); ok {
 		return id
+	} else if idStr, ok := ctx.Value(ContextKeyUserID).(string); ok {
+		if id, err := strconv.ParseUint(idStr, 10, 64); err == nil {
+			return id
+		}
 	}
 	return 0
 }

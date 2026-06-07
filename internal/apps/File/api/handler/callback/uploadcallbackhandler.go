@@ -7,8 +7,6 @@ import (
 	"IM2/internal/apps/File/api/svc"
 	"IM2/internal/apps/File/api/types"
 	"IM2/pkg/resultx"
-
-	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 // 上传回调
@@ -25,7 +23,9 @@ func UploadCallbackHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
-			httpx.Ok(w)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"Status":"OK"}`))
 		}
 	}
 }

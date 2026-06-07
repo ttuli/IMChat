@@ -46,12 +46,6 @@ func main() {
 				}
 				return nil
 			}),
-			service.WithAPISIX(func(cfg any) *service.APISIXConfig {
-				if c, ok := cfg.(*config.Config); ok {
-					return &c.APISIX
-				}
-				return nil
-			}),
 		),
 		*configPath,
 		&config.Config{},

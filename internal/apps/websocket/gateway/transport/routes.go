@@ -13,6 +13,7 @@ import (
 // RegisterHandlers 注册 HTTP 处理器
 func RegisterHandlers(s *rest.Server, serverCtx *server.ServiceContext) {
 	wsHandler := NewWSHandler(serverCtx, protocol.NewProtoCodec())
+	s.Use(middleware.WithRedisJwtAuth(serverCtx.TokenManager))
 	s.Use(middleware.WithWsSessionAuth(serverCtx.TokenManager))
 	s.AddRoutes(
 		[]rest.Route{

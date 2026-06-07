@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"IM2/internal/apps/File/api/config"
 	"IM2/internal/apps/File/api/handler"
@@ -33,17 +34,15 @@ func RegisterServices(cfg any, server *rest.Server) error {
 
 func main() {
 	flag.Parse()
+	fmt.Println("os")
+	os.Setenv("APISIX_API_HOST", "http://www.imflow.cloud:30080")
+	fmt.Println(os.Getenv("APISIX_API_HOST"))
+	fmt.Println("os")
 	runner := service.NewServiceRunner(
 		service.NewRestService(RegisterServices,
 			service.WithRestConf(func(cfg any) *rest.RestConf {
 				if c, ok := cfg.(*config.Config); ok {
 					return &c.RestConf
-				}
-				return nil
-			}),
-			service.WithAPISIX(func(cfg any) *service.APISIXConfig {
-				if c, ok := cfg.(*config.Config); ok {
-					return &c.APISIX
 				}
 				return nil
 			}),

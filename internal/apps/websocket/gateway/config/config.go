@@ -1,7 +1,6 @@
 package config
 
 import (
-	"IM2/pkg/service"
 	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -22,8 +21,6 @@ type Config struct {
 
 	// token 配置
 	TokenConfig tokenmanager.TokenConfig
-
-	APISIX service.APISIXConfig
 }
 
 // NatsConf NATS 配置
