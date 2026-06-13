@@ -34,10 +34,8 @@ func RegisterServices(cfg any, server *rest.Server) error {
 
 func main() {
 	flag.Parse()
-	fmt.Println("os")
-	os.Setenv("APISIX_API_HOST", "http://www.imflow.cloud:30080")
-	fmt.Println(os.Getenv("APISIX_API_HOST"))
-	fmt.Println("os")
+	os.Setenv("OSS_ACCESS_KEY_ID", os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID"))
+	os.Setenv("OSS_ACCESS_KEY_SECRET",os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET"))
 	runner := service.NewServiceRunner(
 		service.NewRestService(RegisterServices,
 			service.WithRestConf(func(cfg any) *rest.RestConf {

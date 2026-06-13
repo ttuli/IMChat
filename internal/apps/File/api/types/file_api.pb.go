@@ -398,7 +398,9 @@ func (x *CallbackData) GetMimeType() string {
 type GetPostSignatureReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"file_type,optional" json:"file_type,optional"
-	FileType      int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type,optional" form:"file_type,optional"`
+	FileType int32 `protobuf:"varint,1,opt,name=file_type,json=fileType,proto3" json:"file_type,optional" form:"file_type,optional"`
+	// @gotags: form:"file_name,optional" json:"file_name,optional"
+	FileName      string `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,optional" form:"file_name,optional"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -440,6 +442,65 @@ func (x *GetPostSignatureReq) GetFileType() int32 {
 	return 0
 }
 
+func (x *GetPostSignatureReq) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+type GetPostSignatureResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsExits       bool                   `protobuf:"varint,1,opt,name=is_exits,json=isExits,proto3" json:"is_exits,omitempty"`
+	Policy        *PolicyToken           `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPostSignatureResp) Reset() {
+	*x = GetPostSignatureResp{}
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPostSignatureResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPostSignatureResp) ProtoMessage() {}
+
+func (x *GetPostSignatureResp) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPostSignatureResp.ProtoReflect.Descriptor instead.
+func (*GetPostSignatureResp) Descriptor() ([]byte, []int) {
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetPostSignatureResp) GetIsExits() bool {
+	if x != nil {
+		return x.IsExits
+	}
+	return false
+}
+
+func (x *GetPostSignatureResp) GetPolicy() *PolicyToken {
+	if x != nil {
+		return x.Policy
+	}
+	return nil
+}
+
 type GetAccessUrlReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// @gotags: form:"file_key,optional" json:"file_key,optional"
@@ -456,7 +517,7 @@ type GetAccessUrlReq struct {
 
 func (x *GetAccessUrlReq) Reset() {
 	*x = GetAccessUrlReq{}
-	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[4]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -468,7 +529,7 @@ func (x *GetAccessUrlReq) String() string {
 func (*GetAccessUrlReq) ProtoMessage() {}
 
 func (x *GetAccessUrlReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[4]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -481,7 +542,7 @@ func (x *GetAccessUrlReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccessUrlReq.ProtoReflect.Descriptor instead.
 func (*GetAccessUrlReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{4}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetAccessUrlReq) GetFileKey() string {
@@ -522,7 +583,7 @@ type GetAccessUrlResp struct {
 
 func (x *GetAccessUrlResp) Reset() {
 	*x = GetAccessUrlResp{}
-	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[5]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -534,7 +595,7 @@ func (x *GetAccessUrlResp) String() string {
 func (*GetAccessUrlResp) ProtoMessage() {}
 
 func (x *GetAccessUrlResp) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[5]
+	mi := &file_internal_apps_File_api_types_file_api_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +608,7 @@ func (x *GetAccessUrlResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccessUrlResp.ProtoReflect.Descriptor instead.
 func (*GetAccessUrlResp) Descriptor() ([]byte, []int) {
-	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{5}
+	return file_internal_apps_File_api_types_file_api_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetAccessUrlResp) GetAccessUrl() string {
@@ -584,9 +645,13 @@ const file_internal_apps_File_api_types_file_api_proto_rawDesc = "" +
 	"\x06height\x18\x04 \x01(\x05R\x06height\x12\x12\n" +
 	"\x04size\x18\x05 \x01(\x04R\x04size\x12\x1b\n" +
 	"\tfile_name\x18\x06 \x01(\tR\bfileName\x12\x1b\n" +
-	"\tmime_type\x18\a \x01(\tR\bmimeType\"2\n" +
+	"\tmime_type\x18\a \x01(\tR\bmimeType\"O\n" +
 	"\x13GetPostSignatureReq\x12\x1b\n" +
-	"\tfile_type\x18\x01 \x01(\x05R\bfileType\"\xa5\x01\n" +
+	"\tfile_type\x18\x01 \x01(\x05R\bfileType\x12\x1b\n" +
+	"\tfile_name\x18\x02 \x01(\tR\bfileName\"]\n" +
+	"\x14GetPostSignatureResp\x12\x19\n" +
+	"\bis_exits\x18\x01 \x01(\bR\aisExits\x12*\n" +
+	"\x06policy\x18\x02 \x01(\v2\x12.types.PolicyTokenR\x06policy\"\xa5\x01\n" +
 	"\x0fGetAccessUrlReq\x12\x19\n" +
 	"\bfile_key\x18\x01 \x01(\tR\afileKey\x12,\n" +
 	"\tfile_type\x18\x02 \x01(\x0e2\x0f.types.FileTypeR\bfileType\x12\x1f\n" +
@@ -619,25 +684,27 @@ func file_internal_apps_File_api_types_file_api_proto_rawDescGZIP() []byte {
 }
 
 var file_internal_apps_File_api_types_file_api_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_internal_apps_File_api_types_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_internal_apps_File_api_types_file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_internal_apps_File_api_types_file_api_proto_goTypes = []any{
-	(FileType)(0),               // 0: types.FileType
-	(GetMethod)(0),              // 1: types.GetMethod
-	(*PolicyToken)(nil),         // 2: types.PolicyToken
-	(*CallbackParam)(nil),       // 3: types.CallbackParam
-	(*CallbackData)(nil),        // 4: types.CallbackData
-	(*GetPostSignatureReq)(nil), // 5: types.GetPostSignatureReq
-	(*GetAccessUrlReq)(nil),     // 6: types.GetAccessUrlReq
-	(*GetAccessUrlResp)(nil),    // 7: types.GetAccessUrlResp
+	(FileType)(0),                // 0: types.FileType
+	(GetMethod)(0),               // 1: types.GetMethod
+	(*PolicyToken)(nil),          // 2: types.PolicyToken
+	(*CallbackParam)(nil),        // 3: types.CallbackParam
+	(*CallbackData)(nil),         // 4: types.CallbackData
+	(*GetPostSignatureReq)(nil),  // 5: types.GetPostSignatureReq
+	(*GetPostSignatureResp)(nil), // 6: types.GetPostSignatureResp
+	(*GetAccessUrlReq)(nil),      // 7: types.GetAccessUrlReq
+	(*GetAccessUrlResp)(nil),     // 8: types.GetAccessUrlResp
 }
 var file_internal_apps_File_api_types_file_api_proto_depIdxs = []int32{
-	0, // 0: types.GetAccessUrlReq.file_type:type_name -> types.FileType
-	1, // 1: types.GetAccessUrlReq.method:type_name -> types.GetMethod
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 0: types.GetPostSignatureResp.policy:type_name -> types.PolicyToken
+	0, // 1: types.GetAccessUrlReq.file_type:type_name -> types.FileType
+	1, // 2: types.GetAccessUrlReq.method:type_name -> types.GetMethod
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_internal_apps_File_api_types_file_api_proto_init() }
@@ -651,7 +718,7 @@ func file_internal_apps_File_api_types_file_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_apps_File_api_types_file_api_proto_rawDesc), len(file_internal_apps_File_api_types_file_api_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

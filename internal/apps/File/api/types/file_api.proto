@@ -54,6 +54,13 @@ message CallbackData {
 message GetPostSignatureReq {
   // @gotags: form:"file_type,optional" json:"file_type,optional"
   int32 file_type = 1;
+  // @gotags: form:"file_name,optional" json:"file_name,optional"
+  string file_name = 2;
+}
+
+message GetPostSignatureResp {
+  bool is_exits = 1;
+  PolicyToken policy = 2;
 }
 
 message GetAccessUrlReq {

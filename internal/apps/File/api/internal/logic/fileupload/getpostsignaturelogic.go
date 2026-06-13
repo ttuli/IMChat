@@ -38,10 +38,12 @@ func NewGetPostSignatureLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 	}
 }
 
-func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq) (resp *types.PolicyToken, err error) {
+func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq) (resp *types.GetPostSignatureResp, err error) {
 	id := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	var region, bucketName, dir, callbackUrl, product string
+	var IsExits bool
+	
 	switch req.FileType {
 	case int32(types.FileType_FileTypeAvatar):
 		region = l.svcCtx.Config.Oss.Avatar.Region
@@ -49,20 +51,35 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 		dir = l.svcCtx.Config.Oss.Avatar.Dir
 		callbackUrl = l.svcCtx.Config.Oss.Avatar.CallbackURL
 		product = l.svcCtx.Config.Oss.Avatar.Product
+
+		IsExits, err = l.svcCtx.AvatarOss.IsObjectExist(l.ctx, req.FileName)
 	case int32(types.FileType_FileTypeChatImage):
 		region = l.svcCtx.Config.Oss.ChatImage.Region
 		bucketName = l.svcCtx.Config.Oss.ChatImage.BucketName
 		dir = l.svcCtx.Config.Oss.ChatImage.Dir
 		callbackUrl = l.svcCtx.Config.Oss.ChatImage.CallbackURL
 		product = l.svcCtx.Config.Oss.ChatImage.Product
+
+		IsExits, err = l.svcCtx.ImageOss.IsObjectExist(l.ctx, req.FileName)
 	case int32(types.FileType_FileTypeChatFile):
 		region = l.svcCtx.Config.Oss.ChatFile.Region
 		bucketName = l.svcCtx.Config.Oss.ChatFile.BucketName
 		dir = l.svcCtx.Config.Oss.ChatFile.Dir
 		callbackUrl = l.svcCtx.Config.Oss.ChatFile.CallbackURL
 		product = l.svcCtx.Config.Oss.ChatFile.Product
+
+		IsExits, err = l.svcCtx.FileOss.IsObjectExist(l.ctx, req.FileName)
 	default:
 		return nil, xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "文件类型不合法")
+	}
+	if err != nil {
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "上传文件失败")
+	}
+	if IsExits {
+		return &types.GetPostSignatureResp{
+			IsExits: IsExits,
+			Policy:  &types.PolicyToken{},
+		}, nil
 	}
 
 	host := fmt.Sprintf("https://%s.oss-%s.aliyuncs.com", bucketName, region)
@@ -155,5 +172,8 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 		Dir:                  dir,            // 返回上传目录
 		Callback:             callbackBase64, // 返回上传回调参数
 	}
-	return policyToken, nil
+	return &types.GetPostSignatureResp{
+		Policy:  policyToken,
+		IsExits: false,
+	}, nil
 }

@@ -32,6 +32,7 @@ func NewGetAccessUrlLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetA
 func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*types.GetAccessUrlResp, error) {
 	// 1. 根据 file_type 选择对应的 Bucket 配置
 	var region, bucketName, product string
+	var err error
 	switch req.FileType {
 	case types.FileType_FileTypeChatImage:
 		region = l.svcCtx.Config.Oss.ChatImage.Region
@@ -44,7 +45,9 @@ func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*type
 	default:
 		return nil, xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "文件类型不合法")
 	}
-
+	if err != nil {
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取文件状态失败")
+	}
 	// 2. 获取 STS 临时凭证
 	config := new(stscredentials.Config).
 		SetType("ram_role_arn").
@@ -65,12 +68,12 @@ func (l *GetAccessUrlLogic) GetAccessUrlLogic(req *types.GetAccessUrlReq) (*type
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取凭证失败")
 	}
 
-	method:="GET"
+	method := "GET"
 	switch req.Method {
-		case types.GetMethod_MethodHead:
-			method="HEAD"
-		default:
-			method="GET"
+	case types.GetMethod_MethodHead:
+		method = "HEAD"
+	default:
+		method = "GET"
 	}
 	fmt.Println(method)
 

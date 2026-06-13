@@ -7,7 +7,7 @@ require (
 	github.com/alibabacloud-go/dypnsapi-20170525/v3 v3.0.0
 	github.com/alibabacloud-go/tea v1.3.12
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
-	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.4.0
+	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.5.1
 	github.com/aliyun/credentials-go v1.4.10
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.5.2
