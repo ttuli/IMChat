@@ -75,14 +75,15 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	if err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "上传文件失败")
 	}
+	host := fmt.Sprintf("https://%s.oss-%s.aliyuncs.com", bucketName, region)
 	if IsExits {
 		return &types.GetPostSignatureResp{
 			IsExits: IsExits,
-			Policy:  &types.PolicyToken{},
+			Policy:  &types.PolicyToken{
+				Host: host,
+			},
 		}, nil
 	}
-
-	host := fmt.Sprintf("https://%s.oss-%s.aliyuncs.com", bucketName, region)
 
 	config := new(credentials.Config).
 		SetType("ram_role_arn").

@@ -1165,6 +1165,7 @@ type PersistAck struct {
 	Target        uint64                 `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
 	AckStatus     AckStatus              `protobuf:"varint,5,opt,name=ack_status,json=ackStatus,proto3,enum=message.AckStatus" json:"ack_status,omitempty"` // 确认状态
 	Timestamp     int64                  `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                         // 时间戳
+	Seq           uint64                 `protobuf:"varint,7,opt,name=seq,proto3" json:"seq,omitempty"`                                                     // 消息序号
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1237,6 +1238,13 @@ func (x *PersistAck) GetAckStatus() AckStatus {
 func (x *PersistAck) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *PersistAck) GetSeq() uint64 {
+	if x != nil {
+		return x.Seq
 	}
 	return 0
 }
@@ -1682,7 +1690,7 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x03 \x01(\tR\tsessionId\x12*\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x12.message.AckStatusR\x06status\"\xc8\x01\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x12.message.AckStatusR\x06status\"\xda\x01\n" +
 	"\n" +
 	"PersistAck\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
@@ -1692,7 +1700,8 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\x06target\x18\x04 \x01(\x04R\x06target\x121\n" +
 	"\n" +
 	"ack_status\x18\x05 \x01(\x0e2\x12.message.AckStatusR\tackStatus\x12\x1c\n" +
-	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\"\x85\x01\n" +
+	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\x12\x10\n" +
+	"\x03seq\x18\a \x01(\x04R\x03seq\"\x85\x01\n" +
 	"\vMessageRead\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x17\n" +

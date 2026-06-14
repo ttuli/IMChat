@@ -115,6 +115,7 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 			SessionId: m.ConversationId,
 			Target:    m.Sender,
 			AckStatus: message.AckStatus_ACK_STATUS_FAILED,
+			Seq:       dbMsg.Seq,
 		}
 		if data, err2 := proto.Marshal(pack); err2 == nil {
 			if pubErr := l.conn.Publish(l.c.Listener.AckSubject, data); pubErr != nil {

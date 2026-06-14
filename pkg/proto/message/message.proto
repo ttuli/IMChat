@@ -140,6 +140,7 @@ message PersistAck {
   uint64 target = 4;
   AckStatus ack_status = 5;       // 确认状态
   int64 timestamp = 6;            // 时间戳
+  uint64 seq = 7;                // 消息序号
 }
 
 enum AckStatus {
