@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type GetPendingAppliesLogic struct {
@@ -24,7 +26,7 @@ func NewGetPendingAppliesLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *GetPendingAppliesLogic) GetPendingApplies(in *group.GetPendingAppliesReq) (*group.GetPendingAppliesResp, error) {
-	applies, err := l.svcCtx.GroupService.GetPendingApplies(l.ctx, in.UserId)
+	applies, err := service.NewGroupService(l.svcCtx).GetPendingApplies(l.ctx, in.UserId)
 	if err != nil {
 		return nil, err
 	}

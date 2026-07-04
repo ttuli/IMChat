@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"IM2/internal/apps/Message/rpc/config"
+	"IM2/internal/apps/Message/rpc/listener"
 	"IM2/internal/apps/Message/rpc/message"
 	server "IM2/internal/apps/Message/rpc/server/messagerpc"
 	"IM2/internal/apps/Message/rpc/svc"
@@ -27,6 +28,7 @@ func main() {
 	flag.Parse()
 
 	var svcCtx *svc.ServiceContext
+	var listenService *listener.NatsListener
 
 	registerServices := func(cfg any) (*zrpc.RpcServer, error) {
 		if c, ok := cfg.(*config.Config); ok {
@@ -34,6 +36,8 @@ func main() {
 				return nil, fmt.Errorf("config 不能为空")
 			}
 			svcCtx = svc.NewServiceContext(*c) // 赋值给外部变量
+			listenService = listener.NewNatsListener(*c, svcCtx)
+
 			server := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 				message.RegisterMessageRpcServer(grpcServer, server.NewMessageRpcServer(svcCtx))
 				if c.Mode == zservice.DevMode || c.Mode == zservice.TestMode {
@@ -53,14 +57,14 @@ func main() {
 		service.WithLogger("/var/log/im/message.rpc.log", logger.LoggerEnvDev),
 		service.WithHooks(&service.LifecycleHooks{
 			BeforeStart: func() error {
-				if svcCtx != nil {
-					return svcCtx.ListenService.Listen()
+				if listenService != nil {
+					return listenService.Listen()
 				}
 				return nil
 			},
 			BeforeStop: func() error {
-				if svcCtx != nil {
-					return svcCtx.ListenService.Stop()
+				if listenService != nil {
+					return listenService.Stop()
 				}
 				return nil
 			},

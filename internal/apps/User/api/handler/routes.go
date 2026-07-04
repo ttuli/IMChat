@@ -44,12 +44,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
-				// 创建好友
-				Method:  http.MethodPost,
-				Path:    "/create",
-				Handler: friend.CreateFriendHandler(serverCtx),
-			},
-			{
 				// 删除好友
 				Method:  http.MethodDelete,
 				Path:    "/delete",

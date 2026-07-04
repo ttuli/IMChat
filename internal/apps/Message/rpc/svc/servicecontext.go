@@ -1,21 +1,27 @@
 package svc
 
 import (
+	"fmt"
+	"hash/crc32"
+	"os"
+	"strconv"
+
 	"IM2/internal/apps/Message/rpc/config"
 	"IM2/internal/apps/Message/rpc/internal/dao"
-	"IM2/internal/apps/Message/rpc/internal/listener"
-	"IM2/internal/apps/Message/rpc/internal/service"
 	"IM2/pkg/redisx"
 
+	"github.com/bwmarrin/snowflake"
 	"github.com/nats-io/nats.go"
 )
 
 type ServiceContext struct {
-	Config         config.Config
-	MessageService *service.MessageService
-	ListenService  *listener.NatsListener
-	NatsConn       *nats.Conn
-	Js             nats.JetStreamContext
+	Config        config.Config
+	MessageDAO    *dao.MessageDAO
+	SessionDAO    *dao.SessionDAO
+	NatsConn      *nats.Conn
+	Js            nats.JetStreamContext
+	Redis         *redisx.Client
+	SnowflakeNode *snowflake.Node
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -28,21 +34,39 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(err)
 	}
 
-	redisClient, err := redisx.NewClient(c.DAO.ConversationDAO.Redisx)
+	redisClient, err := redisx.NewClient(c.DAO.SessionDAO.Redisx)
 	if err != nil {
 		panic(err)
 	}
 
-	msgDao := dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource)
-	convDao := dao.NewConversationDAO(c.DAO.ConversationDAO.Dbsource, c.DAO.ConversationDAO.Redisx)
+	// 初始化本地雪花发号器
+	nodeID := c.SnowflakeNodeID
+	if nodeID == 0 {
+		if envNodeID := os.Getenv("NODE_ID"); envNodeID != "" {
+			if id, err := strconv.ParseInt(envNodeID, 10, 64); err == nil {
+				nodeID = id
+			}
+		}
+	}
+	if nodeID == 0 {
+		hostname, _ := os.Hostname()
+		nodeID = int64(crc32.ChecksumIEEE([]byte(fmt.Sprintf("msg-%s", hostname))) % 1024)
+	}
+	sfNode, sfErr := snowflake.NewNode(nodeID)
+	if sfErr != nil {
+		panic(fmt.Sprintf("init message snowflake node failed: %v", sfErr))
+	}
 
-	msgSvc := service.NewMessageService(c, js, conn, msgDao, convDao, redisClient)
+	msgDao := dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource)
+	ssDao := dao.NewSessionDAO(c.DAO.SessionDAO.Dbsource, c.DAO.SessionDAO.Redisx)
 
 	return &ServiceContext{
-		Config:         c,
-		NatsConn:       conn,
-		Js:             js,
-		MessageService: msgSvc,
-		ListenService:  listener.NewNatsListener(c, conn, js, msgSvc),
+		Config:        c,
+		NatsConn:      conn,
+		Js:            js,
+		MessageDAO:    msgDao,
+		SessionDAO:    ssDao,
+		Redis:         redisClient,
+		SnowflakeNode: sfNode,
 	}
 }

@@ -19,13 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessageRpc_GetHistory_FullMethodName                 = "/messagerpc.MessageRpc/GetHistory"
-	MessageRpc_GetConversationList_FullMethodName        = "/messagerpc.MessageRpc/GetConversationList"
-	MessageRpc_ReadMessage_FullMethodName                = "/messagerpc.MessageRpc/ReadMessage"
-	MessageRpc_UpdateConversation_FullMethodName         = "/messagerpc.MessageRpc/UpdateConversation"
-	MessageRpc_GetUserConversations_FullMethodName       = "/messagerpc.MessageRpc/GetUserConversations"
-	MessageRpc_GetUserActiveConversations_FullMethodName = "/messagerpc.MessageRpc/GetUserActiveConversations"
-	MessageRpc_RecallMessage_FullMethodName              = "/messagerpc.MessageRpc/RecallMessage"
+	MessageRpc_GetHistory_FullMethodName            = "/messagerpc.MessageRpc/GetHistory"
+	MessageRpc_UpdateSession_FullMethodName         = "/messagerpc.MessageRpc/UpdateSession"
+	MessageRpc_GetUserSessions_FullMethodName       = "/messagerpc.MessageRpc/GetUserSessions"
+	MessageRpc_GetUserActiveSessions_FullMethodName = "/messagerpc.MessageRpc/GetUserActiveSessions"
+	MessageRpc_GetSession_FullMethodName            = "/messagerpc.MessageRpc/GetSession"
 )
 
 // MessageRpcClient is the client API for MessageRpc service.
@@ -33,12 +31,11 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MessageRpcClient interface {
 	GetHistory(ctx context.Context, in *GetHistoryReq, opts ...grpc.CallOption) (*GetHistoryResp, error)
-	GetConversationList(ctx context.Context, in *GetConversationListReq, opts ...grpc.CallOption) (*GetConversationListResp, error)
-	ReadMessage(ctx context.Context, in *ReadMessageReq, opts ...grpc.CallOption) (*ReadMessageResp, error)
-	UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error)
-	GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
-	GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error)
-	RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error)
+	UpdateSession(ctx context.Context, in *UpdateSessionReq, opts ...grpc.CallOption) (*UpdateSessionResp, error)
+	GetUserSessions(ctx context.Context, in *GetUserSessionsReq, opts ...grpc.CallOption) (*GetUserSessionsResp, error)
+	GetUserActiveSessions(ctx context.Context, in *GetUserActiveSessionsReq, opts ...grpc.CallOption) (*GetUserActiveSessionsResp, error)
+	// 内部会话管理接口
+	GetSession(ctx context.Context, in *GetSessionReq, opts ...grpc.CallOption) (*GetSessionResp, error)
 }
 
 type messageRpcClient struct {
@@ -59,60 +56,40 @@ func (c *messageRpcClient) GetHistory(ctx context.Context, in *GetHistoryReq, op
 	return out, nil
 }
 
-func (c *messageRpcClient) GetConversationList(ctx context.Context, in *GetConversationListReq, opts ...grpc.CallOption) (*GetConversationListResp, error) {
+func (c *messageRpcClient) UpdateSession(ctx context.Context, in *UpdateSessionReq, opts ...grpc.CallOption) (*UpdateSessionResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetConversationListResp)
-	err := c.cc.Invoke(ctx, MessageRpc_GetConversationList_FullMethodName, in, out, cOpts...)
+	out := new(UpdateSessionResp)
+	err := c.cc.Invoke(ctx, MessageRpc_UpdateSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *messageRpcClient) ReadMessage(ctx context.Context, in *ReadMessageReq, opts ...grpc.CallOption) (*ReadMessageResp, error) {
+func (c *messageRpcClient) GetUserSessions(ctx context.Context, in *GetUserSessionsReq, opts ...grpc.CallOption) (*GetUserSessionsResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReadMessageResp)
-	err := c.cc.Invoke(ctx, MessageRpc_ReadMessage_FullMethodName, in, out, cOpts...)
+	out := new(GetUserSessionsResp)
+	err := c.cc.Invoke(ctx, MessageRpc_GetUserSessions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *messageRpcClient) UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error) {
+func (c *messageRpcClient) GetUserActiveSessions(ctx context.Context, in *GetUserActiveSessionsReq, opts ...grpc.CallOption) (*GetUserActiveSessionsResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateConversationResp)
-	err := c.cc.Invoke(ctx, MessageRpc_UpdateConversation_FullMethodName, in, out, cOpts...)
+	out := new(GetUserActiveSessionsResp)
+	err := c.cc.Invoke(ctx, MessageRpc_GetUserActiveSessions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *messageRpcClient) GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error) {
+func (c *messageRpcClient) GetSession(ctx context.Context, in *GetSessionReq, opts ...grpc.CallOption) (*GetSessionResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetUserConversationsResp)
-	err := c.cc.Invoke(ctx, MessageRpc_GetUserConversations_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *messageRpcClient) GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetUserActiveConversationsResp)
-	err := c.cc.Invoke(ctx, MessageRpc_GetUserActiveConversations_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *messageRpcClient) RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RecallMessageResp)
-	err := c.cc.Invoke(ctx, MessageRpc_RecallMessage_FullMethodName, in, out, cOpts...)
+	out := new(GetSessionResp)
+	err := c.cc.Invoke(ctx, MessageRpc_GetSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +101,11 @@ func (c *messageRpcClient) RecallMessage(ctx context.Context, in *RecallMessageR
 // for forward compatibility.
 type MessageRpcServer interface {
 	GetHistory(context.Context, *GetHistoryReq) (*GetHistoryResp, error)
-	GetConversationList(context.Context, *GetConversationListReq) (*GetConversationListResp, error)
-	ReadMessage(context.Context, *ReadMessageReq) (*ReadMessageResp, error)
-	UpdateConversation(context.Context, *UpdateConversationReq) (*UpdateConversationResp, error)
-	GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error)
-	GetUserActiveConversations(context.Context, *GetUserActiveConversationsReq) (*GetUserActiveConversationsResp, error)
-	RecallMessage(context.Context, *RecallMessageReq) (*RecallMessageResp, error)
+	UpdateSession(context.Context, *UpdateSessionReq) (*UpdateSessionResp, error)
+	GetUserSessions(context.Context, *GetUserSessionsReq) (*GetUserSessionsResp, error)
+	GetUserActiveSessions(context.Context, *GetUserActiveSessionsReq) (*GetUserActiveSessionsResp, error)
+	// 内部会话管理接口
+	GetSession(context.Context, *GetSessionReq) (*GetSessionResp, error)
 	mustEmbedUnimplementedMessageRpcServer()
 }
 
@@ -143,23 +119,17 @@ type UnimplementedMessageRpcServer struct{}
 func (UnimplementedMessageRpcServer) GetHistory(context.Context, *GetHistoryReq) (*GetHistoryResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetHistory not implemented")
 }
-func (UnimplementedMessageRpcServer) GetConversationList(context.Context, *GetConversationListReq) (*GetConversationListResp, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetConversationList not implemented")
+func (UnimplementedMessageRpcServer) UpdateSession(context.Context, *UpdateSessionReq) (*UpdateSessionResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSession not implemented")
 }
-func (UnimplementedMessageRpcServer) ReadMessage(context.Context, *ReadMessageReq) (*ReadMessageResp, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReadMessage not implemented")
+func (UnimplementedMessageRpcServer) GetUserSessions(context.Context, *GetUserSessionsReq) (*GetUserSessionsResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserSessions not implemented")
 }
-func (UnimplementedMessageRpcServer) UpdateConversation(context.Context, *UpdateConversationReq) (*UpdateConversationResp, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateConversation not implemented")
+func (UnimplementedMessageRpcServer) GetUserActiveSessions(context.Context, *GetUserActiveSessionsReq) (*GetUserActiveSessionsResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserActiveSessions not implemented")
 }
-func (UnimplementedMessageRpcServer) GetUserConversations(context.Context, *GetUserConversationsReq) (*GetUserConversationsResp, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetUserConversations not implemented")
-}
-func (UnimplementedMessageRpcServer) GetUserActiveConversations(context.Context, *GetUserActiveConversationsReq) (*GetUserActiveConversationsResp, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetUserActiveConversations not implemented")
-}
-func (UnimplementedMessageRpcServer) RecallMessage(context.Context, *RecallMessageReq) (*RecallMessageResp, error) {
-	return nil, status.Error(codes.Unimplemented, "method RecallMessage not implemented")
+func (UnimplementedMessageRpcServer) GetSession(context.Context, *GetSessionReq) (*GetSessionResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSession not implemented")
 }
 func (UnimplementedMessageRpcServer) mustEmbedUnimplementedMessageRpcServer() {}
 func (UnimplementedMessageRpcServer) testEmbeddedByValue()                    {}
@@ -200,110 +170,74 @@ func _MessageRpc_GetHistory_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MessageRpc_GetConversationList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetConversationListReq)
+func _MessageRpc_UpdateSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSessionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MessageRpcServer).GetConversationList(ctx, in)
+		return srv.(MessageRpcServer).UpdateSession(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MessageRpc_GetConversationList_FullMethodName,
+		FullMethod: MessageRpc_UpdateSession_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).GetConversationList(ctx, req.(*GetConversationListReq))
+		return srv.(MessageRpcServer).UpdateSession(ctx, req.(*UpdateSessionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MessageRpc_ReadMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReadMessageReq)
+func _MessageRpc_GetUserSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserSessionsReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MessageRpcServer).ReadMessage(ctx, in)
+		return srv.(MessageRpcServer).GetUserSessions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MessageRpc_ReadMessage_FullMethodName,
+		FullMethod: MessageRpc_GetUserSessions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).ReadMessage(ctx, req.(*ReadMessageReq))
+		return srv.(MessageRpcServer).GetUserSessions(ctx, req.(*GetUserSessionsReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MessageRpc_UpdateConversation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateConversationReq)
+func _MessageRpc_GetUserActiveSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserActiveSessionsReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MessageRpcServer).UpdateConversation(ctx, in)
+		return srv.(MessageRpcServer).GetUserActiveSessions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MessageRpc_UpdateConversation_FullMethodName,
+		FullMethod: MessageRpc_GetUserActiveSessions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).UpdateConversation(ctx, req.(*UpdateConversationReq))
+		return srv.(MessageRpcServer).GetUserActiveSessions(ctx, req.(*GetUserActiveSessionsReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MessageRpc_GetUserConversations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUserConversationsReq)
+func _MessageRpc_GetSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSessionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MessageRpcServer).GetUserConversations(ctx, in)
+		return srv.(MessageRpcServer).GetSession(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MessageRpc_GetUserConversations_FullMethodName,
+		FullMethod: MessageRpc_GetSession_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).GetUserConversations(ctx, req.(*GetUserConversationsReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MessageRpc_GetUserActiveConversations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUserActiveConversationsReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessageRpcServer).GetUserActiveConversations(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MessageRpc_GetUserActiveConversations_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).GetUserActiveConversations(ctx, req.(*GetUserActiveConversationsReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MessageRpc_RecallMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RecallMessageReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessageRpcServer).RecallMessage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MessageRpc_RecallMessage_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageRpcServer).RecallMessage(ctx, req.(*RecallMessageReq))
+		return srv.(MessageRpcServer).GetSession(ctx, req.(*GetSessionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -320,28 +254,20 @@ var MessageRpc_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MessageRpc_GetHistory_Handler,
 		},
 		{
-			MethodName: "GetConversationList",
-			Handler:    _MessageRpc_GetConversationList_Handler,
+			MethodName: "UpdateSession",
+			Handler:    _MessageRpc_UpdateSession_Handler,
 		},
 		{
-			MethodName: "ReadMessage",
-			Handler:    _MessageRpc_ReadMessage_Handler,
+			MethodName: "GetUserSessions",
+			Handler:    _MessageRpc_GetUserSessions_Handler,
 		},
 		{
-			MethodName: "UpdateConversation",
-			Handler:    _MessageRpc_UpdateConversation_Handler,
+			MethodName: "GetUserActiveSessions",
+			Handler:    _MessageRpc_GetUserActiveSessions_Handler,
 		},
 		{
-			MethodName: "GetUserConversations",
-			Handler:    _MessageRpc_GetUserConversations_Handler,
-		},
-		{
-			MethodName: "GetUserActiveConversations",
-			Handler:    _MessageRpc_GetUserActiveConversations_Handler,
-		},
-		{
-			MethodName: "RecallMessage",
-			Handler:    _MessageRpc_RecallMessage_Handler,
+			MethodName: "GetSession",
+			Handler:    _MessageRpc_GetSession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

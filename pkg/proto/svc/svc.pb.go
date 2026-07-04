@@ -134,18 +134,18 @@ func (x *UserGroupSync) GetGroupIds() []uint64 {
 }
 
 type MessageSend struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	MsgId          string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
-	ClientId       string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	ConversationId string                 `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	Sender         uint64                 `protobuf:"varint,4,opt,name=sender,proto3" json:"sender,omitempty"`
-	Target         uint64                 `protobuf:"varint,5,opt,name=target,proto3" json:"target,omitempty"`
-	MsgType        int64                  `protobuf:"varint,6,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`
-	Timestamp      int64                  `protobuf:"varint,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Preview        string                 `protobuf:"bytes,8,opt,name=preview,proto3" json:"preview,omitempty"`
-	Payload        []byte                 `protobuf:"bytes,9,opt,name=payload,proto3" json:"payload,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionKey    string                 `protobuf:"bytes,3,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"`
+	Sender        uint64                 `protobuf:"varint,4,opt,name=sender,proto3" json:"sender,omitempty"`
+	Target        uint64                 `protobuf:"varint,5,opt,name=target,proto3" json:"target,omitempty"`
+	MsgType       int64                  `protobuf:"varint,6,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Preview       string                 `protobuf:"bytes,8,opt,name=preview,proto3" json:"preview,omitempty"`
+	Payload       []byte                 `protobuf:"bytes,9,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MessageSend) Reset() {
@@ -178,13 +178,6 @@ func (*MessageSend) Descriptor() ([]byte, []int) {
 	return file_pkg_proto_svc_svc_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *MessageSend) GetMsgId() string {
-	if x != nil {
-		return x.MsgId
-	}
-	return ""
-}
-
 func (x *MessageSend) GetClientId() string {
 	if x != nil {
 		return x.ClientId
@@ -192,9 +185,16 @@ func (x *MessageSend) GetClientId() string {
 	return ""
 }
 
-func (x *MessageSend) GetConversationId() string {
+func (x *MessageSend) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *MessageSend) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
 	}
 	return ""
 }
@@ -253,10 +253,12 @@ const file_pkg_proto_svc_svc_proto_rawDesc = "" +
 	"\rUserGroupSync\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1b\n" +
 	"\tgroup_ids\x18\x02 \x03(\x04R\bgroupIds\"\x87\x02\n" +
-	"\vMessageSend\x12\x15\n" +
-	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
-	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12'\n" +
-	"\x0fconversation_id\x18\x03 \x01(\tR\x0econversationId\x12\x16\n" +
+	"\vMessageSend\x12\x1b\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x1f\n" +
+	"\vsession_key\x18\x03 \x01(\tR\n" +
+	"sessionKey\x12\x16\n" +
 	"\x06sender\x18\x04 \x01(\x04R\x06sender\x12\x16\n" +
 	"\x06target\x18\x05 \x01(\x04R\x06target\x12\x19\n" +
 	"\bmsg_type\x18\x06 \x01(\x03R\amsgType\x12\x1c\n" +

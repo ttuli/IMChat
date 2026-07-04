@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/User/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type GetFriendsLogic struct {
@@ -25,7 +27,7 @@ func NewGetFriendsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetFri
 
 // 好友管理
 func (l *GetFriendsLogic) GetFriends(in *user.GetFriendsReq) (*user.GetFriendsResp, error) {
-	friends, err := l.svcCtx.UserService.GetFriends(l.ctx, in.UserId)
+	friends, err := service.NewUserService(l.svcCtx).GetFriends(l.ctx, in.UserId)
 	if err != nil {
 		return nil, err
 	}

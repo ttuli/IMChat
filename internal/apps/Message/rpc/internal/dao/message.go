@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

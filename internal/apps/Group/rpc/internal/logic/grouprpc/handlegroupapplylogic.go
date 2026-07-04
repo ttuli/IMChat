@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type HandleGroupApplyLogic struct {
@@ -24,7 +26,7 @@ func NewHandleGroupApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *HandleGroupApplyLogic) HandleGroupApply(in *group.HandleGroupApplyReq) (*group.HandleGroupApplyResp, error) {
-	apply, err := l.svcCtx.GroupService.HandleGroupApply(l.ctx, in.Id, in.OperatorId, uint8(in.Status), in.RejectReason)
+	apply, err := service.NewGroupService(l.svcCtx).HandleGroupApply(l.ctx, in.Id, in.OperatorId, uint8(in.Status), in.RejectReason)
 	if err != nil {
 		return nil, err
 	}

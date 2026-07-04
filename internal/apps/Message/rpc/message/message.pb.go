@@ -22,20 +22,20 @@ const (
 )
 
 type Message struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	MsgId          string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
-	ClientId       string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	ConversationId string                 `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	FromUserId     uint64                 `protobuf:"varint,4,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id,omitempty"`
-	MsgType        int32                  `protobuf:"varint,5,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`
-	Seq            uint64                 `protobuf:"varint,6,opt,name=seq,proto3" json:"seq,omitempty"`
-	Content        string                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
-	MediaUrl       string                 `protobuf:"bytes,8,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
-	Extra          []byte                 `protobuf:"bytes,9,opt,name=extra,proto3" json:"extra,omitempty"`
-	Status         int32                  `protobuf:"varint,10,opt,name=status,proto3" json:"status,omitempty"`
-	CreateTime     int64                  `protobuf:"varint,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MsgId         string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
+	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	FromUserId    uint64                 `protobuf:"varint,4,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id,omitempty"`
+	MsgType       int32                  `protobuf:"varint,5,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`
+	Seq           uint64                 `protobuf:"varint,6,opt,name=seq,proto3" json:"seq,omitempty"`
+	Content       string                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
+	MediaUrl      string                 `protobuf:"bytes,8,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
+	Extra         []byte                 `protobuf:"bytes,9,opt,name=extra,proto3" json:"extra,omitempty"`
+	Status        int32                  `protobuf:"varint,10,opt,name=status,proto3" json:"status,omitempty"`
+	CreateTime    int64                  `protobuf:"varint,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Message) Reset() {
@@ -82,9 +82,9 @@ func (x *Message) GetClientId() string {
 	return ""
 }
 
-func (x *Message) GetConversationId() string {
+func (x *Message) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
@@ -145,33 +145,35 @@ func (x *Message) GetCreateTime() int64 {
 	return 0
 }
 
-type Conversation struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	Type           int32                  `protobuf:"varint,2,opt,name=type,proto3" json:"type,omitempty"`
-	MaxSeq         uint64                 `protobuf:"varint,3,opt,name=max_seq,json=maxSeq,proto3" json:"max_seq,omitempty"`
-	CreateTime     int64                  `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	UpdateTime     int64                  `protobuf:"varint,5,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	LastContent    string                 `protobuf:"bytes,6,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"`
-	LastSender     uint64                 `protobuf:"varint,7,opt,name=last_sender,json=lastSender,proto3" json:"last_sender,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+type Session struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	Type          int32                  `protobuf:"varint,2,opt,name=type,proto3" json:"type,omitempty"`
+	SessionKey    string                 `protobuf:"bytes,3,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"`
+	MaxSeq        uint64                 `protobuf:"varint,4,opt,name=max_seq,json=maxSeq,proto3" json:"max_seq,omitempty"`
+	ActualSeq     uint64                 `protobuf:"varint,5,opt,name=actual_seq,json=actualSeq,proto3" json:"actual_seq,omitempty"`
+	LastContent   string                 `protobuf:"bytes,6,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"`
+	LastSender    uint64                 `protobuf:"varint,7,opt,name=last_sender,json=lastSender,proto3" json:"last_sender,omitempty"`
+	CreateTime    int64                  `protobuf:"varint,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime    int64                  `protobuf:"varint,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Conversation) Reset() {
-	*x = Conversation{}
+func (x *Session) Reset() {
+	*x = Session{}
 	mi := &file_rpc_message_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Conversation) String() string {
+func (x *Session) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Conversation) ProtoMessage() {}
+func (*Session) ProtoMessage() {}
 
-func (x *Conversation) ProtoReflect() protoreflect.Message {
+func (x *Session) ProtoReflect() protoreflect.Message {
 	mi := &file_rpc_message_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -183,87 +185,101 @@ func (x *Conversation) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
-func (*Conversation) Descriptor() ([]byte, []int) {
+// Deprecated: Use Session.ProtoReflect.Descriptor instead.
+func (*Session) Descriptor() ([]byte, []int) {
 	return file_rpc_message_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Conversation) GetConversationId() string {
+func (x *Session) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
 
-func (x *Conversation) GetType() int32 {
+func (x *Session) GetType() int32 {
 	if x != nil {
 		return x.Type
 	}
 	return 0
 }
 
-func (x *Conversation) GetMaxSeq() uint64 {
+func (x *Session) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
+	}
+	return ""
+}
+
+func (x *Session) GetMaxSeq() uint64 {
 	if x != nil {
 		return x.MaxSeq
 	}
 	return 0
 }
 
-func (x *Conversation) GetCreateTime() int64 {
+func (x *Session) GetActualSeq() uint64 {
 	if x != nil {
-		return x.CreateTime
+		return x.ActualSeq
 	}
 	return 0
 }
 
-func (x *Conversation) GetUpdateTime() int64 {
-	if x != nil {
-		return x.UpdateTime
-	}
-	return 0
-}
-
-func (x *Conversation) GetLastContent() string {
+func (x *Session) GetLastContent() string {
 	if x != nil {
 		return x.LastContent
 	}
 	return ""
 }
 
-func (x *Conversation) GetLastSender() uint64 {
+func (x *Session) GetLastSender() uint64 {
 	if x != nil {
 		return x.LastSender
 	}
 	return 0
 }
 
-type UserConversation struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	UserId         uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ConversationId string                 `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	IsTop          int32                  `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`
-	IsDisturb      int32                  `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`
-	LastReadSeq    uint64                 `protobuf:"varint,5,opt,name=last_read_seq,json=lastReadSeq,proto3" json:"last_read_seq,omitempty"`
-	CreateTime     int64                  `protobuf:"varint,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	UpdateTime     int64                  `protobuf:"varint,7,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+func (x *Session) GetCreateTime() int64 {
+	if x != nil {
+		return x.CreateTime
+	}
+	return 0
 }
 
-func (x *UserConversation) Reset() {
-	*x = UserConversation{}
+func (x *Session) GetUpdateTime() int64 {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return 0
+}
+
+type UserSession struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	IsTop         int32                  `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`
+	IsDisturb     int32                  `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`
+	LastReadSeq   uint64                 `protobuf:"varint,5,opt,name=last_read_seq,json=lastReadSeq,proto3" json:"last_read_seq,omitempty"`
+	CreateTime    int64                  `protobuf:"varint,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime    int64                  `protobuf:"varint,7,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserSession) Reset() {
+	*x = UserSession{}
 	mi := &file_rpc_message_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UserConversation) String() string {
+func (x *UserSession) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UserConversation) ProtoMessage() {}
+func (*UserSession) ProtoMessage() {}
 
-func (x *UserConversation) ProtoReflect() protoreflect.Message {
+func (x *UserSession) ProtoReflect() protoreflect.Message {
 	mi := &file_rpc_message_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -275,54 +291,54 @@ func (x *UserConversation) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UserConversation.ProtoReflect.Descriptor instead.
-func (*UserConversation) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserSession.ProtoReflect.Descriptor instead.
+func (*UserSession) Descriptor() ([]byte, []int) {
 	return file_rpc_message_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *UserConversation) GetUserId() uint64 {
+func (x *UserSession) GetUserId() uint64 {
 	if x != nil {
 		return x.UserId
 	}
 	return 0
 }
 
-func (x *UserConversation) GetConversationId() string {
+func (x *UserSession) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
 
-func (x *UserConversation) GetIsTop() int32 {
+func (x *UserSession) GetIsTop() int32 {
 	if x != nil {
 		return x.IsTop
 	}
 	return 0
 }
 
-func (x *UserConversation) GetIsDisturb() int32 {
+func (x *UserSession) GetIsDisturb() int32 {
 	if x != nil {
 		return x.IsDisturb
 	}
 	return 0
 }
 
-func (x *UserConversation) GetLastReadSeq() uint64 {
+func (x *UserSession) GetLastReadSeq() uint64 {
 	if x != nil {
 		return x.LastReadSeq
 	}
 	return 0
 }
 
-func (x *UserConversation) GetCreateTime() int64 {
+func (x *UserSession) GetCreateTime() int64 {
 	if x != nil {
 		return x.CreateTime
 	}
 	return 0
 }
 
-func (x *UserConversation) GetUpdateTime() int64 {
+func (x *UserSession) GetUpdateTime() int64 {
 	if x != nil {
 		return x.UpdateTime
 	}
@@ -330,13 +346,13 @@ func (x *UserConversation) GetUpdateTime() int64 {
 }
 
 type GetHistoryReq struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	StartSeq       int64                  `protobuf:"varint,2,opt,name=start_seq,json=startSeq,proto3" json:"start_seq,omitempty"`
-	EndSeq         int64                  `protobuf:"varint,3,opt,name=end_seq,json=endSeq,proto3" json:"end_seq,omitempty"`
-	Limit          int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	StartSeq      int64                  `protobuf:"varint,2,opt,name=start_seq,json=startSeq,proto3" json:"start_seq,omitempty"`
+	EndSeq        int64                  `protobuf:"varint,3,opt,name=end_seq,json=endSeq,proto3" json:"end_seq,omitempty"`
+	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetHistoryReq) Reset() {
@@ -369,9 +385,9 @@ func (*GetHistoryReq) Descriptor() ([]byte, []int) {
 	return file_rpc_message_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetHistoryReq) GetConversationId() string {
+func (x *GetHistoryReq) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
@@ -441,116 +457,28 @@ func (x *GetHistoryResp) GetMessages() []*Message {
 	return nil
 }
 
-type GetConversationListReq struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionIds    []string               `protobuf:"bytes,1,rep,name=session_ids,json=sessionIds,proto3" json:"session_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetConversationListReq) Reset() {
-	*x = GetConversationListReq{}
-	mi := &file_rpc_message_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetConversationListReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetConversationListReq) ProtoMessage() {}
-
-func (x *GetConversationListReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetConversationListReq.ProtoReflect.Descriptor instead.
-func (*GetConversationListReq) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *GetConversationListReq) GetSessionIds() []string {
-	if x != nil {
-		return x.SessionIds
-	}
-	return nil
-}
-
-type GetConversationListResp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Conversations []*Conversation        `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetConversationListResp) Reset() {
-	*x = GetConversationListResp{}
-	mi := &file_rpc_message_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetConversationListResp) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetConversationListResp) ProtoMessage() {}
-
-func (x *GetConversationListResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetConversationListResp.ProtoReflect.Descriptor instead.
-func (*GetConversationListResp) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *GetConversationListResp) GetConversations() []*Conversation {
-	if x != nil {
-		return x.Conversations
-	}
-	return nil
-}
-
-type GetUserConversationsReq struct {
+type GetUserSessionsReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetUserConversationsReq) Reset() {
-	*x = GetUserConversationsReq{}
-	mi := &file_rpc_message_proto_msgTypes[7]
+func (x *GetUserSessionsReq) Reset() {
+	*x = GetUserSessionsReq{}
+	mi := &file_rpc_message_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetUserConversationsReq) String() string {
+func (x *GetUserSessionsReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetUserConversationsReq) ProtoMessage() {}
+func (*GetUserSessionsReq) ProtoMessage() {}
 
-func (x *GetUserConversationsReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[7]
+func (x *GetUserSessionsReq) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -561,40 +489,40 @@ func (x *GetUserConversationsReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUserConversationsReq.ProtoReflect.Descriptor instead.
-func (*GetUserConversationsReq) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{7}
+// Deprecated: Use GetUserSessionsReq.ProtoReflect.Descriptor instead.
+func (*GetUserSessionsReq) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetUserConversationsReq) GetUserId() uint64 {
+func (x *GetUserSessionsReq) GetUserId() uint64 {
 	if x != nil {
 		return x.UserId
 	}
 	return 0
 }
 
-type GetUserConversationsResp struct {
+type GetUserSessionsResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Conversations []*UserConversation    `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations,omitempty"`
+	Sessions      []*UserSession         `protobuf:"bytes,1,rep,name=sessions,proto3" json:"sessions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetUserConversationsResp) Reset() {
-	*x = GetUserConversationsResp{}
-	mi := &file_rpc_message_proto_msgTypes[8]
+func (x *GetUserSessionsResp) Reset() {
+	*x = GetUserSessionsResp{}
+	mi := &file_rpc_message_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetUserConversationsResp) String() string {
+func (x *GetUserSessionsResp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetUserConversationsResp) ProtoMessage() {}
+func (*GetUserSessionsResp) ProtoMessage() {}
 
-func (x *GetUserConversationsResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[8]
+func (x *GetUserSessionsResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -605,99 +533,43 @@ func (x *GetUserConversationsResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUserConversationsResp.ProtoReflect.Descriptor instead.
-func (*GetUserConversationsResp) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{8}
+// Deprecated: Use GetUserSessionsResp.ProtoReflect.Descriptor instead.
+func (*GetUserSessionsResp) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GetUserConversationsResp) GetConversations() []*UserConversation {
+func (x *GetUserSessionsResp) GetSessions() []*UserSession {
 	if x != nil {
-		return x.Conversations
+		return x.Sessions
 	}
 	return nil
 }
 
-type ReadMessageReq struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	UserId         uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ConversationId string                 `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	Seq            uint64                 `protobuf:"varint,3,opt,name=seq,proto3" json:"seq,omitempty"` // 读到的seq
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *ReadMessageReq) Reset() {
-	*x = ReadMessageReq{}
-	mi := &file_rpc_message_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadMessageReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadMessageReq) ProtoMessage() {}
-
-func (x *ReadMessageReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadMessageReq.ProtoReflect.Descriptor instead.
-func (*ReadMessageReq) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ReadMessageReq) GetUserId() uint64 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
-}
-
-func (x *ReadMessageReq) GetConversationId() string {
-	if x != nil {
-		return x.ConversationId
-	}
-	return ""
-}
-
-func (x *ReadMessageReq) GetSeq() uint64 {
-	if x != nil {
-		return x.Seq
-	}
-	return 0
-}
-
-type ReadMessageResp struct {
+type UpdateSessionReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	IsTop         int32                  `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`             // 0:不变更 1:置顶 2:取消置顶
+	IsDisturb     int32                  `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"` // 0:不变更 1:免打扰 2:取消免打扰
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReadMessageResp) Reset() {
-	*x = ReadMessageResp{}
-	mi := &file_rpc_message_proto_msgTypes[10]
+func (x *UpdateSessionReq) Reset() {
+	*x = UpdateSessionReq{}
+	mi := &file_rpc_message_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReadMessageResp) String() string {
+func (x *UpdateSessionReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReadMessageResp) ProtoMessage() {}
+func (*UpdateSessionReq) ProtoMessage() {}
 
-func (x *ReadMessageResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[10]
+func (x *UpdateSessionReq) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -708,100 +580,60 @@ func (x *ReadMessageResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReadMessageResp.ProtoReflect.Descriptor instead.
-func (*ReadMessageResp) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{10}
+// Deprecated: Use UpdateSessionReq.ProtoReflect.Descriptor instead.
+func (*UpdateSessionReq) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{7}
 }
 
-type UpdateConversationReq struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	UserId         uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ConversationId string                 `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	IsTop          int32                  `protobuf:"varint,3,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`             // 0:不变更 1:置顶 2:取消置顶
-	IsDisturb      int32                  `protobuf:"varint,4,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"` // 0:不变更 1:免打扰 2:取消免打扰
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *UpdateConversationReq) Reset() {
-	*x = UpdateConversationReq{}
-	mi := &file_rpc_message_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UpdateConversationReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UpdateConversationReq) ProtoMessage() {}
-
-func (x *UpdateConversationReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UpdateConversationReq.ProtoReflect.Descriptor instead.
-func (*UpdateConversationReq) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *UpdateConversationReq) GetUserId() uint64 {
+func (x *UpdateSessionReq) GetUserId() uint64 {
 	if x != nil {
 		return x.UserId
 	}
 	return 0
 }
 
-func (x *UpdateConversationReq) GetConversationId() string {
+func (x *UpdateSessionReq) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
 
-func (x *UpdateConversationReq) GetIsTop() int32 {
+func (x *UpdateSessionReq) GetIsTop() int32 {
 	if x != nil {
 		return x.IsTop
 	}
 	return 0
 }
 
-func (x *UpdateConversationReq) GetIsDisturb() int32 {
+func (x *UpdateSessionReq) GetIsDisturb() int32 {
 	if x != nil {
 		return x.IsDisturb
 	}
 	return 0
 }
 
-type UpdateConversationResp struct {
+type UpdateSessionResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateConversationResp) Reset() {
-	*x = UpdateConversationResp{}
-	mi := &file_rpc_message_proto_msgTypes[12]
+func (x *UpdateSessionResp) Reset() {
+	*x = UpdateSessionResp{}
+	mi := &file_rpc_message_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateConversationResp) String() string {
+func (x *UpdateSessionResp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateConversationResp) ProtoMessage() {}
+func (*UpdateSessionResp) ProtoMessage() {}
 
-func (x *UpdateConversationResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[12]
+func (x *UpdateSessionResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -812,12 +644,12 @@ func (x *UpdateConversationResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateConversationResp.ProtoReflect.Descriptor instead.
-func (*UpdateConversationResp) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{12}
+// Deprecated: Use UpdateSessionResp.ProtoReflect.Descriptor instead.
+func (*UpdateSessionResp) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{8}
 }
 
-type GetUserActiveConversationsReq struct {
+type GetUserActiveSessionsReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Timestamp     int64                  `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -825,21 +657,21 @@ type GetUserActiveConversationsReq struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetUserActiveConversationsReq) Reset() {
-	*x = GetUserActiveConversationsReq{}
-	mi := &file_rpc_message_proto_msgTypes[13]
+func (x *GetUserActiveSessionsReq) Reset() {
+	*x = GetUserActiveSessionsReq{}
+	mi := &file_rpc_message_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetUserActiveConversationsReq) String() string {
+func (x *GetUserActiveSessionsReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetUserActiveConversationsReq) ProtoMessage() {}
+func (*GetUserActiveSessionsReq) ProtoMessage() {}
 
-func (x *GetUserActiveConversationsReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[13]
+func (x *GetUserActiveSessionsReq) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -850,47 +682,47 @@ func (x *GetUserActiveConversationsReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUserActiveConversationsReq.ProtoReflect.Descriptor instead.
-func (*GetUserActiveConversationsReq) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{13}
+// Deprecated: Use GetUserActiveSessionsReq.ProtoReflect.Descriptor instead.
+func (*GetUserActiveSessionsReq) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *GetUserActiveConversationsReq) GetUserId() uint64 {
+func (x *GetUserActiveSessionsReq) GetUserId() uint64 {
 	if x != nil {
 		return x.UserId
 	}
 	return 0
 }
 
-func (x *GetUserActiveConversationsReq) GetTimestamp() int64 {
+func (x *GetUserActiveSessionsReq) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
 	}
 	return 0
 }
 
-type GetUserActiveConversationsResp struct {
+type GetUserActiveSessionsResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Conversations []*Conversation        `protobuf:"bytes,1,rep,name=conversations,proto3" json:"conversations,omitempty"`
+	Sessions      []*Session             `protobuf:"bytes,1,rep,name=sessions,proto3" json:"sessions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetUserActiveConversationsResp) Reset() {
-	*x = GetUserActiveConversationsResp{}
-	mi := &file_rpc_message_proto_msgTypes[14]
+func (x *GetUserActiveSessionsResp) Reset() {
+	*x = GetUserActiveSessionsResp{}
+	mi := &file_rpc_message_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetUserActiveConversationsResp) String() string {
+func (x *GetUserActiveSessionsResp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetUserActiveConversationsResp) ProtoMessage() {}
+func (*GetUserActiveSessionsResp) ProtoMessage() {}
 
-func (x *GetUserActiveConversationsResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[14]
+func (x *GetUserActiveSessionsResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -901,42 +733,43 @@ func (x *GetUserActiveConversationsResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUserActiveConversationsResp.ProtoReflect.Descriptor instead.
-func (*GetUserActiveConversationsResp) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{14}
+// Deprecated: Use GetUserActiveSessionsResp.ProtoReflect.Descriptor instead.
+func (*GetUserActiveSessionsResp) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *GetUserActiveConversationsResp) GetConversations() []*Conversation {
+func (x *GetUserActiveSessionsResp) GetSessions() []*Session {
 	if x != nil {
-		return x.Conversations
+		return x.Sessions
 	}
 	return nil
 }
 
-type RecallMessageReq struct {
+// 根据 session_id 或 conv_key 查询会话；通过 conv_key 查询时若不存在则按给定类型创建
+type GetSessionReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	MsgId         string                 `protobuf:"bytes,2,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
-	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`        // 按 session_id 查询（精确）
+	SessionKey    string                 `protobuf:"bytes,2,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"`     // 按 session_key 查询（不存在则创建）
+	SessionType   int32                  `protobuf:"varint,3,opt,name=session_type,json=sessionType,proto3" json:"session_type,omitempty"` // 仅 session_key 模式下有效，指定创建时的会话类型
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RecallMessageReq) Reset() {
-	*x = RecallMessageReq{}
-	mi := &file_rpc_message_proto_msgTypes[15]
+func (x *GetSessionReq) Reset() {
+	*x = GetSessionReq{}
+	mi := &file_rpc_message_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RecallMessageReq) String() string {
+func (x *GetSessionReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RecallMessageReq) ProtoMessage() {}
+func (*GetSessionReq) ProtoMessage() {}
 
-func (x *RecallMessageReq) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[15]
+func (x *GetSessionReq) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -947,53 +780,54 @@ func (x *RecallMessageReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecallMessageReq.ProtoReflect.Descriptor instead.
-func (*RecallMessageReq) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{15}
+// Deprecated: Use GetSessionReq.ProtoReflect.Descriptor instead.
+func (*GetSessionReq) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *RecallMessageReq) GetUserId() uint64 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
-}
-
-func (x *RecallMessageReq) GetMsgId() string {
-	if x != nil {
-		return x.MsgId
-	}
-	return ""
-}
-
-func (x *RecallMessageReq) GetSessionId() string {
+func (x *GetSessionReq) GetSessionId() string {
 	if x != nil {
 		return x.SessionId
 	}
 	return ""
 }
 
-type RecallMessageResp struct {
+func (x *GetSessionReq) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
+	}
+	return ""
+}
+
+func (x *GetSessionReq) GetSessionType() int32 {
+	if x != nil {
+		return x.SessionType
+	}
+	return 0
+}
+
+type GetSessionResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Session       *Session               `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RecallMessageResp) Reset() {
-	*x = RecallMessageResp{}
-	mi := &file_rpc_message_proto_msgTypes[16]
+func (x *GetSessionResp) Reset() {
+	*x = GetSessionResp{}
+	mi := &file_rpc_message_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RecallMessageResp) String() string {
+func (x *GetSessionResp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RecallMessageResp) ProtoMessage() {}
+func (*GetSessionResp) ProtoMessage() {}
 
-func (x *RecallMessageResp) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_message_proto_msgTypes[16]
+func (x *GetSessionResp) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_message_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1004,9 +838,16 @@ func (x *RecallMessageResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecallMessageResp.ProtoReflect.Descriptor instead.
-func (*RecallMessageResp) Descriptor() ([]byte, []int) {
-	return file_rpc_message_proto_rawDescGZIP(), []int{16}
+// Deprecated: Use GetSessionResp.ProtoReflect.Descriptor instead.
+func (*GetSessionResp) Descriptor() ([]byte, []int) {
+	return file_rpc_message_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetSessionResp) GetSession() *Session {
+	if x != nil {
+		return x.Session
+	}
+	return nil
 }
 
 var File_rpc_message_proto protoreflect.FileDescriptor
@@ -1014,11 +855,12 @@ var File_rpc_message_proto protoreflect.FileDescriptor
 const file_rpc_message_proto_rawDesc = "" +
 	"\n" +
 	"\x11rpc/message.proto\x12\n" +
-	"messagerpc\"\xbb\x02\n" +
+	"messagerpc\"\xb1\x02\n" +
 	"\aMessage\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
-	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12'\n" +
-	"\x0fconversation_id\x18\x03 \x01(\tR\x0econversationId\x12 \n" +
+	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12 \n" +
 	"\ffrom_user_id\x18\x04 \x01(\x04R\n" +
 	"fromUserId\x12\x19\n" +
 	"\bmsg_type\x18\x05 \x01(\x05R\amsgType\x12\x10\n" +
@@ -1029,21 +871,27 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\x06status\x18\n" +
 	" \x01(\x05R\x06status\x12\x1f\n" +
 	"\vcreate_time\x18\v \x01(\x03R\n" +
-	"createTime\"\xea\x01\n" +
-	"\fConversation\x12'\n" +
-	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x12\n" +
-	"\x04type\x18\x02 \x01(\x05R\x04type\x12\x17\n" +
-	"\amax_seq\x18\x03 \x01(\x04R\x06maxSeq\x12\x1f\n" +
-	"\vcreate_time\x18\x04 \x01(\x03R\n" +
-	"createTime\x12\x1f\n" +
-	"\vupdate_time\x18\x05 \x01(\x03R\n" +
-	"updateTime\x12!\n" +
+	"createTime\"\x9b\x02\n" +
+	"\aSession\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\x05R\x04type\x12\x1f\n" +
+	"\vsession_key\x18\x03 \x01(\tR\n" +
+	"sessionKey\x12\x17\n" +
+	"\amax_seq\x18\x04 \x01(\x04R\x06maxSeq\x12\x1d\n" +
+	"\n" +
+	"actual_seq\x18\x05 \x01(\x04R\tactualSeq\x12!\n" +
 	"\flast_content\x18\x06 \x01(\tR\vlastContent\x12\x1f\n" +
 	"\vlast_sender\x18\a \x01(\x04R\n" +
-	"lastSender\"\xf0\x01\n" +
-	"\x10UserConversation\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
-	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x15\n" +
+	"lastSender\x12\x1f\n" +
+	"\vcreate_time\x18\b \x01(\x03R\n" +
+	"createTime\x12\x1f\n" +
+	"\vupdate_time\x18\t \x01(\x03R\n" +
+	"updateTime\"\xe1\x01\n" +
+	"\vUserSession\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x15\n" +
 	"\x06is_top\x18\x03 \x01(\x05R\x05isTop\x12\x1d\n" +
 	"\n" +
 	"is_disturb\x18\x04 \x01(\x05R\tisDisturb\x12\"\n" +
@@ -1051,56 +899,49 @@ const file_rpc_message_proto_rawDesc = "" +
 	"\vcreate_time\x18\x06 \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
 	"\vupdate_time\x18\a \x01(\x03R\n" +
-	"updateTime\"\x84\x01\n" +
-	"\rGetHistoryReq\x12'\n" +
-	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1b\n" +
+	"updateTime\"z\n" +
+	"\rGetHistoryReq\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x1b\n" +
 	"\tstart_seq\x18\x02 \x01(\x03R\bstartSeq\x12\x17\n" +
 	"\aend_seq\x18\x03 \x01(\x03R\x06endSeq\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\"A\n" +
 	"\x0eGetHistoryResp\x12/\n" +
-	"\bmessages\x18\x01 \x03(\v2\x13.messagerpc.MessageR\bmessages\"9\n" +
-	"\x16GetConversationListReq\x12\x1f\n" +
-	"\vsession_ids\x18\x01 \x03(\tR\n" +
-	"sessionIds\"Y\n" +
-	"\x17GetConversationListResp\x12>\n" +
-	"\rconversations\x18\x01 \x03(\v2\x18.messagerpc.ConversationR\rconversations\"2\n" +
-	"\x17GetUserConversationsReq\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x04R\x06userId\"^\n" +
-	"\x18GetUserConversationsResp\x12B\n" +
-	"\rconversations\x18\x01 \x03(\v2\x1c.messagerpc.UserConversationR\rconversations\"d\n" +
-	"\x0eReadMessageReq\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
-	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x10\n" +
-	"\x03seq\x18\x03 \x01(\x04R\x03seq\"\x11\n" +
-	"\x0fReadMessageResp\"\x8f\x01\n" +
-	"\x15UpdateConversationReq\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
-	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x15\n" +
+	"\bmessages\x18\x01 \x03(\v2\x13.messagerpc.MessageR\bmessages\"-\n" +
+	"\x12GetUserSessionsReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\"J\n" +
+	"\x13GetUserSessionsResp\x123\n" +
+	"\bsessions\x18\x01 \x03(\v2\x17.messagerpc.UserSessionR\bsessions\"\x80\x01\n" +
+	"\x10UpdateSessionReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x15\n" +
 	"\x06is_top\x18\x03 \x01(\x05R\x05isTop\x12\x1d\n" +
 	"\n" +
-	"is_disturb\x18\x04 \x01(\x05R\tisDisturb\"\x18\n" +
-	"\x16UpdateConversationResp\"V\n" +
-	"\x1dGetUserActiveConversationsReq\x12\x17\n" +
+	"is_disturb\x18\x04 \x01(\x05R\tisDisturb\"\x13\n" +
+	"\x11UpdateSessionResp\"Q\n" +
+	"\x18GetUserActiveSessionsReq\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"`\n" +
-	"\x1eGetUserActiveConversationsResp\x12>\n" +
-	"\rconversations\x18\x01 \x03(\v2\x18.messagerpc.ConversationR\rconversations\"a\n" +
-	"\x10RecallMessageReq\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x15\n" +
-	"\x06msg_id\x18\x02 \x01(\tR\x05msgId\x12\x1d\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"L\n" +
+	"\x19GetUserActiveSessionsResp\x12/\n" +
+	"\bsessions\x18\x01 \x03(\v2\x13.messagerpc.SessionR\bsessions\"r\n" +
+	"\rGetSessionReq\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\tR\tsessionId\"\x13\n" +
-	"\x11RecallMessageResp2\xfc\x04\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x1f\n" +
+	"\vsession_key\x18\x02 \x01(\tR\n" +
+	"sessionKey\x12!\n" +
+	"\fsession_type\x18\x03 \x01(\x05R\vsessionType\"?\n" +
+	"\x0eGetSessionResp\x12-\n" +
+	"\asession\x18\x01 \x01(\v2\x13.messagerpc.SessionR\asession2\x9e\x03\n" +
 	"\n" +
 	"MessageRpc\x12C\n" +
 	"\n" +
-	"GetHistory\x12\x19.messagerpc.GetHistoryReq\x1a\x1a.messagerpc.GetHistoryResp\x12^\n" +
-	"\x13GetConversationList\x12\".messagerpc.GetConversationListReq\x1a#.messagerpc.GetConversationListResp\x12F\n" +
-	"\vReadMessage\x12\x1a.messagerpc.ReadMessageReq\x1a\x1b.messagerpc.ReadMessageResp\x12[\n" +
-	"\x12UpdateConversation\x12!.messagerpc.UpdateConversationReq\x1a\".messagerpc.UpdateConversationResp\x12a\n" +
-	"\x14GetUserConversations\x12#.messagerpc.GetUserConversationsReq\x1a$.messagerpc.GetUserConversationsResp\x12s\n" +
-	"\x1aGetUserActiveConversations\x12).messagerpc.GetUserActiveConversationsReq\x1a*.messagerpc.GetUserActiveConversationsResp\x12L\n" +
-	"\rRecallMessage\x12\x1c.messagerpc.RecallMessageReq\x1a\x1d.messagerpc.RecallMessageRespB\vZ\t./messageb\x06proto3"
+	"GetHistory\x12\x19.messagerpc.GetHistoryReq\x1a\x1a.messagerpc.GetHistoryResp\x12L\n" +
+	"\rUpdateSession\x12\x1c.messagerpc.UpdateSessionReq\x1a\x1d.messagerpc.UpdateSessionResp\x12R\n" +
+	"\x0fGetUserSessions\x12\x1e.messagerpc.GetUserSessionsReq\x1a\x1f.messagerpc.GetUserSessionsResp\x12d\n" +
+	"\x15GetUserActiveSessions\x12$.messagerpc.GetUserActiveSessionsReq\x1a%.messagerpc.GetUserActiveSessionsResp\x12C\n" +
+	"\n" +
+	"GetSession\x12\x19.messagerpc.GetSessionReq\x1a\x1a.messagerpc.GetSessionRespB\vZ\t./messageb\x06proto3"
 
 var (
 	file_rpc_message_proto_rawDescOnce sync.Once
@@ -1114,47 +955,39 @@ func file_rpc_message_proto_rawDescGZIP() []byte {
 	return file_rpc_message_proto_rawDescData
 }
 
-var file_rpc_message_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_rpc_message_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_rpc_message_proto_goTypes = []any{
-	(*Message)(nil),                        // 0: messagerpc.Message
-	(*Conversation)(nil),                   // 1: messagerpc.Conversation
-	(*UserConversation)(nil),               // 2: messagerpc.UserConversation
-	(*GetHistoryReq)(nil),                  // 3: messagerpc.GetHistoryReq
-	(*GetHistoryResp)(nil),                 // 4: messagerpc.GetHistoryResp
-	(*GetConversationListReq)(nil),         // 5: messagerpc.GetConversationListReq
-	(*GetConversationListResp)(nil),        // 6: messagerpc.GetConversationListResp
-	(*GetUserConversationsReq)(nil),        // 7: messagerpc.GetUserConversationsReq
-	(*GetUserConversationsResp)(nil),       // 8: messagerpc.GetUserConversationsResp
-	(*ReadMessageReq)(nil),                 // 9: messagerpc.ReadMessageReq
-	(*ReadMessageResp)(nil),                // 10: messagerpc.ReadMessageResp
-	(*UpdateConversationReq)(nil),          // 11: messagerpc.UpdateConversationReq
-	(*UpdateConversationResp)(nil),         // 12: messagerpc.UpdateConversationResp
-	(*GetUserActiveConversationsReq)(nil),  // 13: messagerpc.GetUserActiveConversationsReq
-	(*GetUserActiveConversationsResp)(nil), // 14: messagerpc.GetUserActiveConversationsResp
-	(*RecallMessageReq)(nil),               // 15: messagerpc.RecallMessageReq
-	(*RecallMessageResp)(nil),              // 16: messagerpc.RecallMessageResp
+	(*Message)(nil),                   // 0: messagerpc.Message
+	(*Session)(nil),                   // 1: messagerpc.Session
+	(*UserSession)(nil),               // 2: messagerpc.UserSession
+	(*GetHistoryReq)(nil),             // 3: messagerpc.GetHistoryReq
+	(*GetHistoryResp)(nil),            // 4: messagerpc.GetHistoryResp
+	(*GetUserSessionsReq)(nil),        // 5: messagerpc.GetUserSessionsReq
+	(*GetUserSessionsResp)(nil),       // 6: messagerpc.GetUserSessionsResp
+	(*UpdateSessionReq)(nil),          // 7: messagerpc.UpdateSessionReq
+	(*UpdateSessionResp)(nil),         // 8: messagerpc.UpdateSessionResp
+	(*GetUserActiveSessionsReq)(nil),  // 9: messagerpc.GetUserActiveSessionsReq
+	(*GetUserActiveSessionsResp)(nil), // 10: messagerpc.GetUserActiveSessionsResp
+	(*GetSessionReq)(nil),             // 11: messagerpc.GetSessionReq
+	(*GetSessionResp)(nil),            // 12: messagerpc.GetSessionResp
 }
 var file_rpc_message_proto_depIdxs = []int32{
 	0,  // 0: messagerpc.GetHistoryResp.messages:type_name -> messagerpc.Message
-	1,  // 1: messagerpc.GetConversationListResp.conversations:type_name -> messagerpc.Conversation
-	2,  // 2: messagerpc.GetUserConversationsResp.conversations:type_name -> messagerpc.UserConversation
-	1,  // 3: messagerpc.GetUserActiveConversationsResp.conversations:type_name -> messagerpc.Conversation
+	2,  // 1: messagerpc.GetUserSessionsResp.sessions:type_name -> messagerpc.UserSession
+	1,  // 2: messagerpc.GetUserActiveSessionsResp.sessions:type_name -> messagerpc.Session
+	1,  // 3: messagerpc.GetSessionResp.session:type_name -> messagerpc.Session
 	3,  // 4: messagerpc.MessageRpc.GetHistory:input_type -> messagerpc.GetHistoryReq
-	5,  // 5: messagerpc.MessageRpc.GetConversationList:input_type -> messagerpc.GetConversationListReq
-	9,  // 6: messagerpc.MessageRpc.ReadMessage:input_type -> messagerpc.ReadMessageReq
-	11, // 7: messagerpc.MessageRpc.UpdateConversation:input_type -> messagerpc.UpdateConversationReq
-	7,  // 8: messagerpc.MessageRpc.GetUserConversations:input_type -> messagerpc.GetUserConversationsReq
-	13, // 9: messagerpc.MessageRpc.GetUserActiveConversations:input_type -> messagerpc.GetUserActiveConversationsReq
-	15, // 10: messagerpc.MessageRpc.RecallMessage:input_type -> messagerpc.RecallMessageReq
-	4,  // 11: messagerpc.MessageRpc.GetHistory:output_type -> messagerpc.GetHistoryResp
-	6,  // 12: messagerpc.MessageRpc.GetConversationList:output_type -> messagerpc.GetConversationListResp
-	10, // 13: messagerpc.MessageRpc.ReadMessage:output_type -> messagerpc.ReadMessageResp
-	12, // 14: messagerpc.MessageRpc.UpdateConversation:output_type -> messagerpc.UpdateConversationResp
-	8,  // 15: messagerpc.MessageRpc.GetUserConversations:output_type -> messagerpc.GetUserConversationsResp
-	14, // 16: messagerpc.MessageRpc.GetUserActiveConversations:output_type -> messagerpc.GetUserActiveConversationsResp
-	16, // 17: messagerpc.MessageRpc.RecallMessage:output_type -> messagerpc.RecallMessageResp
-	11, // [11:18] is the sub-list for method output_type
-	4,  // [4:11] is the sub-list for method input_type
+	7,  // 5: messagerpc.MessageRpc.UpdateSession:input_type -> messagerpc.UpdateSessionReq
+	5,  // 6: messagerpc.MessageRpc.GetUserSessions:input_type -> messagerpc.GetUserSessionsReq
+	9,  // 7: messagerpc.MessageRpc.GetUserActiveSessions:input_type -> messagerpc.GetUserActiveSessionsReq
+	11, // 8: messagerpc.MessageRpc.GetSession:input_type -> messagerpc.GetSessionReq
+	4,  // 9: messagerpc.MessageRpc.GetHistory:output_type -> messagerpc.GetHistoryResp
+	8,  // 10: messagerpc.MessageRpc.UpdateSession:output_type -> messagerpc.UpdateSessionResp
+	6,  // 11: messagerpc.MessageRpc.GetUserSessions:output_type -> messagerpc.GetUserSessionsResp
+	10, // 12: messagerpc.MessageRpc.GetUserActiveSessions:output_type -> messagerpc.GetUserActiveSessionsResp
+	12, // 13: messagerpc.MessageRpc.GetSession:output_type -> messagerpc.GetSessionResp
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -1171,7 +1004,7 @@ func file_rpc_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rpc_message_proto_rawDesc), len(file_rpc_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

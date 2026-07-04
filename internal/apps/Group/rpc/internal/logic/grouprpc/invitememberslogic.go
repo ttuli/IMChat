@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type InviteMembersLogic struct {
@@ -25,7 +27,7 @@ func NewInviteMembersLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Inv
 
 // 群成员管理
 func (l *InviteMembersLogic) InviteMembers(in *group.InviteMembersReq) (*group.InviteMembersResp, error) {
-	successCount, failedIDs, err := l.svcCtx.GroupService.InviteMembers(l.ctx, in.GroupId, in.OperatorId, in.MemberIds)
+	successCount, failedIDs, err := service.NewGroupService(l.svcCtx).InviteMembers(l.ctx, in.GroupId, in.OperatorId, in.MemberIds)
 	if err != nil {
 		return nil, err
 	}

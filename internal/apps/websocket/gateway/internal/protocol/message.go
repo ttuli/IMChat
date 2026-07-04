@@ -46,9 +46,9 @@ func NewAckMessage(base *message.BaseMessage, st message.AckStatus) *transport.W
 		Type:      transport.MessageType_MSG_ACK,
 	}
 	ack := &message.MessageAck{
-		MsgId:     base.MsgId,
 		ClientId:  base.ClientId,
 		SessionId: base.SessionId,
+		SessionKey:   base.SessionKey,
 		Status:    st,
 	}
 	data, _ := proto.Marshal(ack)

@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/User/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type UpdateFriendLogic struct {
@@ -24,7 +26,7 @@ func NewUpdateFriendLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upda
 }
 
 func (l *UpdateFriendLogic) UpdateFriend(in *user.UpdateFriendReq) (*user.UpdateFriendResp, error) {
-	friendRecord, err := l.svcCtx.UserService.UpdateFriend(l.ctx, in.UserId, in.FriendId, in.Remark, in.Blocked, in.Starred)
+	friendRecord, err := service.NewUserService(l.svcCtx).UpdateFriend(l.ctx, in.UserId, in.FriendId, in.Remark, in.Blocked, in.Starred)
 	if err != nil {
 		return nil, err
 	}

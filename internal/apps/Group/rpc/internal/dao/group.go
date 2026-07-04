@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/redisx"
 

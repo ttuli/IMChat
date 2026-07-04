@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/pkg/env"
 
 	"gorm.io/driver/mysql"
@@ -34,7 +34,7 @@ func main() {
 		// &model.UserFriend{},
 		// &model.FriendApply{},
 		// &model.Group{},
-		&model.Conversation{},
+		&model.Session{},
 		// &model.UserConversation{},
 		// &model.GroupMember{},
 	}

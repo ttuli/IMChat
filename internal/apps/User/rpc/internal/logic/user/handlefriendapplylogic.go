@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/User/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type HandleFriendApplyLogic struct {
@@ -24,7 +26,13 @@ func NewHandleFriendApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *HandleFriendApplyLogic) HandleFriendApply(in *user.HandleFriendApplyReq) (*user.HandleFriendApplyResp, error) {
-	apply, err := l.svcCtx.UserService.HandleFriendApply(l.ctx, in.Id, in.OperatorId, uint8(in.Status), in.RejectReason)
+	apply, err := service.NewUserService(l.svcCtx).HandleFriendApply(
+		l.ctx,
+		in.Id,
+		in.OperatorId,
+		uint8(in.Status),
+		in.RejectReason,
+	)
 	if err != nil {
 		return nil, err
 	}

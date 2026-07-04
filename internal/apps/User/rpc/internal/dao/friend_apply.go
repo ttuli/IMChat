@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

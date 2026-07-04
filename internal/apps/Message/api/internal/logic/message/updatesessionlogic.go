@@ -11,28 +11,29 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type ReadMessageLogic struct {
+type UpdateSessionLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-// 消息已读上报
-func NewReadMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ReadMessageLogic {
-	return &ReadMessageLogic{
+// 更新会话设置
+func NewUpdateSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UpdateSessionLogic {
+	return &UpdateSessionLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *ReadMessageLogic) ReadMessage(req *types.ReadMessageReq) error {
+func (l *UpdateSessionLogic) UpdateSession(req *types.UpdateSessionReq) error {
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
-	_, err := l.svcCtx.MessageRpc.ReadMessage(l.ctx, &messagerpc.ReadMessageReq{
-		UserId:         userID,
-		ConversationId: req.ConversationId,
-		Seq:            req.Seq,
+	_, err := l.svcCtx.MessageRpc.UpdateSession(l.ctx, &messagerpc.UpdateSessionReq{
+		UserId:    userID,
+		SessionId: req.SessionId,
+		IsTop:     req.IsTop,
+		IsDisturb: req.IsDisturb,
 	})
 	return err
 }

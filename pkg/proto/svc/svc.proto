@@ -18,9 +18,9 @@ message UserGroupSync {
 }
 
 message MessageSend {
-  string msg_id = 1;
-  string client_id = 2;
-  string conversation_id = 3;
+  string client_id = 1;
+  string session_id = 2;
+  string session_key = 3;
   uint64 sender = 4;
   uint64 target = 5;
   int64 msg_type = 6;

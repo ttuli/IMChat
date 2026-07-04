@@ -8,6 +8,8 @@ import (
 	"IM2/internal/apps/Message/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Message/rpc/internal/service"
 )
 
 type GetHistoryLogic struct {
@@ -25,7 +27,7 @@ func NewGetHistoryLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetHis
 }
 
 func (l *GetHistoryLogic) GetHistory(in *message.GetHistoryReq) (*message.GetHistoryResp, error) {
-	msgs, err := l.svcCtx.MessageService.GetHistory(l.ctx, in.ConversationId, in.StartSeq, in.EndSeq, int(in.Limit))
+	msgs, err := service.NewMessageService(l.svcCtx).GetHistory(l.ctx, in.SessionId, in.StartSeq, in.EndSeq, int(in.Limit))
 	if err != nil {
 		return nil, err
 	}
@@ -41,16 +43,16 @@ func (l *GetHistoryLogic) GetHistory(in *message.GetHistoryReq) (*message.GetHis
 			}
 		}
 		list = append(list, &message.Message{
-			MsgId:          m.MsgID,
-			ConversationId: m.ConversationID,
-			FromUserId:     m.FromUserID,
-			MsgType:        int32(m.MsgType),
-			Content:        m.Content,
-			MediaUrl:       m.MediaURL,
-			Status:         int32(m.Status),
-			CreateTime:     m.CreateTime.UnixMilli(),
-			Seq:            m.Seq,
-			Extra:          byteData,
+			MsgId:      m.MsgID,
+			SessionId:  m.SessionID,
+			FromUserId: m.FromUserID,
+			MsgType:    int32(m.MsgType),
+			Content:    m.Content,
+			MediaUrl:   m.MediaURL,
+			Status:     int32(m.Status),
+			CreateTime: m.CreateTime.UnixMilli(),
+			Seq:        m.Seq,
+			Extra:      byteData,
 		})
 	}
 

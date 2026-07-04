@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type MuteMemberLogic struct {
@@ -24,7 +26,7 @@ func NewMuteMemberLogic(ctx context.Context, svcCtx *svc.ServiceContext) *MuteMe
 }
 
 func (l *MuteMemberLogic) MuteMember(in *group.MuteMemberReq) (*group.EmptyResp, error) {
-	if err := l.svcCtx.GroupService.MuteMember(l.ctx, in.GroupId, in.OperatorId, in.UserId, in.MuteUntil); err != nil {
+	if err := service.NewGroupService(l.svcCtx).MuteMember(l.ctx, in.GroupId, in.OperatorId, in.UserId, in.MuteUntil); err != nil {
 		return nil, err
 	}
 	return &group.EmptyResp{}, nil

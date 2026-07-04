@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/internal/apps/Auth/rpc/config"
 	"IM2/internal/apps/Auth/rpc/internal/dao"
 	"IM2/pkg/logger"

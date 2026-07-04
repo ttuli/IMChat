@@ -20,40 +20,34 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			middleware.WithRedisJwtAuth(serverCtx.TokenManager),
 		}, []rest.Route{
 			{
+				// 获取会话
+				Method:  http.MethodGet,
+				Path:    "/session",
+				Handler: message.GetSessionHandler(serverCtx),
+			},
+			{
 				// 更新会话设置
 				Method:  http.MethodPut,
-				Path:    "/conversation",
-				Handler: message.UpdateConversationHandler(serverCtx),
+				Path:    "/session",
+				Handler: message.UpdateSessionHandler(serverCtx),
 			},
 			{
 				// 获取用户的会话列表(根据UserID)
 				Method:  http.MethodGet,
-				Path:    "/conversations/user",
-				Handler: message.GetUserConversationsHandler(serverCtx),
+				Path:    "/sessions/user",
+				Handler: message.GetUserSessionsHandler(serverCtx),
 			},
 			{
 				// 获取用户的活跃会话列表(根据UserID)
 				Method:  http.MethodGet,
-				Path:    "/conversations/user/active",
-				Handler: message.GetUserActiveConversationsHandler(serverCtx),
+				Path:    "/sessions/user/active",
+				Handler: message.GetUserActiveSessionsHandler(serverCtx),
 			},
 			{
 				// 获取历史消息
 				Method:  http.MethodGet,
 				Path:    "/history",
 				Handler: message.GetHistoryHandler(serverCtx),
-			},
-			{
-				// 消息已读上报
-				Method:  http.MethodPost,
-				Path:    "/read",
-				Handler: message.ReadMessageHandler(serverCtx),
-			},
-			{
-				// 撤回消息
-				Method:  http.MethodPost,
-				Path:    "/recall",
-				Handler: message.RecallMessageHandler(serverCtx),
 			},
 		}...),
 		rest.WithPrefix("/message"),

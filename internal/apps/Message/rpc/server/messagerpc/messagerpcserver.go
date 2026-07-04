@@ -28,32 +28,23 @@ func (s *MessageRpcServer) GetHistory(ctx context.Context, in *message.GetHistor
 	return l.GetHistory(in)
 }
 
-func (s *MessageRpcServer) GetConversationList(ctx context.Context, in *message.GetConversationListReq) (*message.GetConversationListResp, error) {
-	l := messagerpclogic.NewGetConversationListLogic(ctx, s.svcCtx)
-	return l.GetConversationList(in)
+func (s *MessageRpcServer) UpdateSession(ctx context.Context, in *message.UpdateSessionReq) (*message.UpdateSessionResp, error) {
+	l := messagerpclogic.NewUpdateSessionLogic(ctx, s.svcCtx)
+	return l.UpdateSession(in)
 }
 
-func (s *MessageRpcServer) ReadMessage(ctx context.Context, in *message.ReadMessageReq) (*message.ReadMessageResp, error) {
-	l := messagerpclogic.NewReadMessageLogic(ctx, s.svcCtx)
-	return l.ReadMessage(in)
+func (s *MessageRpcServer) GetUserSessions(ctx context.Context, in *message.GetUserSessionsReq) (*message.GetUserSessionsResp, error) {
+	l := messagerpclogic.NewGetUserSessionsLogic(ctx, s.svcCtx)
+	return l.GetUserSessions(in)
 }
 
-func (s *MessageRpcServer) UpdateConversation(ctx context.Context, in *message.UpdateConversationReq) (*message.UpdateConversationResp, error) {
-	l := messagerpclogic.NewUpdateConversationLogic(ctx, s.svcCtx)
-	return l.UpdateConversation(in)
+func (s *MessageRpcServer) GetUserActiveSessions(ctx context.Context, in *message.GetUserActiveSessionsReq) (*message.GetUserActiveSessionsResp, error) {
+	l := messagerpclogic.NewGetUserActiveSessionsLogic(ctx, s.svcCtx)
+	return l.GetUserActiveSessions(in)
 }
 
-func (s *MessageRpcServer) GetUserConversations(ctx context.Context, in *message.GetUserConversationsReq) (*message.GetUserConversationsResp, error) {
-	l := messagerpclogic.NewGetUserConversationsLogic(ctx, s.svcCtx)
-	return l.GetUserConversations(in)
-}
-
-func (s *MessageRpcServer) GetUserActiveConversations(ctx context.Context, in *message.GetUserActiveConversationsReq) (*message.GetUserActiveConversationsResp, error) {
-	l := messagerpclogic.NewGetUserActiveConversationsLogic(ctx, s.svcCtx)
-	return l.GetUserActiveConversations(in)
-}
-
-func (s *MessageRpcServer) RecallMessage(ctx context.Context, in *message.RecallMessageReq) (*message.RecallMessageResp, error) {
-	l := messagerpclogic.NewRecallMessageLogic(ctx, s.svcCtx)
-	return l.RecallMessage(in)
+// 内部会话管理接口
+func (s *MessageRpcServer) GetSession(ctx context.Context, in *message.GetSessionReq) (*message.GetSessionResp, error) {
+	l := messagerpclogic.NewGetSessionLogic(ctx, s.svcCtx)
+	return l.GetSession(in)
 }

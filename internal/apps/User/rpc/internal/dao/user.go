@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/redisx"
 
@@ -205,6 +205,9 @@ func (m *UserDAO) FindOneByPhone(ctx context.Context, phone string) (*model.User
 // FindByName 根据名字模糊查询用户（不缓存，因为是模糊查询）
 func (m *UserDAO) FindByName(ctx context.Context, name string, limit, offset int32) ([]*model.UserInfo, error) {
 	var users []*model.UserInfo
+	if offset > 120 {
+		return users, nil
+	}
 	if err := m.DB.WithContext(ctx).Where("user_name LIKE ?", "%"+name+"%").Limit(int(limit)).Offset(int(offset)).Find(&users).Error; err != nil {
 		return nil, err
 	}

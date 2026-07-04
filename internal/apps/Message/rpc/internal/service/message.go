@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/svc"
@@ -23,7 +23,7 @@ func (s *MessageService) GetHistory(ctx context.Context, conversationID string, 
 	if limit <= 0 || limit > maxLimit {
 		limit = maxLimit
 	}
-	messages, err := s.messageDAO.FindByConversation(ctx, conversationID, startSeq, endSeq, limit)
+	messages, err := s.svcCtx.MessageDAO.FindByConversation(ctx, conversationID, startSeq, endSeq, limit)
 	if err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询历史消息失败")
 	}
@@ -34,23 +34,25 @@ func (s *MessageService) GetHistory(ctx context.Context, conversationID string, 
 // TODO 改为在消息消费后发送一个ack消息到nats，再由websocket消费发送
 func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
 	// 1. 生成或递增 Seq
-	seq, err := s.conversationDAO.IncrSeq(ctx, msg.ConversationId, msg.Preview, msg.Sender)
+	seq, err := s.svcCtx.SessionDAO.IncrSeq(ctx, msg.SessionId, msg.Preview, msg.Sender)
 	if err != nil {
-		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.ConversationId, err)
+		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.SessionId, err)
 		return nil, err
 	}
 
 	// 3. 将完整会话状态推送到 SeqSyncer
-	s.conversationDAO.PushSeqUpdate(
-		msg.ConversationId, seq,
+	s.svcCtx.SessionDAO.PushSeqUpdate(
+		msg.SessionId, seq,
 		msg.Preview, msg.Sender, msg.Timestamp,
 	)
 
+	msgid := s.GenerateMsgId()
+
 	// 4. 构建 db model 并落库
 	dbMsg := &model.Message{
-		MsgID:          msg.MsgId,
+		MsgID:          msgid,
 		ClientID:       msg.ClientId,
-		ConversationID: msg.ConversationId,
+		SessionID:      msg.SessionId,
 		FromUserID:     msg.Sender,
 		MsgType:        int16(msg.MsgType),
 		Seq:            seq,
@@ -111,8 +113,8 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		}
 	}
 
-	if err := s.messageDAO.InsertMessages(ctx, []*model.Message{dbMsg}); err != nil {
-		logger.Errorf("Failed to persist message %s: %v", msg.MsgId, err)
+	if err := s.svcCtx.MessageDAO.InsertMessages(ctx, []*model.Message{dbMsg}); err != nil {
+		logger.Errorf("Failed to persist message %s: %v", msgid, err)
 		return nil, err
 	}
 
@@ -128,7 +130,7 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 	const recallWindowSeconds = 120 // 撤回时间窗口：2分钟
 
 	// 1. 查询消息
-	msg, err := s.messageDAO.FindByMsgID(ctx, msgID)
+	msg, err := s.svcCtx.MessageDAO.FindByMsgID(ctx, msgID)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return xerr.Wrap(err, transport.ErrorCode_ERR_NOT_FOUND, "消息不存在")
@@ -152,7 +154,7 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 	}
 
 	// 5. 更新消息状态为已撤回 (status=1)
-	if err := s.messageDAO.UpdateMessageStatus(ctx, msgID, 1); err != nil {
+	if err := s.svcCtx.MessageDAO.UpdateMessageStatus(ctx, msgID, 1); err != nil {
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "撤回消息失败")
 	}
 
@@ -166,7 +168,7 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 		logger.Errorf("Failed to marshal WSMessage: %v", err)
 		return nil
 	}
-	if err := s.nc.Publish(s.Config.Listener.BroadcastSubject, payload); err != nil {
+	if err := s.svcCtx.NatsConn.Publish(s.svcCtx.Config.Listener.BroadcastSubject, payload); err != nil {
 		logger.Errorf("Failed to publish NATS message: %v", err)
 	}
 
@@ -178,7 +180,7 @@ func (s *MessageService) BulkPersistMessages(ctx context.Context, msgs []*model.
 	if len(msgs) == 0 {
 		return nil
 	}
-	if err := s.messageDAO.InsertMessages(ctx, msgs); err != nil {
+	if err := s.svcCtx.MessageDAO.InsertMessages(ctx, msgs); err != nil {
 		logger.Errorf("[MessageService] BulkPersistMessages failed (batch=%d): %v", len(msgs), err)
 		return err
 	}

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"IM2/internal/Entity"
+	"IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/redisx"
@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	defaultSeqBufSize      = 4096
+	defaultSeqBufSize      = 32768
 	defaultFlushInterval   = 3 * time.Second
 	defaultFlushBatchLimit = 500 // 定量触发：攒满 500 条即提前刷盘
 )
@@ -27,11 +27,11 @@ const (
 // 号段模式下 MySQL max_seq 已由 allocSegment 实时写入，SeqSyncer 只负责异步批量刷下面元数据字段。
 // 聚合时同一 conversationID 只保留 seq 最大的那条（视为最新状态）。
 type seqUpdate struct {
-	conversationID string
-	seq            uint64 // 写入 MySQL actual_seq 和 Redis 快照
-	lastContent    string
-	lastSender     uint64
-	updateTime     int64
+	sessionID   string
+	seq         uint64 // 写入 MySQL actual_seq 和 Redis 快照
+	lastContent string
+	lastSender  uint64
+	updateTime  int64
 }
 
 // ConvSnapshot 会话快照，同时用作:
@@ -39,8 +39,8 @@ type seqUpdate struct {
 //  2. Hash conv:snapshot:{convID} 的读取输入
 //
 // 字段缩写以减少 Redis 内存占用。
-type ConvSnapshot struct {
-	ConvID      string `json:"c"`
+type SessionSnapshot struct {
+	SessionID   string `json:"c"`
 	Seq         uint64 `json:"s"`
 	LastContent string `json:"lc"`
 	LastSender  uint64 `json:"ls"`
@@ -81,13 +81,28 @@ func newSeqSyncer(db *gorm.DB, cache *redisx.Client) *SeqSyncer {
 	return s
 }
 
-// Push 非阻塞推送一条完整的会话状态更新事件。
-// channel 满时丢弃并打错误日志（不阻塞主链路）。
 func (s *SeqSyncer) Push(u seqUpdate) {
+	// 背压告警：当 channel 使用率 > 80% 时触发告警
+	if len(s.ch) > cap(s.ch)*8/10 {
+		logger.Errorf("[BACKPRESSURE ALERT] SeqSyncer channel usage > 80%% (current: %d, cap: %d)", len(s.ch), cap(s.ch))
+	}
+
+	// 1. 优先尝试无阻塞写入
 	select {
 	case s.ch <- u:
+		return
 	default:
-		logger.Errorf("SeqSyncer: channel full, drop update for conv %s seq %d", u.conversationID, u.seq)
+		// 2. channel 满时，退化为带超时的阻塞等待（例如最多阻塞 200ms）
+		// 这样既能给后台协程消化数据的时间，又不会导致主链路无限阻塞
+		timer := time.NewTimer(200 * time.Millisecond)
+		defer timer.Stop()
+
+		select {
+		case s.ch <- u:
+			return
+		case <-timer.C:
+			logger.Errorf("[BACKPRESSURE ALERT] SeqSyncer channel full and 200ms timeout reached, drop update for session %s seq %d", u.sessionID, u.seq)
+		}
 	}
 }
 
@@ -112,8 +127,8 @@ func (s *SeqSyncer) run() {
 		// 聚合：同一 conversationID 只保留 seq 最大的那条（含 lastContent 等完整信息）
 		latest := make(map[string]seqUpdate, len(pending))
 		for _, u := range pending {
-			if u.seq > latest[u.conversationID].seq {
-				latest[u.conversationID] = u
+			if u.seq > latest[u.sessionID].seq {
+				latest[u.sessionID] = u
 			}
 		}
 		pending = pending[:0]
@@ -178,9 +193,9 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	userTimelines := make(map[uint64]map[string]int64) // uid -> convID -> updateTime
 
 	for convID, u := range latest {
-		convType := model.ConvTypeSingle
+		convType := model.SessionTypeSingle
 		if util.IsGroupSession(convID) {
-			convType = model.ConvTypeGroup
+			convType = model.SessionTypeGroup
 		}
 
 		// 1. MySQL Upsert：不存在则创建，存在则只更新 actual_seq / last_content / last_sender / update_time。
@@ -190,13 +205,13 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 				Columns:   []clause.Column{{Name: "conversation_id"}},
 				DoUpdates: clause.AssignmentColumns([]string{"actual_seq", "last_content", "last_sender", "update_time"}),
 			}).
-			Create(&model.Conversation{
-				ConversationID: convID,
-				Type:           convType,
-				LastContent:    u.lastContent,
-				LastSender:     u.lastSender,
-				ActualSeq:      u.seq,
-				UpdateTime:     now,
+			Create(&model.Session{
+				SessionID:   convID,
+				Type:        convType,
+				LastContent: u.lastContent,
+				LastSender:  u.lastSender,
+				ActualSeq:   u.seq,
+				UpdateTime:  now,
 			})
 		if res.Error != nil {
 			failed = append(failed, fmt.Sprintf("%s(seq=%d,err=%v)", convID, u.seq, res.Error))
@@ -206,9 +221,9 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 		// 2. 收集需要更新的时间线信息
 		var userIDs []uint64
 		if util.IsGroupSession(convID) {
-			// 从 DB 查群成员 (UserConversation 记录了用户参与了哪些会话)
-			s.db.WithContext(ctx).Model(&model.UserConversation{}).
-				Where("conversation_id = ?", convID).
+			// 从 DB 查群成员 (UserSession 记录了用户参与了哪些会话)
+			s.db.WithContext(ctx).Model(&model.UserSession{}).
+				Where("session_id = ?", convID).
 				Pluck("user_id", &userIDs)
 		} else if util.IsPrivateSession(convID) {
 			// 单谈直接从 SessionID 提取双方 ID

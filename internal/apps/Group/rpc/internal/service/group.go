@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	model "IM2/internal/Entity"
 	"IM2/internal/apps/Idgen/rpc/idgen"
+	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/social"
 	"IM2/pkg/proto/svc"
@@ -21,7 +21,7 @@ import (
 
 func (s *GroupService) CreateGroup(ctx context.Context, ownerID uint64, name, avatar string, memberIDs []uint64) (*model.Group, error) {
 	// 1. 生成群组ID
-	resp, err := s.idGenerator.GetId(ctx, &idgen.GetIdReq{
+	resp, err := s.svcCtx.IdGenerator.GetId(ctx, &idgen.GetIdReq{
 		IdType: idgen.IDType_ID_TYPE_GROUP,
 		Count:  1,
 	})
@@ -70,7 +70,7 @@ func (s *GroupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 	}
 
 	// 4. 事务创建群组和成员
-	if err := s.groupDAO.CreateGroupWithMembers(ctx, group, members); err != nil {
+	if err := s.svcCtx.GroupDAO.CreateGroupWithMembers(ctx, group, members); err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "创建群组失败")
 	}
 
@@ -78,7 +78,7 @@ func (s *GroupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
-		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+		_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
 		if err != nil {
 			logger.Errorf("发送nats失败: %v", err)
 		}
@@ -94,14 +94,14 @@ func (s *GroupService) GetGroups(ctx context.Context, groupIDs []uint64, nameKey
 
 	if len(groupIDs) > 0 {
 		// 通过 IDs 查询
-		groups, err = s.groupDAO.FindByIDs(ctx, groupIDs)
+		groups, err = s.svcCtx.GroupDAO.FindByIDs(ctx, groupIDs)
 		if err != nil {
 			return nil, 0, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询群组失败")
 		}
 		total = int64(len(groups))
 	} else if nameKeyword != "" {
 		// 通过名字模糊搜索
-		groups, total, err = s.groupDAO.SearchByName(ctx, nameKeyword, int(limit), int(offset))
+		groups, total, err = s.svcCtx.GroupDAO.SearchByName(ctx, nameKeyword, int(limit), int(offset))
 		if err != nil {
 			return nil, 0, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "搜索群组失败")
 		}
@@ -113,7 +113,7 @@ func (s *GroupService) GetGroups(ctx context.Context, groupIDs []uint64, nameKey
 }
 
 func (s *GroupService) UpdateGroup(ctx context.Context, groupID, operatorID uint64, name, avatar string, joinType int32) error {
-	_, err := s.groupDAO.FindMember(ctx, groupID, operatorID)
+	_, err := s.svcCtx.GroupDAO.FindMember(ctx, groupID, operatorID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(transport.ErrorCode_ERR_FORBIDDEN, "非群成员无权操作")
 	}
@@ -122,7 +122,7 @@ func (s *GroupService) UpdateGroup(ctx context.Context, groupID, operatorID uint
 	}
 
 	// 2. 查询群组
-	group, err := s.groupDAO.FindByID(ctx, groupID)
+	group, err := s.svcCtx.GroupDAO.FindByID(ctx, groupID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(transport.ErrorCode_ERR_NOT_FOUND, "群组不存在")
 	}
@@ -140,7 +140,7 @@ func (s *GroupService) UpdateGroup(ctx context.Context, groupID, operatorID uint
 	if joinType != 0 {
 		group.JoinType = int(joinType)
 	}
-	if err := s.groupDAO.UpdateGroup(ctx, group); err != nil {
+	if err := s.svcCtx.GroupDAO.UpdateGroup(ctx, group); err != nil {
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "更新群组失败")
 	}
 
@@ -149,7 +149,7 @@ func (s *GroupService) UpdateGroup(ctx context.Context, groupID, operatorID uint
 
 func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uint64) error {
 	// 1. 检查权限（必须是群主）
-	member, err := s.groupDAO.FindMember(ctx, groupID, operatorID)
+	member, err := s.svcCtx.GroupDAO.FindMember(ctx, groupID, operatorID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(transport.ErrorCode_ERR_FORBIDDEN, "非群成员无权操作")
 	}
@@ -161,7 +161,7 @@ func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 	}
 
 	// 2. 在事务中删除所有成员和群组
-	if err := s.groupDAO.Transaction(ctx, func(tx *gorm.DB) error {
+	if err := s.svcCtx.GroupDAO.Transaction(ctx, func(tx *gorm.DB) error {
 		if err := tx.Where("group_id = ?", groupID).Delete(&model.GroupMember{}).Error; err != nil {
 			return err
 		}
@@ -174,7 +174,7 @@ func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
-		_, err = s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+		_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
 		if err != nil {
 			logger.Errorf("发送nats失败: %v", err)
 		}
@@ -184,7 +184,7 @@ func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 }
 
 func (s *GroupService) GetUserGroupIDs(ctx context.Context, userID uint64) ([]uint64, error) {
-	groupIDs, err := s.groupDAO.FindAllGroupIDsByUserID(ctx, userID)
+	groupIDs, err := s.svcCtx.GroupDAO.FindAllGroupIDsByUserID(ctx, userID)
 	if err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询用户群组失败")
 	}
@@ -203,7 +203,7 @@ func (s *GroupService) GetUserGroupIDs(ctx context.Context, userID uint64) ([]ui
 			Payload:         payload,
 		}
 		bytes, _ := proto.Marshal(wsMsg)
-		_, err := s.js.Publish(s.config.NATS.BroadcastSubject, bytes)
+		_, err := s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
 		if err != nil {
 			logger.Errorf("发送nats失败: %v", err)
 		}

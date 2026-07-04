@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
@@ -18,50 +18,17 @@ import (
 
 // GetFriends 获取好友列表（返回全部）
 func (s *UserService) GetFriends(ctx context.Context, userID uint64) ([]*model.UserFriend, error) {
-	friends, _, err := s.friendDAO.FindFriendsByUserID(ctx, userID, -1, 0)
+	friends, _, err := s.svcCtx.FriendDAO.FindFriendsByUserID(ctx, userID, -1, 0)
 	if err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询好友列表失败")
 	}
 	return friends, nil
 }
 
-// CreateFriend 创建好友关系（双向）
-func (s *UserService) CreateFriend(ctx context.Context, userID, friendID uint64, source uint8, remark string) (*model.UserFriend, error) {
-	// 检查是否已经是好友
-	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
-	if err == nil {
-		return nil, xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "已经是好友")
-	}
-	if err != gorm.ErrRecordNotFound {
-		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询好友关系失败")
-	}
-
-	// 创建双向好友关系
-	if err := s.friendDAO.InsertFriend(ctx, userID, friendID, source); err != nil {
-		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "创建好友关系失败")
-	}
-
-	// 如果有备注，更新备注
-	if remark != "" {
-		updates := map[string]any{"remark": remark}
-		if err := s.friendDAO.UpdateFriend(ctx, userID, friendID, updates); err != nil {
-			return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "更新好友备注失败")
-		}
-	}
-
-	// 返回创建好的好友记录
-	friend, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
-	if err != nil {
-		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "获取好友记录失败")
-	}
-
-	return friend, nil
-}
-
 // UpdateFriend 更新好友信息（备注、拉黑、星标）
 func (s *UserService) UpdateFriend(ctx context.Context, userID, friendID uint64, remark string, blocked, starred bool) (*model.UserFriend, error) {
 	// 检查好友关系是否存在
-	_, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	_, err := s.svcCtx.FriendDAO.FindFriendRelation(ctx, userID, friendID)
 	if err == gorm.ErrRecordNotFound {
 		return nil, xerr.New(transport.ErrorCode_ERR_NOT_FOUND, "好友关系不存在")
 	}
@@ -74,11 +41,11 @@ func (s *UserService) UpdateFriend(ctx context.Context, userID, friendID uint64,
 		"blocked": sql.NullBool{Bool: blocked, Valid: true},
 		"starred": sql.NullBool{Bool: starred, Valid: true},
 	}
-	if err := s.friendDAO.UpdateFriend(ctx, userID, friendID, updates); err != nil {
+	if err := s.svcCtx.FriendDAO.UpdateFriend(ctx, userID, friendID, updates); err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "更新好友信息失败")
 	}
 
-	friend, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	friend, err := s.svcCtx.FriendDAO.FindFriendRelation(ctx, userID, friendID)
 	if err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询更新后的好友信息失败")
 	}
@@ -89,7 +56,7 @@ func (s *UserService) UpdateFriend(ctx context.Context, userID, friendID uint64,
 // DeleteFriend 删除好友（双向删除）
 func (s *UserService) DeleteFriend(ctx context.Context, userID, friendID uint64) error {
 	// 检查好友关系是否存在
-	friendRecord, err := s.friendDAO.FindFriendRelation(ctx, userID, friendID)
+	friendRecord, err := s.svcCtx.FriendDAO.FindFriendRelation(ctx, userID, friendID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(transport.ErrorCode_ERR_NOT_FOUND, "好友关系不存在")
 	}
@@ -99,7 +66,7 @@ func (s *UserService) DeleteFriend(ctx context.Context, userID, friendID uint64)
 
 	if msg, err := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_DELETED, friendRecord, userID); err == nil {
 		if data, err := proto.Marshal(msg); err == nil {
-			if _, err := s.js.Publish(s.Config.NATS.BroadcastSubject, data); err != nil {
+			if _, err := s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data); err != nil {
 				logger.Error("DeleteFriend publish error: " + err.Error())
 			}
 		}

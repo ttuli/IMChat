@@ -1,0 +1,47 @@
+package messagerpclogic
+
+import (
+	"context"
+
+	"IM2/internal/apps/Message/rpc/internal/service"
+	"IM2/internal/apps/Message/rpc/message"
+	"IM2/internal/apps/Message/rpc/svc"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+type GetUserSessionsLogic struct {
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+	logx.Logger
+}
+
+func NewGetUserSessionsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUserSessionsLogic {
+	return &GetUserSessionsLogic{
+		ctx:    ctx,
+		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
+	}
+}
+
+func (l *GetUserSessionsLogic) GetUserSessions(in *message.GetUserSessionsReq) (*message.GetUserSessionsResp, error) {
+	userSess, err := service.NewMessageService(l.svcCtx).GetUserSessions(l.ctx, in.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	var list []*message.UserSession
+	for _, uc := range userSess {
+		list = append(list, &message.UserSession{
+			UserId:         uc.UserID,
+			SessionId:      uc.SessionID,
+			IsTop:          int32(uc.IsTop),
+			IsDisturb:      int32(uc.IsDisturb),
+			LastReadSeq:    uc.LastReadSeq,
+			CreateTime:     uc.CreateTime.UnixMilli(),
+			UpdateTime:     uc.UpdateTime.UnixMilli(),
+		})
+	}
+
+	return &message.GetUserSessionsResp{Sessions: list}, nil
+}

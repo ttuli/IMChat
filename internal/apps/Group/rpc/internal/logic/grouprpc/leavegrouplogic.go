@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type LeaveGroupLogic struct {
@@ -24,7 +26,7 @@ func NewLeaveGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveG
 }
 
 func (l *LeaveGroupLogic) LeaveGroup(in *group.LeaveGroupReq) (*group.EmptyResp, error) {
-	if err := l.svcCtx.GroupService.LeaveGroup(l.ctx, in.GroupId, in.UserId); err != nil {
+	if err := service.NewGroupService(l.svcCtx).LeaveGroup(l.ctx, in.GroupId, in.UserId); err != nil {
 		return nil, err
 	}
 	return &group.EmptyResp{}, nil

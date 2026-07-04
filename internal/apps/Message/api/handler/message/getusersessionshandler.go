@@ -9,10 +9,10 @@ import (
 )
 
 // 获取用户的会话列表(根据UserID)
-func GetUserConversationsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+func GetUserSessionsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		l := message.NewGetUserConversationsLogic(r.Context(), svcCtx)
-		resp, err := l.GetUserConversations()
+		l := message.NewGetUserSessionsLogic(r.Context(), svcCtx)
+		resp, err := l.GetUserSessions()
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {

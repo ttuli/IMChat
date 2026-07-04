@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/User/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type VerifyPasswordLogic struct {
@@ -25,7 +27,7 @@ func NewVerifyPasswordLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ve
 
 func (l *VerifyPasswordLogic) VerifyPassword(in *user.VerifyPasswordReq) (*user.VerifyPasswordResp, error) {
 	// 调用 UserService 验证密码
-	valid, err := l.svcCtx.UserService.VerifyPassword(l.ctx, in.UserId, in.Password)
+	valid, err := service.NewUserService(l.svcCtx).VerifyPassword(l.ctx, in.UserId, in.Password)
 	if err != nil {
 		return nil, err
 	}

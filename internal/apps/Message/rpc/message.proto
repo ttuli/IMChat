@@ -9,7 +9,7 @@ option go_package = "./message";
 message Message {
   string msg_id = 1;
   string client_id = 2;
-  string conversation_id = 3;
+  string session_id = 3;
   uint64 from_user_id = 4;
   int32 msg_type = 5;
   uint64 seq = 6;
@@ -20,19 +20,21 @@ message Message {
   int64 create_time = 11;
 }
 
-message Conversation {
-  string conversation_id = 1;
+message Session {
+  string session_id = 1;
   int32 type = 2;
-  uint64 max_seq = 3;
-  int64 create_time = 4;
-  int64 update_time = 5;
+  string session_key = 3;
+  uint64 max_seq = 4;
+  uint64 actual_seq = 5;
   string last_content = 6;
   uint64 last_sender = 7;
+  int64 create_time = 8;
+  int64 update_time = 9;
 }
 
-message UserConversation {
+message UserSession {
   uint64 user_id = 1;
-  string conversation_id = 2;
+  string session_id = 2;
   int32 is_top = 3;
   int32 is_disturb = 4;
   uint64 last_read_seq = 5;
@@ -43,7 +45,7 @@ message UserConversation {
 // ========== 请求/响应 ==========
 
 message GetHistoryReq {
-  string conversation_id = 1;
+  string session_id = 1;
   int64 start_seq = 2;
   int64 end_seq = 3;  
   int32 limit = 4;
@@ -53,65 +55,51 @@ message GetHistoryResp {
   repeated Message messages = 1;
 }
 
-message GetConversationListReq {
-  repeated string session_ids = 1;
-}
-
-message GetConversationListResp {
-  repeated Conversation conversations = 1;
-}
-
-message GetUserConversationsReq {
+message GetUserSessionsReq {
   uint64 user_id = 1;
 }
 
-message GetUserConversationsResp {
-  repeated UserConversation conversations = 1;
+message GetUserSessionsResp {
+  repeated UserSession sessions = 1;
 }
 
-
-message ReadMessageReq {
+message UpdateSessionReq {
   uint64 user_id = 1;
-  string conversation_id = 2;
-  uint64 seq = 3;        // 读到的seq
-}
-
-message ReadMessageResp {}
-
-message UpdateConversationReq {
-  uint64 user_id = 1;
-  string conversation_id = 2;
+  string session_id = 2;
   int32 is_top = 3;      // 0:不变更 1:置顶 2:取消置顶
   int32 is_disturb = 4;  // 0:不变更 1:免打扰 2:取消免打扰
 }
 
-message UpdateConversationResp {}
+message UpdateSessionResp {}
 
-message GetUserActiveConversationsReq {
+message GetUserActiveSessionsReq {
   uint64 user_id = 1;
   int64 timestamp = 2;
 }
 
-message GetUserActiveConversationsResp {
-  repeated Conversation conversations = 1;
+message GetUserActiveSessionsResp {
+  repeated Session sessions = 1;
 }
 
-message RecallMessageReq {
-  uint64 user_id = 1;
-  string msg_id = 2;
-  string session_id = 3;
+// 根据 session_id 或 conv_key 查询会话；通过 conv_key 查询时若不存在则按给定类型创建
+message GetSessionReq {
+  string session_id = 1;  // 按 session_id 查询（精确）
+  string session_key = 2;         // 按 session_key 查询（不存在则创建）
+  int32 session_type = 3;         // 仅 session_key 模式下有效，指定创建时的会话类型
 }
 
-message RecallMessageResp {}
+message GetSessionResp {
+  Session session = 1;
+}
 
 // ========== 服务定义 ==========
 
 service MessageRpc {
   rpc GetHistory(GetHistoryReq) returns (GetHistoryResp);
-  rpc GetConversationList(GetConversationListReq) returns (GetConversationListResp);
-  rpc ReadMessage(ReadMessageReq) returns (ReadMessageResp);
-  rpc UpdateConversation(UpdateConversationReq) returns (UpdateConversationResp);
-  rpc GetUserConversations(GetUserConversationsReq) returns (GetUserConversationsResp);
-  rpc GetUserActiveConversations(GetUserActiveConversationsReq) returns (GetUserActiveConversationsResp);
-  rpc RecallMessage(RecallMessageReq) returns (RecallMessageResp);
+  rpc UpdateSession(UpdateSessionReq) returns (UpdateSessionResp);
+  rpc GetUserSessions(GetUserSessionsReq) returns (GetUserSessionsResp);
+  rpc GetUserActiveSessions(GetUserActiveSessionsReq) returns (GetUserActiveSessionsResp);
+
+  // 内部会话管理接口
+  rpc GetSession(GetSessionReq) returns (GetSessionResp);
 }

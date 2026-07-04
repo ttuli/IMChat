@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/User/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type NewFriendApplyLogic struct {
@@ -25,7 +27,13 @@ func NewNewFriendApplyLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ne
 
 // 好友申请
 func (l *NewFriendApplyLogic) NewFriendApply(in *user.NewFriendApplyReq) (*user.NewFriendApplyResp, error) {
-	apply, friend, err := l.svcCtx.UserService.NewFriendApply(l.ctx, in.FromUserId, in.ToUserId, in.ApplyMsg, uint8(in.Source))
+	apply, friend, err := service.NewUserService(l.svcCtx).NewFriendApply(
+		l.ctx,
+		in.FromUserId,
+		in.ToUserId,
+		in.ApplyMsg,
+		uint8(in.Source),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +51,7 @@ func (l *NewFriendApplyLogic) NewFriendApply(in *user.NewFriendApplyReq) (*user.
 			RequestTime:  apply.CreateTime.UnixMilli(),
 			HandleTime:   apply.HandleTime.UnixMilli(),
 			RejectReason: apply.RejectReason,
-		}	
+		}
 	} else if friend != nil {
 		resp.Friend = &user.Friend{
 			UserId:     friend.UserID,

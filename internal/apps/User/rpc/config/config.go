@@ -23,5 +23,6 @@ type Config struct {
 		QueueBroadcastSubject string
 	}
 
-	IDRpc zrpc.RpcClientConf
+	IDRpc      zrpc.RpcClientConf
+	MessageRpc zrpc.RpcClientConf
 }

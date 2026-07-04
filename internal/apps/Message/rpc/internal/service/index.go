@@ -1,31 +1,22 @@
 package service
 
 import (
-	"IM2/internal/apps/Message/rpc/config"
-	"IM2/internal/apps/Message/rpc/internal/dao"
-	"IM2/pkg/redisx"
-
-	"github.com/nats-io/nats.go"
+	"IM2/internal/apps/Message/rpc/svc"
 )
 
 // MessageService 消息服务实现
 type MessageService struct {
-	config.Config
-	messageDAO      *dao.MessageDAO
-	conversationDAO *dao.ConversationDAO
-	js              nats.JetStreamContext
-	nc              *nats.Conn
-	redis           *redisx.Client
+	svcCtx *svc.ServiceContext
 }
 
 // NewMessageService 创建消息服务
-func NewMessageService(c config.Config, js nats.JetStreamContext, nc *nats.Conn, msgDao *dao.MessageDAO, convDao *dao.ConversationDAO, redisClient *redisx.Client) *MessageService {
+func NewMessageService(svcCtx *svc.ServiceContext) *MessageService {
 	return &MessageService{
-		Config:          c,
-		messageDAO:      msgDao,
-		conversationDAO: convDao,
-		js:              js,
-		nc:              nc,
-		redis:           redisClient,
+		svcCtx: svcCtx,
 	}
+}
+
+// GenerateMsgId 使用本地 SnowflakeNode 生成全局唯一消息 ID
+func (s *MessageService) GenerateMsgId() string {
+	return s.svcCtx.SnowflakeNode.Generate().String()
 }

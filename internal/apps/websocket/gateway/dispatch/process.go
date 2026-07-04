@@ -29,9 +29,11 @@ func (h *Dispatcher) processMessage(msg *transport.WSMessage) error {
 		return fmt.Errorf("target is empty")
 	}
 
-	// 网关层只负责生成 MsgId，seq 分配和 DB 落盘由后续 MQ 队列消费者异步完成
+	// 网关层完全无状态化：不再生成 MsgId
+	// 实际的全局唯一 MsgId 由 Message 服务在消费 MQ 后用其本地 SnowflakeNode 生成
+	// 网关层仅使用客户端提供的 ClientId 进行 ACK 回包
 	base.FromUserId = h.conn.UserID
-	base.MsgId = h.svcCtx.SnowflakeNode.Generate().String()
+	base.MsgId = base.ClientId // 临时占位，实际 MsgId 由 Message 服务复写
 	base.SendTime = time.Now().UnixMilli()
 	msg.Timestamp = base.SendTime
 	base.Status = message.MessageStatus_MESSAGE_STATUS_SENDING
@@ -46,15 +48,15 @@ func (h *Dispatcher) processMessage(msg *transport.WSMessage) error {
 	}
 
 	msgSend := &svc.MessageSend{
-		MsgId:          base.MsgId,
-		ClientId:       base.ClientId,
-		ConversationId: base.SessionId,
-		Sender:         base.FromUserId,
-		Target:         base.Target,
-		MsgType:        int64(msg.Type),
-		Timestamp:      base.SendTime,
-		Preview:        preview,
-		Payload:        newMsg.Payload,
+		ClientId:   base.ClientId,
+		SessionId:  base.SessionId,
+		SessionKey: base.SessionKey,
+		Sender:     base.FromUserId,
+		Target:     base.Target,
+		MsgType:    int64(msg.Type),
+		Timestamp:  base.SendTime,
+		Preview:    preview,
+		Payload:    newMsg.Payload,
 	}
 	newMsgBytes, err := proto.Marshal(msgSend)
 	if err != nil {

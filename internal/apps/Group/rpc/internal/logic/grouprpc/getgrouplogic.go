@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type GetGroupLogic struct {
@@ -24,7 +26,7 @@ func NewGetGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetGroup
 }
 
 func (l *GetGroupLogic) GetGroup(in *group.GetGroupReq) (*group.GetGroupResp, error) {
-	results, total, err := l.svcCtx.GroupService.GetGroups(l.ctx, in.GroupIds, in.NameKeyword, in.Limit, in.Offset)
+	results, total, err := service.NewGroupService(l.svcCtx).GetGroups(l.ctx, in.GroupIds, in.NameKeyword, in.Limit, in.Offset)
 	if err != nil {
 		return nil, err
 	}

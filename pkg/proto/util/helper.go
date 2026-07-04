@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/pkg/proto/group"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/social"
@@ -16,11 +16,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func GetConversationType(sessionId string) message.ConversationType {
+func GetSessionType(sessionId string) message.SessionType {
 	if IsGroupSession(sessionId) {
-		return message.ConversationType_CONVERSATION_TYPE_GROUP
+		return message.SessionType_SESSION_TYPE_GROUP
 	}
-	return message.ConversationType_CONVERSATION_TYPE_PRIVATE
+	return message.SessionType_SESSION_TYPE_PRIVATE
 }
 
 func GenerateUserSessionId(userId uint64, targetId uint64) string {
@@ -140,7 +140,7 @@ func NewMessageOperationMsg(opType transport.MessageType, operator uint64, msg *
 		return nil, errors.New("message is nil")
 	}
 
-	targetId, err := GetTargetIdFromSessionId(msg.ConversationID, operator)
+	targetId, err := GetTargetIdFromSessionId(msg.SessionID, operator)
 	if err != nil {
 		return nil, err
 	}
@@ -151,17 +151,17 @@ func NewMessageOperationMsg(opType transport.MessageType, operator uint64, msg *
 		RouteTarget: []uint64{targetId},
 		Timestamp:   now,
 	}
-	if IsGroupSession(msg.ConversationID) {
+	if IsGroupSession(msg.SessionID) {
 		ws.RouteTargetType = transport.TargetType_GROUP
 	} else {
 		ws.RouteTargetType = transport.TargetType_USER
 	}
 
 	recall := &message.MessageRecall{
-		MsgId:          msg.MsgID,
-		ConversationId: msg.ConversationID,
-		UserId:         operator,
-		RecallTime:     now,
+		MsgId:      msg.MsgID,
+		SessionId:  msg.SessionID,
+		UserId:     operator,
+		RecallTime: now,
 	}
 
 	payload, err := proto.Marshal(recall)

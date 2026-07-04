@@ -104,17 +104,6 @@ message GetFriendsResp {
   repeated Friend data = 1;
 }
 
-message CreateFriendReq {
-  uint64 user_id = 1;
-  uint64 friend_id = 2;
-  string remark = 3;
-  int32 source = 4;
-}
-
-message CreateFriendResp {
-  Friend data = 1;
-}
-
 message UpdateFriendReq {
   uint64 user_id = 1;
   uint64 friend_id = 2;
@@ -176,7 +165,6 @@ service User {
 
   // 好友管理
   rpc GetFriends(GetFriendsReq) returns (GetFriendsResp);
-  rpc CreateFriend(CreateFriendReq) returns (CreateFriendResp);
   rpc UpdateFriend(UpdateFriendReq) returns (UpdateFriendResp);
   rpc DeleteFriend(DeleteFriendReq) returns (EmptyResp);
 

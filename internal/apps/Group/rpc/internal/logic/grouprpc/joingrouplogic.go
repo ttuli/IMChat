@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type JoinGroupLogic struct {
@@ -25,7 +27,7 @@ func NewJoinGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *JoinGro
 
 // 群申请管理
 func (l *JoinGroupLogic) JoinGroup(in *group.JoinGroupReq) (*group.JoinGroupResp, error) {
-	apply, member, err := l.svcCtx.GroupService.JoinGroup(l.ctx, in.GroupId, in.FromUserId, in.ApplyMsg)
+	apply, member, err := service.NewGroupService(l.svcCtx).JoinGroup(l.ctx, in.GroupId, in.FromUserId, in.ApplyMsg)
 	if err != nil {
 		return nil, err
 	}

@@ -5,9 +5,11 @@ import (
 
 	"IM2/internal/apps/User/rpc/svc"
 	"IM2/internal/apps/User/rpc/user"
-	"IM2/internal/Entity"
+	"IM2/internal/model"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type GetUserInfoLogic struct {
@@ -30,15 +32,15 @@ func (l *GetUserInfoLogic) GetUserInfo(in *user.GetUserInfoReq) (*user.GetUserIn
 
 	// 根据不同的查询条件调用 service
 	if len(in.Ids) != 0 {
-		users, err = l.svcCtx.UserService.GetUsersByIDs(l.ctx, in.Ids)
+		users, err = service.NewUserService(l.svcCtx).GetUsersByIDs(l.ctx, in.Ids)
 	} else if in.Phone != "" {
-		u, e := l.svcCtx.UserService.GetUserByPhone(l.ctx, in.Phone)
+		u, e := service.NewUserService(l.svcCtx).GetUserByPhone(l.ctx, in.Phone)
 		if e != nil {
 			return nil, e
 		}
 		users = append(users, u)
 	} else if in.Name != "" {
-		users, err = l.svcCtx.UserService.GetUsersByName(l.ctx, in.Name, in.Limit, in.Offset)
+		users, err = service.NewUserService(l.svcCtx).GetUsersByName(l.ctx, in.Name, in.Limit, in.Offset)
 	}
 
 	if err != nil {

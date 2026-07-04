@@ -11,17 +11,17 @@ import (
 	"IM2/pkg/resultx"
 )
 
-// 消息已读上报
-func RecallMessageHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+// 更新会话设置
+func UpdateSessionHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.RecallMessageReq
+		var req types.UpdateSessionReq
 		if err := resultx.ParseProto(r, &req); err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 			return
 		}
 
-		l := message.NewRecallMessageLogic(r.Context(), svcCtx)
-		err := l.RecallMessage(&req)
+		l := message.NewUpdateSessionLogic(r.Context(), svcCtx)
+		err := l.UpdateSession(&req)
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {

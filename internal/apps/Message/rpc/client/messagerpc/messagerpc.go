@@ -14,29 +14,24 @@ import (
 )
 
 type (
-	GetConversationListReq         = message.GetConversationListReq
-	GetConversationListResp        = message.GetConversationListResp
-	GetHistoryReq                  = message.GetHistoryReq
-	GetHistoryResp                 = message.GetHistoryResp
-	GetUserActiveConversationsReq  = message.GetUserActiveConversationsReq
-	GetUserActiveConversationsResp = message.GetUserActiveConversationsResp
-	GetUserConversationsReq        = message.GetUserConversationsReq
-	GetUserConversationsResp       = message.GetUserConversationsResp
-	ReadMessageReq                 = message.ReadMessageReq
-	ReadMessageResp                = message.ReadMessageResp
-	RecallMessageReq               = message.RecallMessageReq
-	RecallMessageResp              = message.RecallMessageResp
-	UpdateConversationReq          = message.UpdateConversationReq
-	UpdateConversationResp         = message.UpdateConversationResp
+	GetHistoryReq             = message.GetHistoryReq
+	GetHistoryResp            = message.GetHistoryResp
+	GetSessionReq             = message.GetSessionReq
+	GetSessionResp            = message.GetSessionResp
+	GetUserActiveSessionsReq  = message.GetUserActiveSessionsReq
+	GetUserActiveSessionsResp = message.GetUserActiveSessionsResp
+	GetUserSessionsReq        = message.GetUserSessionsReq
+	GetUserSessionsResp       = message.GetUserSessionsResp
+	UpdateSessionReq          = message.UpdateSessionReq
+	UpdateSessionResp         = message.UpdateSessionResp
 
 	MessageRpc interface {
 		GetHistory(ctx context.Context, in *GetHistoryReq, opts ...grpc.CallOption) (*GetHistoryResp, error)
-		GetConversationList(ctx context.Context, in *GetConversationListReq, opts ...grpc.CallOption) (*GetConversationListResp, error)
-		ReadMessage(ctx context.Context, in *ReadMessageReq, opts ...grpc.CallOption) (*ReadMessageResp, error)
-		UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error)
-		GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error)
-		GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error)
-		RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error)
+		UpdateSession(ctx context.Context, in *UpdateSessionReq, opts ...grpc.CallOption) (*UpdateSessionResp, error)
+		GetUserSessions(ctx context.Context, in *GetUserSessionsReq, opts ...grpc.CallOption) (*GetUserSessionsResp, error)
+		GetUserActiveSessions(ctx context.Context, in *GetUserActiveSessionsReq, opts ...grpc.CallOption) (*GetUserActiveSessionsResp, error)
+		// 内部会话管理接口
+		GetSession(ctx context.Context, in *GetSessionReq, opts ...grpc.CallOption) (*GetSessionResp, error)
 	}
 
 	defaultMessageRpc struct {
@@ -55,32 +50,23 @@ func (m *defaultMessageRpc) GetHistory(ctx context.Context, in *GetHistoryReq, o
 	return client.GetHistory(ctx, in, opts...)
 }
 
-func (m *defaultMessageRpc) GetConversationList(ctx context.Context, in *GetConversationListReq, opts ...grpc.CallOption) (*GetConversationListResp, error) {
+func (m *defaultMessageRpc) UpdateSession(ctx context.Context, in *UpdateSessionReq, opts ...grpc.CallOption) (*UpdateSessionResp, error) {
 	client := message.NewMessageRpcClient(m.cli.Conn())
-	return client.GetConversationList(ctx, in, opts...)
+	return client.UpdateSession(ctx, in, opts...)
 }
 
-func (m *defaultMessageRpc) ReadMessage(ctx context.Context, in *ReadMessageReq, opts ...grpc.CallOption) (*ReadMessageResp, error) {
+func (m *defaultMessageRpc) GetUserSessions(ctx context.Context, in *GetUserSessionsReq, opts ...grpc.CallOption) (*GetUserSessionsResp, error) {
 	client := message.NewMessageRpcClient(m.cli.Conn())
-	return client.ReadMessage(ctx, in, opts...)
+	return client.GetUserSessions(ctx, in, opts...)
 }
 
-func (m *defaultMessageRpc) UpdateConversation(ctx context.Context, in *UpdateConversationReq, opts ...grpc.CallOption) (*UpdateConversationResp, error) {
+func (m *defaultMessageRpc) GetUserActiveSessions(ctx context.Context, in *GetUserActiveSessionsReq, opts ...grpc.CallOption) (*GetUserActiveSessionsResp, error) {
 	client := message.NewMessageRpcClient(m.cli.Conn())
-	return client.UpdateConversation(ctx, in, opts...)
+	return client.GetUserActiveSessions(ctx, in, opts...)
 }
 
-func (m *defaultMessageRpc) GetUserConversations(ctx context.Context, in *GetUserConversationsReq, opts ...grpc.CallOption) (*GetUserConversationsResp, error) {
+// 内部会话管理接口
+func (m *defaultMessageRpc) GetSession(ctx context.Context, in *GetSessionReq, opts ...grpc.CallOption) (*GetSessionResp, error) {
 	client := message.NewMessageRpcClient(m.cli.Conn())
-	return client.GetUserConversations(ctx, in, opts...)
-}
-
-func (m *defaultMessageRpc) GetUserActiveConversations(ctx context.Context, in *GetUserActiveConversationsReq, opts ...grpc.CallOption) (*GetUserActiveConversationsResp, error) {
-	client := message.NewMessageRpcClient(m.cli.Conn())
-	return client.GetUserActiveConversations(ctx, in, opts...)
-}
-
-func (m *defaultMessageRpc) RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error) {
-	client := message.NewMessageRpcClient(m.cli.Conn())
-	return client.RecallMessage(ctx, in, opts...)
+	return client.GetSession(ctx, in, opts...)
 }

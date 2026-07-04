@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"hash/crc32"
 	"log"
 	"os"
 
@@ -13,7 +12,6 @@ import (
 	"IM2/internal/apps/websocket/gateway/router"
 	tokenmanager "IM2/pkg/tokenManager"
 
-	"github.com/bwmarrin/snowflake"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
@@ -30,7 +28,6 @@ type ServiceContext struct {
 	JetStream         nats.JetStreamContext
 	TokenManager      *tokenmanager.TokenManager
 	TelemetryBus      *telemetry.Bus
-	SnowflakeNode     *snowflake.Node
 	Codec             protocol.Codec
 }
 
@@ -46,13 +43,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// 创建编解码器
 	codec := protocol.NewProtoCodec()
 
-	// 初始化 Snowflake ID 生成器
-	// 将字符串格式的 nodeID 映射为 10 bit (0-1023) 的整型节点 ID
-	hashID := int64(crc32.ChecksumIEEE([]byte(nodeID)) % 1024)
-	sfNode, err := snowflake.NewNode(hashID)
-	if err != nil {
-		log.Fatalf("init snowflake failed: %v", err)
-	}
+	// 网关无状态化：不再初始化 Snowflake 发号器
+	// MsgId 生成已迁移到 Message 服务本地完成
 
 	// 创建 Redis 客户端 (用于路由 KV 存储)
 	redisClient := redis.NewClient(&redis.Options{
@@ -107,7 +99,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		JetStream:         js,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),
 		TelemetryBus:      bus,
-		SnowflakeNode:     sfNode,
 		Codec:             codec,
 	}
 

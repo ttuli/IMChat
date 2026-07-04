@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/User/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type GetPendingFriendAppliesLogic struct {
@@ -24,7 +26,7 @@ func NewGetPendingFriendAppliesLogic(ctx context.Context, svcCtx *svc.ServiceCon
 }
 
 func (l *GetPendingFriendAppliesLogic) GetPendingFriendApplies(in *user.GetPendingFriendAppliesReq) (*user.GetPendingFriendAppliesResp, error) {
-	applies, err := l.svcCtx.UserService.GetPendingFriendApplies(l.ctx, in.UserId)
+	applies, err := service.NewUserService(l.svcCtx).GetPendingFriendApplies(l.ctx, in.UserId)
 	if err != nil {
 		return nil, err
 	}

@@ -3,14 +3,16 @@ package logic
 import (
 	"context"
 
-	model "IM2/internal/Entity"
 	"IM2/internal/apps/User/rpc/svc"
 	"IM2/internal/apps/User/rpc/user"
+	model "IM2/internal/model"
 	"IM2/pkg/encrypt"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/xerr"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type CreateUserLogic struct {
@@ -32,7 +34,7 @@ func (l *CreateUserLogic) CreateUser(in *user.CreateUserReq) (*user.CreateUserRe
 	if err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_ENCODING, "密码加密失败")
 	}
-	userId, err := l.svcCtx.UserService.CreateUser(l.ctx, &model.UserInfo{
+	userId, err := service.NewUserService(l.svcCtx).CreateUser(l.ctx, &model.UserInfo{
 		UserName: in.Name,
 		Phone:    in.Phone,
 		Gender:   uint8(in.Gender),

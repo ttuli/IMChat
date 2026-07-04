@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type CreateGroupLogic struct {
@@ -25,7 +27,7 @@ func NewCreateGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 
 // 群组管理
 func (l *CreateGroupLogic) CreateGroup(in *group.CreateGroupReq) (*group.CreateGroupResp, error) {
-	result, err := l.svcCtx.GroupService.CreateGroup(l.ctx, in.OwnerId, in.Name, in.Avatar, in.MemberIds)
+	result, err := service.NewGroupService(l.svcCtx).CreateGroup(l.ctx, in.OwnerId, in.Name, in.Avatar, in.MemberIds)
 	if err != nil {
 		return nil, err
 	}

@@ -27,10 +27,10 @@ func NewGetHistoryLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetHis
 
 func (l *GetHistoryLogic) GetHistory(req *types.GetHistoryReq) (resp *types.GetHistoryResp, err error) {
 	res, err := l.svcCtx.MessageRpc.GetHistory(l.ctx, &messagerpc.GetHistoryReq{
-		ConversationId: req.ConversationId,
-		StartSeq:       req.StartSeq,
-		EndSeq:         req.EndSeq,
-		Limit:          int32(req.Limit),
+		SessionId: req.SessionId,
+		StartSeq:  req.StartSeq,
+		EndSeq:    req.EndSeq,
+		Limit:     int32(req.Limit),
 	})
 	if err != nil {
 		return nil, err
@@ -39,16 +39,16 @@ func (l *GetHistoryLogic) GetHistory(req *types.GetHistoryReq) (resp *types.GetH
 	list := make([]*types.Message, 0, len(res.Messages))
 	for _, m := range res.Messages {
 		list = append(list, &types.Message{
-			MsgId:          m.MsgId,
-			ConversationId: m.ConversationId,
-			FromUserId:     m.FromUserId,
-			MsgType:        m.MsgType,
-			Content:        m.Content,
-			MediaUrl:       m.MediaUrl,
-			Extra:          string(m.Extra),
-			CreateTime:     m.CreateTime,
-			Seq:            m.Seq,
-			Status:         m.Status,
+			MsgId:      m.MsgId,
+			SessionId:  m.SessionId,
+			FromUserId: m.FromUserId,
+			MsgType:    m.MsgType,
+			Content:    m.Content,
+			MediaUrl:   m.MediaUrl,
+			Extra:      string(m.Extra),
+			CreateTime: m.CreateTime,
+			Seq:        m.Seq,
+			Status:     m.Status,
 		})
 	}
 

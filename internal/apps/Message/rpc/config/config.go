@@ -6,10 +6,13 @@ import (
 )
 
 type ListenerConfig struct {
-	Url                  string
-	BroadcastSubject     string
-	DBSubject            string
-	AckSubject           string
+	Url              string
+	BroadcastSubject string
+	DBSubject        string
+	AckSubject       string
+	DLQSubject       string
+
+	MaxDeliver int
 }
 
 type Config struct {
@@ -17,11 +20,14 @@ type Config struct {
 
 	Listener ListenerConfig
 
+	// SnowflakeNodeID 本地雪花节点 ID，0-1023，不填时自动从 hostname 派生
+	SnowflakeNodeID int64 `json:",optional"`
+
 	DAO struct {
 		MessageDAO struct {
 			Dbsource string
 		}
-		ConversationDAO struct {
+		SessionDAO struct {
 			Dbsource string
 			Redisx   redis.RedisConf
 		}

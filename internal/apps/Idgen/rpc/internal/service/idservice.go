@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	model "IM2/internal/Entity"
+	model "IM2/internal/model"
 	"IM2/internal/apps/Idgen/rpc/config"
 	"IM2/internal/apps/Idgen/rpc/idgen"
 	repository "IM2/internal/apps/Idgen/rpc/internal/dao"

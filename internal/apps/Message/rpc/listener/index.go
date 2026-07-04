@@ -8,10 +8,12 @@ import (
 
 	"IM2/internal/apps/Message/rpc/config"
 	"IM2/internal/apps/Message/rpc/internal/service"
+	"IM2/internal/apps/Message/rpc/svc"
+	"IM2/internal/model"
 	"IM2/pkg/logger"
 	nats_util "IM2/pkg/nats"
 	"IM2/pkg/proto/message"
-	"IM2/pkg/proto/svc"
+	protosvc "IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 
@@ -28,35 +30,36 @@ const (
 
 // NatsListener 监听 NATS 消息，委托 MessageService 完成业务处理（持久化等）
 type NatsListener struct {
-	conn   *nats.Conn
-	js     nats.JetStreamContext
-	c      config.Config
-	svc    *service.MessageService
+	svcCtx *svc.ServiceContext
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
+	dlq    DLQHandler
 }
 
-func NewNatsListener(c config.Config, conn *nats.Conn, js nats.JetStreamContext, svc *service.MessageService) *NatsListener {
+func NewNatsListener(c config.Config, svcCtx *svc.ServiceContext) *NatsListener {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &NatsListener{
-		conn:   conn,
-		js:     js,
-		c:      c,
-		svc:    svc,
+		svcCtx: svcCtx,
 		ctx:    ctx,
 		cancel: cancel,
+		dlq:    NewNatsDLQHandler(svcCtx.NatsConn, svcCtx.Config.Listener.DLQSubject, nil),
 	}
 }
 
 func (l *NatsListener) Listen() error {
-	err := nats_util.InitStream(l.js, []string{l.c.Listener.DBSubject, l.c.Listener.BroadcastSubject})
+	err := nats_util.InitStream(l.svcCtx.Js, []string{l.svcCtx.Config.Listener.DBSubject, l.svcCtx.Config.Listener.BroadcastSubject})
 	if err != nil {
 		return err
 	}
 
+	maxDeliver := l.svcCtx.Config.Listener.MaxDeliver
+	if maxDeliver <= 0 {
+		maxDeliver = 5 // default
+	}
+
 	// Pull Consumer：多个服务实例共享同一个 Durable，NATS 自动负载均衡
-	sub, err := l.js.PullSubscribe(l.c.Listener.DBSubject, durableConsumerName)
+	sub, err := l.svcCtx.Js.PullSubscribe(l.svcCtx.Config.Listener.DBSubject, durableConsumerName, nats.MaxDeliver(maxDeliver))
 	if err != nil {
 		return err
 	}
@@ -90,7 +93,25 @@ func (l *NatsListener) runLoop(sub *nats.Subscription) {
 		msg := msgs[0]
 		if err := l.handleMessage(msg); err != nil {
 			logger.Error(err.Error())
-			msg.Nak()
+
+			// DLQ logic: check if max deliver reached
+			meta, metaErr := msg.Metadata()
+			maxDeliver := l.svcCtx.Config.Listener.MaxDeliver
+			if maxDeliver <= 0 {
+				maxDeliver = 5
+			}
+
+			if metaErr == nil && int(meta.NumDelivered) >= maxDeliver {
+				// Reached max deliver, send to DLQ
+				if dlqErr := l.dlq.Handle(l.ctx, msg, err, int(meta.NumDelivered)); dlqErr != nil {
+					logger.Errorf("[NatsListener] Failed to handle DLQ: %v", dlqErr)
+					msg.Nak() // Still Nak if DLQ fails
+				} else {
+					msg.Ack() // Ack from main stream if DLQ success
+				}
+			} else {
+				msg.Nak() // Normal retry
+			}
 		} else {
 			msg.Ack()
 		}
@@ -99,26 +120,41 @@ func (l *NatsListener) runLoop(sub *nats.Subscription) {
 
 // handleMessage 反序列化单条 NATS 消息并委托 Service 持久化
 func (l *NatsListener) handleMessage(msg *nats.Msg) error {
-	var m svc.MessageSend
+	var m protosvc.MessageSend
 	if err := proto.Unmarshal(msg.Data, &m); err != nil {
 		return fmt.Errorf("[NatsListener] unmarshal error: %v", err)
 	}
+
+	msgSvc := service.NewMessageService(l.svcCtx)
+
+	// 由 Message 服务本地 SnowflakeNode 生成全局唯一的 MsgId
+	// 覆盖网关层用 ClientId 占位的临时 MsgId
 	ctx, cancel := context.WithTimeout(l.ctx, 5*time.Second)
 	defer cancel()
 
-	dbMsg, err := l.svc.PersistMessage(ctx, &m)
+	sessionType := model.SessionTypeSingle
+	if util.IsGroupSession(m.SessionKey) {
+		sessionType = model.SessionTypeGroup
+	}
+	session, _, err := msgSvc.GetOrCreateSession(ctx, "", m.SessionKey, sessionType)
+	if err != nil {
+		return err
+	}
+	m.SessionId = session.SessionID
+
+	dbMsg, err := msgSvc.PersistMessage(ctx, &m)
 	if err != nil {
 		// 持久化失败：直接发裸 PersistAck bytes，由 WS 层的 QueueSubscribeRaw handler 解码
 		pack := &message.PersistAck{
-			MsgId:     m.MsgId,
-			ClientId:  m.ClientId,
-			SessionId: m.ConversationId,
-			Target:    m.Sender,
-			AckStatus: message.AckStatus_ACK_STATUS_FAILED,
-			Seq:       dbMsg.Seq,
+			ClientId:   m.ClientId,
+			SessionId:  m.SessionId,
+			SessionKey: m.SessionKey,
+			Target:     m.Sender,
+			AckStatus:  message.AckStatus_ACK_STATUS_FAILED,
+			Seq:        dbMsg.Seq,
 		}
 		if data, err2 := proto.Marshal(pack); err2 == nil {
-			if pubErr := l.conn.Publish(l.c.Listener.AckSubject, data); pubErr != nil {
+			if pubErr := l.svcCtx.NatsConn.Publish(l.svcCtx.Config.Listener.AckSubject, data); pubErr != nil {
 				logger.Error(pubErr.Error())
 			}
 		}
@@ -128,13 +164,13 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 		pack := &message.PersistAck{
 			MsgId:     dbMsg.MsgID,
 			ClientId:  dbMsg.ClientID,
-			SessionId: dbMsg.ConversationID,
+			SessionId: dbMsg.SessionID,
 			Target:    m.Sender,
 			AckStatus: message.AckStatus_ACK_STATUS_SUCCESS,
 			Timestamp: time.Now().UnixMilli(),
 		}
 		if ackData, err2 := proto.Marshal(pack); err2 == nil {
-			if pubErr := l.conn.Publish(l.c.Listener.AckSubject, ackData); pubErr != nil {
+			if pubErr := l.svcCtx.NatsConn.Publish(l.svcCtx.Config.Listener.AckSubject, ackData); pubErr != nil {
 				logger.Error(pubErr.Error())
 			}
 		}
@@ -145,11 +181,11 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 			Payload:         m.Payload,
 			RouteTarget:     []uint64{m.Target},
 			Timestamp:       dbMsg.CreateTime.UnixMilli(),
-			RouteTargetType: transport.TargetType(util.GetConversationType(m.ConversationId)),
+			RouteTargetType: transport.TargetType(util.GetSessionType(m.SessionId)),
 			SenderId:        dbMsg.FromUserID,
 		}
 		deliverMsgData, _ := proto.Marshal(deliverMsg)
-		if pubErr := l.conn.Publish(l.c.Listener.BroadcastSubject, deliverMsgData); pubErr != nil {
+		if pubErr := l.svcCtx.NatsConn.Publish(l.svcCtx.Config.Listener.BroadcastSubject, deliverMsgData); pubErr != nil {
 			logger.Error(pubErr.Error())
 		}
 	}
@@ -160,8 +196,6 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 func (l *NatsListener) Stop() error {
 	l.cancel()
 	l.wg.Wait()
-	if l.conn != nil {
-		l.conn.Close()
-	}
+	// 注意：l.svcCtx.NatsConn 的生命周期现在由外层控制，不应在这里 Close
 	return nil
 }

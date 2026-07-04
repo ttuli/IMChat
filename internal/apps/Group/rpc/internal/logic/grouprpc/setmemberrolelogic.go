@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/Group/rpc/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/Group/rpc/internal/service"
 )
 
 type SetMemberRoleLogic struct {
@@ -24,7 +26,7 @@ func NewSetMemberRoleLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Set
 }
 
 func (l *SetMemberRoleLogic) SetMemberRole(in *group.SetMemberRoleReq) (*group.EmptyResp, error) {
-	if err := l.svcCtx.GroupService.SetMemberRole(l.ctx, in.GroupId, in.OperatorId, in.UserId, int8(in.Role)); err != nil {
+	if err := service.NewGroupService(l.svcCtx).SetMemberRole(l.ctx, in.GroupId, in.OperatorId, in.UserId, int8(in.Role)); err != nil {
 		return nil, err
 	}
 	return &group.EmptyResp{}, nil

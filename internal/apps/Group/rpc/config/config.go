@@ -13,7 +13,7 @@ type Config struct {
 			DataSource  string
 			RedisSource redis.RedisConf
 		}
-		ApplyDAO   string
+		ApplyDAO string
 	}
 
 	NATS struct {
@@ -22,5 +22,5 @@ type Config struct {
 		QueueBroadcastSubject string
 	}
 
-	IDRpc zrpc.RpcClientConf
+	IDRpc      zrpc.RpcClientConf
 }

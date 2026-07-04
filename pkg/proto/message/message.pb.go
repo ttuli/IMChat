@@ -200,49 +200,49 @@ func (AckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{2}
 }
 
-type ConversationType int32
+type SessionType int32
 
 const (
-	ConversationType_CONVERSATION_TYPE_PRIVATE ConversationType = 0 // 私聊
-	ConversationType_CONVERSATION_TYPE_GROUP   ConversationType = 1 // 群聊
+	SessionType_SESSION_TYPE_PRIVATE SessionType = 0 // 私聊
+	SessionType_SESSION_TYPE_GROUP   SessionType = 1 // 群聊
 )
 
-// Enum value maps for ConversationType.
+// Enum value maps for SessionType.
 var (
-	ConversationType_name = map[int32]string{
-		0: "CONVERSATION_TYPE_PRIVATE",
-		1: "CONVERSATION_TYPE_GROUP",
+	SessionType_name = map[int32]string{
+		0: "SESSION_TYPE_PRIVATE",
+		1: "SESSION_TYPE_GROUP",
 	}
-	ConversationType_value = map[string]int32{
-		"CONVERSATION_TYPE_PRIVATE": 0,
-		"CONVERSATION_TYPE_GROUP":   1,
+	SessionType_value = map[string]int32{
+		"SESSION_TYPE_PRIVATE": 0,
+		"SESSION_TYPE_GROUP":   1,
 	}
 )
 
-func (x ConversationType) Enum() *ConversationType {
-	p := new(ConversationType)
+func (x SessionType) Enum() *SessionType {
+	p := new(SessionType)
 	*p = x
 	return p
 }
 
-func (x ConversationType) String() string {
+func (x SessionType) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ConversationType) Descriptor() protoreflect.EnumDescriptor {
+func (SessionType) Descriptor() protoreflect.EnumDescriptor {
 	return file_pkg_proto_message_message_proto_enumTypes[3].Descriptor()
 }
 
-func (ConversationType) Type() protoreflect.EnumType {
+func (SessionType) Type() protoreflect.EnumType {
 	return &file_pkg_proto_message_message_proto_enumTypes[3]
 }
 
-func (x ConversationType) Number() protoreflect.EnumNumber {
+func (x SessionType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ConversationType.Descriptor instead.
-func (ConversationType) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use SessionType.Descriptor instead.
+func (SessionType) EnumDescriptor() ([]byte, []int) {
 	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{3}
 }
 
@@ -303,9 +303,10 @@ type BaseMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MsgId         string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`                                                           // 消息ID
 	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`                                                  // 客户端ID
-	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                                               // 会话ID
-	FromUserId    uint64                 `protobuf:"varint,4,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id,omitempty"`                                         // 发送者ID
-	Target        uint64                 `protobuf:"varint,5,opt,name=target,proto3" json:"target,omitempty"`                                                                     // 目标ID (私聊=to_user_id, 群聊=group_id, 与ConversationType配套使用)
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                                               // 会话ID (服务端持久化 ID)
+	SessionKey    string                 `protobuf:"bytes,4,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"`                                            // 本地会话 Key (如 "uid1_uid2" 或 groupId)
+	FromUserId    uint64                 `protobuf:"varint,5,opt,name=from_user_id,json=fromUserId,proto3" json:"from_user_id,omitempty"`                                         // 发送者ID
+	Target        uint64                 `protobuf:"varint,6,opt,name=target,proto3" json:"target,omitempty"`                                                                     // 目标ID (私聊=to_user_id, 群聊=group_id, 与SessionType配套使用)
 	SendTime      int64                  `protobuf:"varint,7,opt,name=send_time,json=sendTime,proto3" json:"send_time,omitempty"`                                                 // 发送时间
 	MsgSeq        int32                  `protobuf:"varint,8,opt,name=msg_seq,json=msgSeq,proto3" json:"msg_seq,omitempty"`                                                       // 消息序号
 	Status        MessageStatus          `protobuf:"varint,9,opt,name=status,proto3,enum=message.MessageStatus" json:"status,omitempty"`                                          // 消息状态
@@ -361,6 +362,13 @@ func (x *BaseMessage) GetClientId() string {
 func (x *BaseMessage) GetSessionId() string {
 	if x != nil {
 		return x.SessionId
+	}
+	return ""
+}
+
+func (x *BaseMessage) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
 	}
 	return ""
 }
@@ -1090,10 +1098,10 @@ func (x *CustomMessage) GetData() string {
 // 消息确认(ACK)
 type MessageAck struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MsgId         string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`              // 消息ID
-	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`     // 客户端ID
-	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`  // 会话ID
-	Status        AckStatus              `protobuf:"varint,4,opt,name=status,proto3,enum=message.AckStatus" json:"status,omitempty"` // 确认状态
+	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`       // 客户端ID
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`    // 会话ID
+	SessionKey    string                 `protobuf:"bytes,3,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"` // 本地会话 Key
+	Status        AckStatus              `protobuf:"varint,4,opt,name=status,proto3,enum=message.AckStatus" json:"status,omitempty"`   // 确认状态
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1128,13 +1136,6 @@ func (*MessageAck) Descriptor() ([]byte, []int) {
 	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *MessageAck) GetMsgId() string {
-	if x != nil {
-		return x.MsgId
-	}
-	return ""
-}
-
 func (x *MessageAck) GetClientId() string {
 	if x != nil {
 		return x.ClientId
@@ -1145,6 +1146,13 @@ func (x *MessageAck) GetClientId() string {
 func (x *MessageAck) GetSessionId() string {
 	if x != nil {
 		return x.SessionId
+	}
+	return ""
+}
+
+func (x *MessageAck) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
 	}
 	return ""
 }
@@ -1166,6 +1174,7 @@ type PersistAck struct {
 	AckStatus     AckStatus              `protobuf:"varint,5,opt,name=ack_status,json=ackStatus,proto3,enum=message.AckStatus" json:"ack_status,omitempty"` // 确认状态
 	Timestamp     int64                  `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                         // 时间戳
 	Seq           uint64                 `protobuf:"varint,7,opt,name=seq,proto3" json:"seq,omitempty"`                                                     // 消息序号
+	SessionKey    string                 `protobuf:"bytes,8,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"`                      // 本地会话 Key
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1249,15 +1258,22 @@ func (x *PersistAck) GetSeq() uint64 {
 	return 0
 }
 
+func (x *PersistAck) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
+	}
+	return ""
+}
+
 // 消息已读
 type MessageRead struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	UserId         uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                        // 用户ID
-	ConversationId string                 `protobuf:"bytes,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 会话ID
-	MsgIds         []int64                `protobuf:"varint,3,rep,packed,name=msg_ids,json=msgIds,proto3" json:"msg_ids,omitempty"`                 // 已读消息ID列表
-	ReadTime       int64                  `protobuf:"varint,4,opt,name=read_time,json=readTime,proto3" json:"read_time,omitempty"`                  // 已读时间
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`         // 用户ID
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // 会话ID
+	MsgIds        []int64                `protobuf:"varint,3,rep,packed,name=msg_ids,json=msgIds,proto3" json:"msg_ids,omitempty"`  // 已读消息ID列表
+	ReadTime      int64                  `protobuf:"varint,4,opt,name=read_time,json=readTime,proto3" json:"read_time,omitempty"`   // 已读时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MessageRead) Reset() {
@@ -1297,9 +1313,9 @@ func (x *MessageRead) GetUserId() uint64 {
 	return 0
 }
 
-func (x *MessageRead) GetConversationId() string {
+func (x *MessageRead) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
@@ -1320,14 +1336,14 @@ func (x *MessageRead) GetReadTime() int64 {
 
 // 消息撤回
 type MessageRecall struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	MsgId          string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`                            // 消息ID
-	UserId         uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                        // 撤回者ID
-	ConversationId string                 `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 会话ID
-	RecallTime     int64                  `protobuf:"varint,4,opt,name=recall_time,json=recallTime,proto3" json:"recall_time,omitempty"`            // 撤回时间
-	Reason         string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`                                       // 撤回原因
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MsgId         string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`                 // 消息ID
+	UserId        uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 撤回者ID
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`     // 会话ID
+	RecallTime    int64                  `protobuf:"varint,4,opt,name=recall_time,json=recallTime,proto3" json:"recall_time,omitempty"` // 撤回时间
+	Reason        string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`                            // 撤回原因
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MessageRecall) Reset() {
@@ -1374,9 +1390,9 @@ func (x *MessageRecall) GetUserId() uint64 {
 	return 0
 }
 
-func (x *MessageRecall) GetConversationId() string {
+func (x *MessageRecall) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
@@ -1395,37 +1411,38 @@ func (x *MessageRecall) GetReason() string {
 	return ""
 }
 
-type Conversation struct {
+type Session struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	ConversationId  string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 会话ID
-	Type            ConversationType       `protobuf:"varint,2,opt,name=type,proto3,enum=message.ConversationType" json:"type,omitempty"`            // 会话类型
-	LastContent     string                 `protobuf:"bytes,3,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"`          // 最后一条消息摘要文本
-	MaxSeq          int64                  `protobuf:"varint,4,opt,name=max_seq,json=maxSeq,proto3" json:"max_seq,omitempty"`
-	LastSender      uint64                 `protobuf:"varint,5,opt,name=last_sender,json=lastSender,proto3" json:"last_sender,omitempty"`
-	LastMessageTime int64                  `protobuf:"varint,6,opt,name=last_message_time,json=lastMessageTime,proto3" json:"last_message_time,omitempty"` // 最后消息时间
-	UnreadCount     int64                  `protobuf:"varint,7,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`               // 未读消息数
-	CreateTime      int64                  `protobuf:"varint,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                  // 创建时间
-	UpdateTime      int64                  `protobuf:"varint,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`                  // 更新时间
-	IsTop           int32                  `protobuf:"varint,10,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`                                // 是否置顶
-	IsDisturb       int32                  `protobuf:"varint,11,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`                    // 是否免打扰
+	SessionId       string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`       // 会话ID (服务端持久化 ID)
+	Type            SessionType            `protobuf:"varint,2,opt,name=type,proto3,enum=message.SessionType" json:"type,omitempty"`        // 会话类型
+	SessionKey      string                 `protobuf:"bytes,3,opt,name=session_key,json=sessionKey,proto3" json:"session_key,omitempty"`    // 本地会话 Key
+	LastContent     string                 `protobuf:"bytes,4,opt,name=last_content,json=lastContent,proto3" json:"last_content,omitempty"` // 最后一条消息摘要文本
+	MaxSeq          int64                  `protobuf:"varint,5,opt,name=max_seq,json=maxSeq,proto3" json:"max_seq,omitempty"`
+	LastSender      uint64                 `protobuf:"varint,6,opt,name=last_sender,json=lastSender,proto3" json:"last_sender,omitempty"`
+	LastMessageTime int64                  `protobuf:"varint,7,opt,name=last_message_time,json=lastMessageTime,proto3" json:"last_message_time,omitempty"` // 最后消息时间
+	UnreadCount     int64                  `protobuf:"varint,8,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`               // 未读消息数
+	CreateTime      int64                  `protobuf:"varint,9,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                  // 创建时间
+	UpdateTime      int64                  `protobuf:"varint,10,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`                 // 更新时间
+	IsTop           int32                  `protobuf:"varint,11,opt,name=is_top,json=isTop,proto3" json:"is_top,omitempty"`                                // 是否置顶
+	IsDisturb       int32                  `protobuf:"varint,12,opt,name=is_disturb,json=isDisturb,proto3" json:"is_disturb,omitempty"`                    // 是否免打扰
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *Conversation) Reset() {
-	*x = Conversation{}
+func (x *Session) Reset() {
+	*x = Session{}
 	mi := &file_pkg_proto_message_message_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Conversation) String() string {
+func (x *Session) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Conversation) ProtoMessage() {}
+func (*Session) ProtoMessage() {}
 
-func (x *Conversation) ProtoReflect() protoreflect.Message {
+func (x *Session) ProtoReflect() protoreflect.Message {
 	mi := &file_pkg_proto_message_message_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1437,82 +1454,89 @@ func (x *Conversation) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
-func (*Conversation) Descriptor() ([]byte, []int) {
+// Deprecated: Use Session.ProtoReflect.Descriptor instead.
+func (*Session) Descriptor() ([]byte, []int) {
 	return file_pkg_proto_message_message_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *Conversation) GetConversationId() string {
+func (x *Session) GetSessionId() string {
 	if x != nil {
-		return x.ConversationId
+		return x.SessionId
 	}
 	return ""
 }
 
-func (x *Conversation) GetType() ConversationType {
+func (x *Session) GetType() SessionType {
 	if x != nil {
 		return x.Type
 	}
-	return ConversationType_CONVERSATION_TYPE_PRIVATE
+	return SessionType_SESSION_TYPE_PRIVATE
 }
 
-func (x *Conversation) GetLastContent() string {
+func (x *Session) GetSessionKey() string {
+	if x != nil {
+		return x.SessionKey
+	}
+	return ""
+}
+
+func (x *Session) GetLastContent() string {
 	if x != nil {
 		return x.LastContent
 	}
 	return ""
 }
 
-func (x *Conversation) GetMaxSeq() int64 {
+func (x *Session) GetMaxSeq() int64 {
 	if x != nil {
 		return x.MaxSeq
 	}
 	return 0
 }
 
-func (x *Conversation) GetLastSender() uint64 {
+func (x *Session) GetLastSender() uint64 {
 	if x != nil {
 		return x.LastSender
 	}
 	return 0
 }
 
-func (x *Conversation) GetLastMessageTime() int64 {
+func (x *Session) GetLastMessageTime() int64 {
 	if x != nil {
 		return x.LastMessageTime
 	}
 	return 0
 }
 
-func (x *Conversation) GetUnreadCount() int64 {
+func (x *Session) GetUnreadCount() int64 {
 	if x != nil {
 		return x.UnreadCount
 	}
 	return 0
 }
 
-func (x *Conversation) GetCreateTime() int64 {
+func (x *Session) GetCreateTime() int64 {
 	if x != nil {
 		return x.CreateTime
 	}
 	return 0
 }
 
-func (x *Conversation) GetUpdateTime() int64 {
+func (x *Session) GetUpdateTime() int64 {
 	if x != nil {
 		return x.UpdateTime
 	}
 	return 0
 }
 
-func (x *Conversation) GetIsTop() int32 {
+func (x *Session) GetIsTop() int32 {
 	if x != nil {
 		return x.IsTop
 	}
 	return 0
 }
 
-func (x *Conversation) GetIsDisturb() int32 {
+func (x *Session) GetIsDisturb() int32 {
 	if x != nil {
 		return x.IsDisturb
 	}
@@ -1608,15 +1632,17 @@ var File_pkg_proto_message_message_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\n" +
-	"\x1fpkg/proto/message/message.proto\x12\amessage\"\xef\x02\n" +
+	"\x1fpkg/proto/message/message.proto\x12\amessage\"\x8a\x03\n" +
 	"\vBaseMessage\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\tR\tsessionId\x12 \n" +
-	"\ffrom_user_id\x18\x04 \x01(\x04R\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12\x1f\n" +
+	"\vsession_key\x18\x04 \x01(\tR\n" +
+	"sessionKey\x12 \n" +
+	"\ffrom_user_id\x18\x05 \x01(\x04R\n" +
 	"fromUserId\x12\x16\n" +
-	"\x06target\x18\x05 \x01(\x04R\x06target\x12\x1b\n" +
+	"\x06target\x18\x06 \x01(\x04R\x06target\x12\x1b\n" +
 	"\tsend_time\x18\a \x01(\x03R\bsendTime\x12\x17\n" +
 	"\amsg_seq\x18\b \x01(\x05R\x06msgSeq\x12.\n" +
 	"\x06status\x18\t \x01(\x0e2\x16.message.MessageStatusR\x06status\x12/\n" +
@@ -1624,7 +1650,7 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	" \x03(\v2\x1d.message.BaseMessage.ExtEntryR\x03ext\x1a6\n" +
 	"\bExtEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x06\x10\a\"{\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"{\n" +
 	"\vTextMessage\x12(\n" +
 	"\x04base\x18\x01 \x01(\v2\x14.message.BaseMessageR\x04base\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12(\n" +
@@ -1683,14 +1709,15 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\x04base\x18\x01 \x01(\v2\x14.message.BaseMessageR\x04base\x12\x1f\n" +
 	"\vcustom_type\x18\x02 \x01(\tR\n" +
 	"customType\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\tR\x04data\"\x8b\x01\n" +
+	"\x04data\x18\x03 \x01(\tR\x04data\"\x95\x01\n" +
 	"\n" +
-	"MessageAck\x12\x15\n" +
-	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
-	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1d\n" +
+	"MessageAck\x12\x1b\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\tR\tsessionId\x12*\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x12.message.AckStatusR\x06status\"\xda\x01\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x1f\n" +
+	"\vsession_key\x18\x03 \x01(\tR\n" +
+	"sessionKey\x12*\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x12.message.AckStatusR\x06status\"\xfb\x01\n" +
 	"\n" +
 	"PersistAck\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x1b\n" +
@@ -1701,36 +1728,43 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\n" +
 	"ack_status\x18\x05 \x01(\x0e2\x12.message.AckStatusR\tackStatus\x12\x1c\n" +
 	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\x12\x10\n" +
-	"\x03seq\x18\a \x01(\x04R\x03seq\"\x85\x01\n" +
+	"\x03seq\x18\a \x01(\x04R\x03seq\x12\x1f\n" +
+	"\vsession_key\x18\b \x01(\tR\n" +
+	"sessionKey\"{\n" +
 	"\vMessageRead\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12'\n" +
-	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x17\n" +
 	"\amsg_ids\x18\x03 \x03(\x03R\x06msgIds\x12\x1b\n" +
-	"\tread_time\x18\x04 \x01(\x03R\breadTime\"\xa1\x01\n" +
+	"\tread_time\x18\x04 \x01(\x03R\breadTime\"\x97\x01\n" +
 	"\rMessageRecall\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12'\n" +
-	"\x0fconversation_id\x18\x03 \x01(\tR\x0econversationId\x12\x1f\n" +
+	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12\x1f\n" +
 	"\vrecall_time\x18\x04 \x01(\x03R\n" +
 	"recallTime\x12\x16\n" +
-	"\x06reason\x18\x05 \x01(\tR\x06reason\"\x8a\x03\n" +
-	"\fConversation\x12'\n" +
-	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12-\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x19.message.ConversationTypeR\x04type\x12!\n" +
-	"\flast_content\x18\x03 \x01(\tR\vlastContent\x12\x17\n" +
-	"\amax_seq\x18\x04 \x01(\x03R\x06maxSeq\x12\x1f\n" +
-	"\vlast_sender\x18\x05 \x01(\x04R\n" +
-	"lastSender\x12*\n" +
-	"\x11last_message_time\x18\x06 \x01(\x03R\x0flastMessageTime\x12!\n" +
-	"\funread_count\x18\a \x01(\x03R\vunreadCount\x12\x1f\n" +
-	"\vcreate_time\x18\b \x01(\x03R\n" +
-	"createTime\x12\x1f\n" +
-	"\vupdate_time\x18\t \x01(\x03R\n" +
-	"updateTime\x12\x15\n" +
-	"\x06is_top\x18\n" +
-	" \x01(\x05R\x05isTop\x12\x1d\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\"\x97\x03\n" +
+	"\aSession\x12\x1d\n" +
 	"\n" +
-	"is_disturb\x18\v \x01(\x05R\tisDisturb\"\xb1\x02\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\x12(\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x14.message.SessionTypeR\x04type\x12\x1f\n" +
+	"\vsession_key\x18\x03 \x01(\tR\n" +
+	"sessionKey\x12!\n" +
+	"\flast_content\x18\x04 \x01(\tR\vlastContent\x12\x17\n" +
+	"\amax_seq\x18\x05 \x01(\x03R\x06maxSeq\x12\x1f\n" +
+	"\vlast_sender\x18\x06 \x01(\x04R\n" +
+	"lastSender\x12*\n" +
+	"\x11last_message_time\x18\a \x01(\x03R\x0flastMessageTime\x12!\n" +
+	"\funread_count\x18\b \x01(\x03R\vunreadCount\x12\x1f\n" +
+	"\vcreate_time\x18\t \x01(\x03R\n" +
+	"createTime\x12\x1f\n" +
+	"\vupdate_time\x18\n" +
+	" \x01(\x03R\n" +
+	"updateTime\x12\x15\n" +
+	"\x06is_top\x18\v \x01(\x05R\x05isTop\x12\x1d\n" +
+	"\n" +
+	"is_disturb\x18\f \x01(\x05R\tisDisturb\"\xb1\x02\n" +
 	"\x12SystemNotification\x12'\n" +
 	"\x0fnotification_id\x18\x01 \x01(\tR\x0enotificationId\x12-\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x19.message.NotificationTypeR\x04type\x12\x14\n" +
@@ -1764,10 +1798,10 @@ const file_pkg_proto_message_message_proto_rawDesc = "" +
 	"\tAckStatus\x12\x16\n" +
 	"\x12ACK_STATUS_SUCCESS\x10\x00\x12\x15\n" +
 	"\x11ACK_STATUS_FAILED\x10\x01\x12\x18\n" +
-	"\x14ACK_STATUS_DUPLICATE\x10\x02*N\n" +
-	"\x10ConversationType\x12\x1d\n" +
-	"\x19CONVERSATION_TYPE_PRIVATE\x10\x00\x12\x1b\n" +
-	"\x17CONVERSATION_TYPE_GROUP\x10\x01*\x94\x01\n" +
+	"\x14ACK_STATUS_DUPLICATE\x10\x02*?\n" +
+	"\vSessionType\x12\x18\n" +
+	"\x14SESSION_TYPE_PRIVATE\x10\x00\x12\x16\n" +
+	"\x12SESSION_TYPE_GROUP\x10\x01*\x94\x01\n" +
 	"\x10NotificationType\x12\x1c\n" +
 	"\x18NOTIFICATION_TYPE_SYSTEM\x10\x00\x12\"\n" +
 	"\x1eNOTIFICATION_TYPE_ANNOUNCEMENT\x10\x01\x12\x1e\n" +
@@ -1792,7 +1826,7 @@ var file_pkg_proto_message_message_proto_goTypes = []any{
 	(MessageStatus)(0),         // 0: message.MessageStatus
 	(MessageExtraKey)(0),       // 1: message.MessageExtraKey
 	(AckStatus)(0),             // 2: message.AckStatus
-	(ConversationType)(0),      // 3: message.ConversationType
+	(SessionType)(0),           // 3: message.SessionType
 	(NotificationType)(0),      // 4: message.NotificationType
 	(*BaseMessage)(nil),        // 5: message.BaseMessage
 	(*TextMessage)(nil),        // 6: message.TextMessage
@@ -1807,7 +1841,7 @@ var file_pkg_proto_message_message_proto_goTypes = []any{
 	(*PersistAck)(nil),         // 15: message.PersistAck
 	(*MessageRead)(nil),        // 16: message.MessageRead
 	(*MessageRecall)(nil),      // 17: message.MessageRecall
-	(*Conversation)(nil),       // 18: message.Conversation
+	(*Session)(nil),            // 18: message.Session
 	(*SystemNotification)(nil), // 19: message.SystemNotification
 	nil,                        // 20: message.BaseMessage.ExtEntry
 	nil,                        // 21: message.SystemNotification.DataEntry
@@ -1825,7 +1859,7 @@ var file_pkg_proto_message_message_proto_depIdxs = []int32{
 	5,  // 9: message.CustomMessage.base:type_name -> message.BaseMessage
 	2,  // 10: message.MessageAck.status:type_name -> message.AckStatus
 	2,  // 11: message.PersistAck.ack_status:type_name -> message.AckStatus
-	3,  // 12: message.Conversation.type:type_name -> message.ConversationType
+	3,  // 12: message.Session.type:type_name -> message.SessionType
 	4,  // 13: message.SystemNotification.type:type_name -> message.NotificationType
 	21, // 14: message.SystemNotification.data:type_name -> message.SystemNotification.DataEntry
 	15, // [15:15] is the sub-list for method output_type

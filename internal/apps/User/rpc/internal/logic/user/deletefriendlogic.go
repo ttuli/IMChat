@@ -7,6 +7,8 @@ import (
 	"IM2/internal/apps/User/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"IM2/internal/apps/User/rpc/internal/service"
 )
 
 type DeleteFriendLogic struct {
@@ -24,7 +26,7 @@ func NewDeleteFriendLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dele
 }
 
 func (l *DeleteFriendLogic) DeleteFriend(in *user.DeleteFriendReq) (*user.EmptyResp, error) {
-	err := l.svcCtx.UserService.DeleteFriend(l.ctx, in.UserId, in.FriendId)
+	err := service.NewUserService(l.svcCtx).DeleteFriend(l.ctx, in.UserId, in.FriendId)
 	if err != nil {
 		return nil, err
 	}
