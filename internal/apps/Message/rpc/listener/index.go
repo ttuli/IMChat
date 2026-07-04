@@ -58,6 +58,17 @@ func (l *NatsListener) Listen() error {
 		maxDeliver = 5 // default
 	}
 
+	// 检查并自动更新已存在的 Durable Consumer 配置，防止配置冲突（如 MaxDeliver 校验失败）
+	if info, infoErr := l.svcCtx.Js.ConsumerInfo("WS_MESSAGES", durableConsumerName); infoErr == nil {
+		if info.Config.MaxDeliver != maxDeliver {
+			cfg := info.Config
+			cfg.MaxDeliver = maxDeliver
+			if _, updateErr := l.svcCtx.Js.UpdateConsumer("WS_MESSAGES", &cfg); updateErr != nil {
+				_ = l.svcCtx.Js.DeleteConsumer("WS_MESSAGES", durableConsumerName)
+			}
+		}
+	}
+
 	// Pull Consumer：多个服务实例共享同一个 Durable，NATS 自动负载均衡
 	sub, err := l.svcCtx.Js.PullSubscribe(l.svcCtx.Config.Listener.DBSubject, durableConsumerName, nats.MaxDeliver(maxDeliver))
 	if err != nil {
