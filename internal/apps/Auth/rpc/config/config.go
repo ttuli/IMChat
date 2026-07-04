@@ -15,4 +15,6 @@ type Config struct {
 	TokenConfig tokenmanager.TokenConfig
 
 	Redisx redis.RedisConf
+
+	IDRpc zrpc.RpcClientConf
 }

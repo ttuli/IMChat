@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	model "IM2/internal/model"
 	"IM2/internal/apps/Auth/rpc/config"
 	"IM2/internal/apps/Auth/rpc/internal/dao"
+	"IM2/internal/apps/Idgen/rpc/idgen"
+	"IM2/internal/apps/Idgen/rpc/idgenclient"
+	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/transport"
 	tokenmanager "IM2/pkg/tokenManager"
@@ -25,6 +27,7 @@ type AuthService struct {
 	AuthDAO        *dao.AuthDAO
 	TokenManager   *tokenmanager.TokenManager
 	DypnsapiClient *dypnsapi20170525.Client
+	IdGenerator    idgenclient.Idgen
 }
 
 func createClient() (_result *dypnsapi20170525.Client, _err error) {
@@ -44,7 +47,7 @@ func createClient() (_result *dypnsapi20170525.Client, _err error) {
 	return _result, _err
 }
 
-func NewAuthService(c config.Config) *AuthService {
+func NewAuthService(c config.Config, idGen idgenclient.Idgen) *AuthService {
 	client, err := createClient()
 	if err != nil {
 		panic(err)
@@ -54,6 +57,7 @@ func NewAuthService(c config.Config) *AuthService {
 		AuthDAO:        dao.NewAuthDAO(c.AuthDAO),
 		TokenManager:   tokenmanager.NewTokenManager(c.TokenConfig),
 		DypnsapiClient: client,
+		IdGenerator:    idGen,
 	}
 }
 
@@ -160,7 +164,22 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Regi
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "创建用户失败")
 	}
 
-	// 3. 持久化（AuthDAO 只负责写入，不含业务判断）
+	// 3. 调用 Idgen 生成 10 位分布式 UserID
+	if s.IdGenerator != nil {
+		idResp, err := s.IdGenerator.GetId(ctx, &idgen.GetIdReq{
+			IdType: idgen.IDType_ID_TYPE_USER,
+			Count:  1,
+		})
+		if err != nil {
+			return nil, xerr.Wrap(err, transport.ErrorCode_ERR_RPC, "调用ID生成服务失败")
+		}
+		if len(idResp.Ids) == 0 {
+			return nil, xerr.New(transport.ErrorCode_ERR_INTERNAL_SERVER, "生成用户ID失败")
+		}
+		u.UserID = uint64(idResp.Ids[0])
+	}
+
+	// 4. 持久化（AuthDAO 只负责写入，不含业务判断）
 	if err := s.AuthDAO.InsertUser(ctx, u); err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "注册失败")
 	}

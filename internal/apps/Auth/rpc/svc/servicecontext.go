@@ -1,8 +1,12 @@
 package svc
 
 import (
+	"IM2/interceptor"
 	"IM2/internal/apps/Auth/rpc/config"
 	"IM2/internal/apps/Auth/rpc/internal/service"
+	"IM2/internal/apps/Idgen/rpc/idgenclient"
+
+	"github.com/zeromicro/go-zero/zrpc"
 )
 
 type ServiceContext struct {
@@ -11,8 +15,10 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	idGenerator := idgenclient.NewIdgen(zrpc.MustNewClient(c.IDRpc,
+		zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor)))
 	return &ServiceContext{
 		Config:      c,
-		AuthService: service.NewAuthService(c),
+		AuthService: service.NewAuthService(c, idGenerator),
 	}
 }
