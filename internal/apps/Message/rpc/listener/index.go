@@ -100,31 +100,31 @@ func (l *NatsListener) runLoop(sub *nats.Subscription) {
 		if len(msgs) == 0 {
 			continue
 		}
+		for _, msg := range msgs {
+			if err := l.handleMessage(msg); err != nil {
+				logger.Error(err.Error())
 
-		msg := msgs[0]
-		if err := l.handleMessage(msg); err != nil {
-			logger.Error(err.Error())
+				// DLQ logic: check if max deliver reached
+				meta, metaErr := msg.Metadata()
+				maxDeliver := l.svcCtx.Config.Listener.MaxDeliver
+				if maxDeliver <= 0 {
+					maxDeliver = 5
+				}
 
-			// DLQ logic: check if max deliver reached
-			meta, metaErr := msg.Metadata()
-			maxDeliver := l.svcCtx.Config.Listener.MaxDeliver
-			if maxDeliver <= 0 {
-				maxDeliver = 5
-			}
-
-			if metaErr == nil && int(meta.NumDelivered) >= maxDeliver {
-				// Reached max deliver, send to DLQ
-				if dlqErr := l.dlq.Handle(l.ctx, msg, err, int(meta.NumDelivered)); dlqErr != nil {
-					logger.Errorf("[NatsListener] Failed to handle DLQ: %v", dlqErr)
-					msg.Nak() // Still Nak if DLQ fails
+				if metaErr == nil && int(meta.NumDelivered) >= maxDeliver {
+					// Reached max deliver, send to DLQ
+					if dlqErr := l.dlq.Handle(l.ctx, msg, err, int(meta.NumDelivered)); dlqErr != nil {
+						logger.Errorf("[NatsListener] Failed to handle DLQ: %v", dlqErr)
+						msg.Nak() // Still Nak if DLQ fails
+					} else {
+						msg.Ack() // Ack from main stream if DLQ success
+					}
 				} else {
-					msg.Ack() // Ack from main stream if DLQ success
+					msg.Nak() // Normal retry
 				}
 			} else {
-				msg.Nak() // Normal retry
+				msg.Ack()
 			}
-		} else {
-			msg.Ack()
 		}
 	}
 }
