@@ -177,6 +177,7 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 			ClientId:  dbMsg.ClientID,
 			SessionId: dbMsg.SessionID,
 			Target:    m.Sender,
+			Seq:       dbMsg.Seq,
 			AckStatus: message.AckStatus_ACK_STATUS_SUCCESS,
 			Timestamp: time.Now().UnixMilli(),
 		}
@@ -187,13 +188,30 @@ func (l *NatsListener) handleMessage(msg *nats.Msg) error {
 		}
 
 		// 2. 将消息投递给接收方：BroadcastSubject 依然用 WSMessage（所有 WS 节点广播转发）
-		deliverMsg := &transport.WSMessage{
+		// 构造完整 WSMessage 传入 ParseMessage，repack 时路由字段会一并复制
+		tmpWS := &transport.WSMessage{
 			Type:            transport.MessageType(m.MsgType),
 			Payload:         m.Payload,
 			RouteTarget:     []uint64{m.Target},
 			Timestamp:       dbMsg.CreateTime.UnixMilli(),
 			RouteTargetType: transport.TargetType(util.GetSessionType(m.SessionId)),
 			SenderId:        dbMsg.FromUserID,
+		}
+		base, _, repack, parseErr := transport.ParseMessage(tmpWS)
+		if parseErr == nil && base != nil {
+			// 用服务端持久化后的真实值覆盖客户端占位字段
+			base.MsgId = dbMsg.MsgID
+			base.SessionId = dbMsg.SessionID
+			base.MsgSeq = int32(dbMsg.Seq)
+		}
+		var deliverMsg *transport.WSMessage
+		if parseErr == nil {
+			deliverMsg, _ = repack()
+		}
+		if deliverMsg == nil {
+			// 解析失败 fallback：路由字段正确，仅 payload 内部字段未更新
+			logger.Errorf("[NatsListener] ParseMessage failed, fallback to raw payload: %v", parseErr)
+			deliverMsg = tmpWS
 		}
 		deliverMsgData, _ := proto.Marshal(deliverMsg)
 		if pubErr := l.svcCtx.NatsConn.Publish(l.svcCtx.Config.Listener.BroadcastSubject, deliverMsgData); pubErr != nil {

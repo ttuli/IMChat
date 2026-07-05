@@ -224,18 +224,13 @@ func (s *GatewayServer) handleAckSubscribeMessage(ctx context.Context, data []by
 	if err := proto.Unmarshal(data, &ack); err != nil {
 		return fmt.Errorf("[handleAckSubscribeMessage] unmarshal PersistAck failed: %w", err)
 	}
-
 	// 将 PersistAck 包成 WSMessage 再发送，客户端统一收 WSMessage 格式
-	ackPayload, err := proto.Marshal(&ack)
-	if err != nil {
-		return fmt.Errorf("[handleAckSubscribeMessage] marshal PersistAck failed: %w", err)
-	}
 	wsMsg := &transport.WSMessage{
 		Timestamp:       ack.Timestamp,
 		RouteTarget:     []uint64{ack.Target},
 		RouteTargetType: transport.TargetType_USER,
 		Type:            transport.MessageType_MSG_PERSIST_ACK,
-		Payload:         ackPayload,
+		Payload:         data,
 	}
 	if err := s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Target, wsMsg); err != nil {
 		s.svcCtx.TelemetryBus.Publish(err)

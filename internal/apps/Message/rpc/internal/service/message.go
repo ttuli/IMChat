@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	model "IM2/internal/model"
@@ -39,6 +40,7 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.SessionId, err)
 		return nil, err
 	}
+	fmt.Println("生成seq", seq)
 
 	// 3. 将完整会话状态推送到 SeqSyncer
 	s.svcCtx.SessionDAO.PushSeqUpdate(
