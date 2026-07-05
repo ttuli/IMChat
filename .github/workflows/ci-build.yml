@@ -90,7 +90,7 @@ jobs:
           SERVICES=()
           while IFS= read -r file; do
               [ -z "$file" ] && continue
-              if [[ $file =~ ^cmd/websocket/ ]]; then
+              if [[ $file =~ ^(cmd|internal/apps)/websocket/ ]]; then
                   SERVICES+=("websocket")
               elif [[ $file =~ ^cmd/([a-zA-Z0-9_]+)/(api|rpc|python)/ ]]; then
                   DOMAIN=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
