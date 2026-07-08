@@ -33,10 +33,11 @@ func (l *GetUserActiveSessionsLogic) GetUserActiveSessions(in *message.GetUserAc
 	var list []*message.Session
 	for _, c := range sess {
 		list = append(list, &message.Session{
-			SessionId:   c.SessionID,
-			Type:        int32(c.Type),
-			SessionKey:  c.SessionKey,
-			MaxSeq:      c.MaxSeq,
+			SessionId:  c.SessionID,
+			Type:       int32(c.Type),
+			SessionKey: c.SessionKey,
+			// Lamport 语义下号段上限已废弃，max_seq 对外兼容返回 actual_seq
+			MaxSeq:      c.ActualSeq,
 			ActualSeq:   c.ActualSeq,
 			CreateTime:  c.CreateTime.UnixMilli(),
 			UpdateTime:  c.UpdateTime.UnixMilli(),

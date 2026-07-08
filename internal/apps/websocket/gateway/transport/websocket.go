@@ -66,13 +66,16 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 注册路由
+	// 注册路由；失败时回滚本地连接注册。
+	// 若只 Close 不摘除 map 条目，路由心跳会把该用户重新注册到本节点，
+	// 造成"路由指向本节点但连接已死"的静默漏推。
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
 		h.svcCtx.TelemetryBus.Publish(err)
 		conn.SendError(&transport.ErrorMessage{
 			ErrorCode: int32(transport.ErrorCode_ERR_INTERNAL_SERVER),
 			ErrorMsg:  "与服务器建立连接失败",
 		})
+		h.svcCtx.ConnectionManager.RemoveConnection(conn.UserID, conn)
 		conn.Close()
 		return
 	}

@@ -69,6 +69,13 @@ func (s *MessageService) UpdateSession(ctx context.Context, userID uint64, sessi
 	return nil
 }
 
+// ResolveSessionID 消息消费热路径专用：按 session_key 解析（不存在则创建）会话 ID。
+// 走 SessionDAO 的进程内 LRU 缓存，避免每条消息一次 MySQL 查询。
+func (s *MessageService) ResolveSessionID(ctx context.Context, sessionKey string, sessionType int8) (string, error) {
+	newSessionID := s.svcCtx.SnowflakeNode.Generate().String()
+	return s.svcCtx.SessionDAO.ResolveSessionIDByKey(ctx, newSessionID, sessionKey, sessionType)
+}
+
 // GetOrCreateSession 按 session_id 或 session_key 查询会话。
 // 若按 session_key 且不存在，则创建新会话后返回，created=true。
 func (s *MessageService) GetOrCreateSession(ctx context.Context, sessionID string, sessionKey string, sessionType int8) (*model.Session, bool, error) {

@@ -24,7 +24,7 @@ message BaseMessage {
   uint64 from_user_id = 5;        // 发送者ID
   uint64 target = 6;              // 目标ID (私聊=to_user_id, 群聊=group_id, 与SessionType配套使用)
   int64 send_time = 7;            // 发送时间
-  int32 msg_seq = 8;              // 消息序号
+  uint64 msg_seq = 8;             // 消息序号 (Lamport: 42bit毫秒时间戳|10bit节点|12bit计数器)
   MessageStatus status = 9;       // 消息状态
   map<string, string> ext = 10;   // 扩展字段
 }

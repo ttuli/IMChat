@@ -33,7 +33,6 @@ type NatsConf struct {
 	QueueBroadcastSubject string
 	QueueName             string
 	DBSubject             string
-	AckSubject            string
 }
 
 // WebSocketConf WebSocket 配置

@@ -38,10 +38,11 @@ func (l *GetSessionLogic) GetSession(in *message.GetSessionReq) (*message.GetSes
 
 	return &message.GetSessionResp{
 		Session: &message.Session{
-			SessionId:   ss.SessionID,
-			Type:        int32(ss.Type),
-			SessionKey:  ss.SessionKey,
-			MaxSeq:      ss.MaxSeq,
+			SessionId:  ss.SessionID,
+			Type:       int32(ss.Type),
+			SessionKey: ss.SessionKey,
+			// Lamport 语义下号段上限已废弃，max_seq 对外兼容返回 actual_seq
+			MaxSeq:      ss.ActualSeq,
 			ActualSeq:   ss.ActualSeq,
 			LastContent: ss.LastContent,
 			LastSender:  ss.LastSender,

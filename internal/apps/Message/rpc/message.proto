@@ -40,6 +40,8 @@ message UserSession {
   uint64 last_read_seq = 5;
   int64 create_time = 6;
   int64 update_time = 7;
+  // 服务端计算的未读数（Lamport seq 不连续，客户端不能再用 actual_seq - last_read_seq）
+  uint64 unread_count = 8;
 }
 
 // ========== 请求/响应 ==========

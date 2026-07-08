@@ -24,8 +24,9 @@ const (
 )
 
 // seqUpdate 代表一条完整的会话状态更新事件。
-// 号段模式下 MySQL max_seq 已由 allocSegment 实时写入，SeqSyncer 只负责异步批量刷下面元数据字段。
-// 聚合时同一 conversationID 只保留 seq 最大的那条（视为最新状态）。
+// seq 由 Lamport 分配器在消息服务本地生成，SeqSyncer 负责异步批量刷
+// MySQL actual_seq 及 Redis session:info 快照。
+// 聚合时同一 conversationID 只保留 seq 最大的那条（视为最新状态，Lamport uint64 直接比较）。
 type seqUpdate struct {
 	sessionID   string
 	seq         uint64 // 写入 MySQL actual_seq 和 Redis 快照
@@ -199,10 +200,9 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 		}
 
 		// 1. MySQL Upsert：不存在则创建，存在则只更新 actual_seq / last_content / last_sender / update_time。
-		// 不触碰 max_seq（号段上限，由 allocSegment 管理）。
 		res := s.db.WithContext(ctx).
 			Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "conversation_id"}},
+				Columns:   []clause.Column{{Name: "session_id"}},
 				DoUpdates: clause.AssignmentColumns([]string{"actual_seq", "last_content", "last_sender", "update_time"}),
 			}).
 			Create(&model.Session{
@@ -244,27 +244,34 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	}
 
 	// 3. 批量更新 Redis：
-	//    a) user:conv:timeline:{uid} ZSET：成员存 JSON 快照，分数存 updateTime
-	//    b) conv:info:{convID} Hash：将 actual_seq / last_content / last_sender 追加写入已有的号段 Key。
-	if len(userTimelines) > 0 {
-		err := s.cache.PipelinedCtx(ctx, func(pipe redis.Pipeliner) error {
-			// a) 更新用户时间线：ZSET member = convID，score = updateTime
-			for uid, convs := range userTimelines {
-				key := fmt.Sprintf("user:conv:timeline:%d", uid)
-				for convID, updateTime := range convs {
-					pipe.ZAdd(ctx, key, redis.Z{
-						Score:  float64(updateTime),
-						Member: convID,
-					})
-				}
-				// 30 天过期，避免死号长期占用内存
-				pipe.Expire(ctx, key, 30*24*time.Hour)
-			}
-			return nil
-		})
-		if err != nil {
-			logger.Errorf("SeqSyncer update redis failed: %v", err)
+	//    a) session:info:{convID} Hash：actual_seq / last_content / last_sender 会话快照。
+	//       Lamport 分配器不再经过 Redis，快照统一由此处异步维护（最多滞后一个刷盘周期）。
+	//    b) user:conv:timeline:{uid} ZSET：member = convID，score = updateTime
+	err := s.cache.PipelinedCtx(ctx, func(pipe redis.Pipeliner) error {
+		for convID, u := range latest {
+			key := sessionInfoPrefix + convID
+			pipe.HSet(ctx, key,
+				"actual_seq", strconv.FormatUint(u.seq, 10),
+				"last_content", u.lastContent,
+				"last_sender", strconv.FormatUint(u.lastSender, 10),
+			)
+			pipe.Expire(ctx, key, sessionInfoExpire)
 		}
+		for uid, convs := range userTimelines {
+			key := fmt.Sprintf("user:conv:timeline:%d", uid)
+			for convID, updateTime := range convs {
+				pipe.ZAdd(ctx, key, redis.Z{
+					Score:  float64(updateTime),
+					Member: convID,
+				})
+			}
+			// 30 天过期，避免死号长期占用内存
+			pipe.Expire(ctx, key, 30*24*time.Hour)
+		}
+		return nil
+	})
+	if err != nil {
+		logger.Errorf("SeqSyncer update redis failed: %v", err)
 	}
 
 	if len(failed) > 0 {

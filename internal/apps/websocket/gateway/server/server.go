@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"IM2/pkg/logger"
-	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/social"
 	protosvc "IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
@@ -43,8 +42,13 @@ func (s *GatewayServer) Start() error {
 	// 2. 启动节点心跳 (非阻塞)
 	s.svcCtx.Router.StartHeartbeat(s.ctx)
 
-	// 3. 启动路由心跳 (定期续期活跃用户路由)
-	s.svcCtx.Router.StartRouteHeartbeat(s.ctx, s.svcCtx.ConnectionManager.GetAllLocalUserIDs)
+	// 3. 启动路由心跳 (定期续期活跃用户路由；路由丢失自动重注册，
+	//    路由被其他节点抢占时清理本地滞留连接)
+	s.svcCtx.Router.StartRouteHeartbeat(s.ctx, s.svcCtx.ConnectionManager.GetAllLocalUserIDs, func(userID uint64) {
+		if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(userID); ok {
+			conn.Kick("账号在其他设备登录")
+		}
+	})
 
 	// 4. 订阅跨节点路由消息
 	nodeSubject := fmt.Sprintf("%s%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
@@ -58,10 +62,6 @@ func (s *GatewayServer) Start() error {
 	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.QueueBroadcastSubject,
 		s.svcCtx.Config.Nats.QueueName, s.handleQueueSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe notice failed: %w", err)
-	}
-	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.AckSubject,
-		s.svcCtx.Config.Nats.QueueName, s.handleAckSubscribeMessage); err != nil {
-		return fmt.Errorf("subscribe ack message failed: %w", err)
 	}
 
 	fmt.Println("WebSocket Gateway Server logic started successfully")
@@ -124,6 +124,21 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte)
 			}
 		} else {
 			logger.Errorf("[handleSubscribeMessage] unmarshal UserGroupSync failed: %v", err)
+		}
+		return nil
+	}
+
+	// 拦截跨节点踢下线通知：用户在其他节点重新注册了路由，本节点持有的连接已过时。
+	if msg.Type == transport.MessageType_USER_KICKOFF {
+		for _, target := range msg.RouteTarget {
+			// 二次校验：若路由当前已指回本节点（用户快速切换后又连回来了），
+			// 说明这是迟到的过期通知，忽略，避免误踢最新连接。
+			if node, _ := s.svcCtx.Router.GetUserNode(ctx, target); node == s.svcCtx.Config.WebSocket.NodeID {
+				continue
+			}
+			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(target); ok {
+				conn.Kick("账号在其他设备登录")
+			}
 		}
 		return nil
 	}
@@ -214,26 +229,5 @@ func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, data []
 		}
 	}
 
-	return nil
-}
-
-// handleAckSubscribeMessage 处理来自 AckSubject 的裸 PersistAck bytes
-// 将其包装为 WSMessage 发送给目标用户
-func (s *GatewayServer) handleAckSubscribeMessage(ctx context.Context, data []byte) error {
-	var ack message.PersistAck
-	if err := proto.Unmarshal(data, &ack); err != nil {
-		return fmt.Errorf("[handleAckSubscribeMessage] unmarshal PersistAck failed: %w", err)
-	}
-	// 将 PersistAck 包成 WSMessage 再发送，客户端统一收 WSMessage 格式
-	wsMsg := &transport.WSMessage{
-		Timestamp:       ack.Timestamp,
-		RouteTarget:     []uint64{ack.Target},
-		RouteTargetType: transport.TargetType_USER,
-		Type:            transport.MessageType_MSG_PERSIST_ACK,
-		Payload:         data,
-	}
-	if err := s.svcCtx.ConnectionManager.SendToUser(ctx, ack.Target, wsMsg); err != nil {
-		s.svcCtx.TelemetryBus.Publish(err)
-	}
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"IM2/internal/apps/Message/rpc/config"
 	"IM2/internal/apps/Message/rpc/internal/dao"
+	"IM2/internal/apps/Message/rpc/internal/seq"
 	"IM2/pkg/redisx"
 
 	"github.com/bwmarrin/snowflake"
@@ -22,6 +23,7 @@ type ServiceContext struct {
 	Js            nats.JetStreamContext
 	Redis         *redisx.Client
 	SnowflakeNode *snowflake.Node
+	SeqAllocator  *seq.Allocator
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -68,5 +70,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		SessionDAO:    ssDao,
 		Redis:         redisClient,
 		SnowflakeNode: sfNode,
+		// Lamport seq 分配器与雪花发号器共用节点 ID（0-1023）
+		SeqAllocator: seq.NewAllocator(nodeID),
 	}
 }

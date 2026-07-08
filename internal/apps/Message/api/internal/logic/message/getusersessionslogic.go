@@ -46,6 +46,7 @@ func (l *GetUserSessionsLogic) GetUserSessions() (resp *types.GetUserSessionsRes
 			LastReadSeq: c.LastReadSeq,
 			CreateTime:  c.CreateTime,
 			UpdateTime:  c.UpdateTime,
+			UnreadCount: c.UnreadCount,
 		})
 	}
 

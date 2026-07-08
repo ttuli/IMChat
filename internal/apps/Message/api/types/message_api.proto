@@ -67,6 +67,8 @@ message UserSession {
   int64 create_time = 6;
   // @gotags: json:"update_time"
   int64 update_time = 8;
+  // @gotags: json:"unread_count"
+  uint64 unread_count = 9;
 }
 
 // GetHistoryReq

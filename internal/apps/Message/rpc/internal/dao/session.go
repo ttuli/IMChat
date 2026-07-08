@@ -8,7 +8,6 @@ import (
 
 	"IM2/internal/model"
 	"IM2/pkg/logger"
-	"IM2/pkg/proto/util"
 	"IM2/pkg/redisx"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -21,7 +20,6 @@ const (
 	sessionTimelinePrefix = "user:session:timeline:"
 	sessionInfoPrefix     = "session:info:"
 	sessionInfoExpire     = 7 * 24 * time.Hour
-	defaultSegmentStep    = uint64(100) // 号段步长：每次向 MySQL 预申请的 seq 数量
 )
 
 // SessionDAO 会话数据访问对象 (MySQL + Redis缓存)
@@ -29,6 +27,7 @@ type SessionDAO struct {
 	db        *gorm.DB
 	cache     *redisx.Client
 	seqSyncer *SeqSyncer
+	keyCache  *sessionKeyCache // sessionKey → sessionID 热路径缓存
 }
 
 // NewSessionDAO 创建会话DAO
@@ -46,7 +45,23 @@ func NewSessionDAO(dbSource string, redisConf redis.RedisConf) *SessionDAO {
 		db:        db,
 		cache:     client,
 		seqSyncer: newSeqSyncer(db, client),
+		keyCache:  newSessionKeyCache(65536),
 	}
+}
+
+// ResolveSessionIDByKey 消息消费热路径专用：sessionKey → sessionID 解析。
+// 命中进程内 LRU 时零 DB 访问；未命中时走 FindOrCreateBySessionKey 并回填缓存。
+// key→ID 映射不可变，缓存无一致性问题。
+func (c *SessionDAO) ResolveSessionIDByKey(ctx context.Context, newSessionID string, sessionKey string, sessionType int8) (string, error) {
+	if id, ok := c.keyCache.get(sessionKey); ok {
+		return id, nil
+	}
+	session, _, err := c.FindOrCreateBySessionKey(ctx, newSessionID, sessionKey, sessionType)
+	if err != nil {
+		return "", err
+	}
+	c.keyCache.put(sessionKey, session.SessionID)
+	return session.SessionID, nil
 }
 
 // PushSeqUpdate 将完整的会话状态推送到 SeqSyncer，由后台批量刷 MySQL + 广播 UpdateSession。
@@ -224,8 +239,7 @@ func (c *SessionDAO) UpdateUserSession(ctx context.Context, userID uint64, sessi
 
 // InsertUserSession 插入新的用户会话
 func (c *SessionDAO) InsertUserSession(ctx context.Context, userId uint64, sessionId string, sessionType int8) error {
-	// 从 Redis hash 的 seg_ceiling 字段读取当前已分配的最大 seq，作为新成员的已读起点。
-	// 若缓存未命中则查 MySQL max_seq。
+	// 读取当前会话最后一条消息的 seq，作为新成员的已读起点。
 	maxSeq := c.currentMaxSeq(ctx, sessionId)
 
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -394,166 +408,20 @@ func (c *SessionDAO) getActiveSessionSnapshots(ctx context.Context, userID uint6
 	return result, nil
 }
 
-// IncrSeq 以号段模式递增会话的 seq。
-//
-// 设计：
-//   - Redis Hash（session:info:{id}）存两个字段：
-//     cur_seq    当前已分配到的最大 seq（各实例共享的原子计数器）
-//     seg_ceiling 当前号段的上限（对应 MySQL max_seq 的已预申请值）
-//   - 快路径：cur_seq <= seg_ceiling，直接 HINCRBY 返回，无 DB 访问。
-//   - 慢路径：cur_seq > seg_ceiling 或 Redis 冷启动，
-//     去 MySQL 原子扩容 max_seq += step，
-//     用 Lua 将 seg_ceiling 更新至新上限并保证 cur_seq 不低于新号段起点，
-//     从而彻底消除 Redis 宕机/重启导致的 seq 回退。
-func (c *SessionDAO) IncrSeq(ctx context.Context, sessionID string, lastContent string, lastSender uint64) (uint64, error) {
-	cacheKey := sessionInfoPrefix + sessionID
-	expireSecs := strconv.Itoa(int(sessionInfoExpire.Seconds()))
-	lastSenderStr := strconv.FormatUint(lastSender, 10)
-
-	// 快路径：HINCRBY cur_seq，同时读 seg_ceiling，判断是否在号段内。
-	// 若在号段内，在同一个 Lua 内将 actual_seq / last_content / last_sender 同步写入，共一次网络往返。
-	fastScript := `
-		local cur = redis.call("HINCRBY", KEYS[1], "cur_seq", 1)
-		local ceil = tonumber(redis.call("HGET", KEYS[1], "seg_ceiling")) or 0
-		redis.call("HSET", KEYS[1],
-			"actual_seq",   tostring(cur),
-			"last_content", ARGV[2],
-			"last_sender",  ARGV[3])
-
-		redis.call("EXPIRE", KEYS[1], ARGV[1])
-		return {cur, ceil}
-	`
-	fastVal, err := c.cache.EvalCtx(ctx, fastScript, []string{cacheKey}, expireSecs, lastContent, lastSenderStr)
-	if err != nil {
-		return 0, fmt.Errorf("redis eval fast script failed: %w", err)
-	}
-
-	result, ok := fastVal.([]interface{})
-	if !ok || len(result) != 2 {
-		return 0, fmt.Errorf("unexpected redis result type: %T", fastVal)
-	}
-	toInt64 := func(v interface{}) int64 {
-		switch x := v.(type) {
-		case int64:
-			return x
-		case int:
-			return int64(x)
-		}
-		return 0
-	}
-	cur := uint64(toInt64(result[0]))
-	segCeiling := uint64(toInt64(result[1]))
-
-	if cur <= segCeiling {
-		// 快路径：在当前号段内，直接返回。
-		return cur, nil
-	}
-
-	// 慢路径：号段耗尽或冷启动，向 MySQL 申请新号段。
-	newCeiling, err := c.allocSegment(ctx, sessionID, cacheKey, expireSecs)
-	if err != nil {
-		return 0, err
-	}
-
-	newBase := newCeiling - uint64(defaultSegmentStep) + 1
-	if cur >= newBase && cur <= newCeiling {
-		// 本次 HINCRBY 拿到的 cur 落在新号段内，直接使用。
-		return cur, nil
-	}
-
-	// cur 不在有效号段内，分两种情况：
-	// 1. cur < newBase：Redis 冷启动，allocSegment 已将 cur_seq 重置到 newBase，
-	//    本次拿到的 cur（如 1）是已用过的旧 seq，必须重试。
-	// 2. cur > newCeiling：并发竞争导致号段耗尽，同样重试。
-	return c.IncrSeq(ctx, sessionID, lastContent, lastSender)
-}
-
-// allocSegment 原子地向 MySQL 申请下一个号段，并更新 Redis 中的 seg_ceiling 和 cur_seq。
-//
-// 参数 curSeq 是触发扩容的那次 HINCRBY 拿到的值，用于判断 Lua 里是否需要重置 cur_seq。
-// 返回新的 seg_ceiling（即 MySQL 最新的 max_seq）。
-func (c *SessionDAO) allocSegment(
-	ctx context.Context,
-	sessionID, cacheKey string,
-	expireSecs string,
-) (uint64, error) {
-	// 1. MySQL 原子申请号段：INSERT 不存在则创建，存在则 max_seq += step。
-	//    合并 SELECT 操作，消除读写间隙
-	now := time.Now()
-	step := defaultSegmentStep
-
-	session := model.Session{
-		SessionID:  sessionID,
-		Type:       int8(util.GetSessionType(sessionID)),
-		MaxSeq:     step, // 初次创建时 max_seq = step
-		CreateTime: now,
-		UpdateTime: now,
-	}
-
-	err := c.db.WithContext(ctx).Clauses(
-		clause.OnConflict{
-			Columns: []clause.Column{{Name: "session_id"}},
-			DoUpdates: clause.Assignments(map[string]interface{}{
-				"max_seq": gorm.Expr("max_seq + ?", step),
-			}),
-		},
-		clause.Returning{Columns: []clause.Column{{Name: "max_seq"}}},
-	).Create(&session).Error
-	if err != nil {
-		return 0, fmt.Errorf("allocSegment: upsert session failed: %w", err)
-	}
-
-	newCeiling := session.MaxSeq
-	newBase := newCeiling - step + 1 // 新号段起点
-
-	// 3. 原子更新 Redis：
-	//    - seg_ceiling 设置为新上限（使用 HSET，Last-Write-Wins，多实例并发时取最大值即可）
-	//    - cur_seq：若当前值低于 new_base（冷启动/旧数据），重置到 new_base，避免分配已用过的 seq。
-	allocScript := `
-		local new_ceiling = tonumber(ARGV[1])
-		local new_base    = tonumber(ARGV[2])
-		local expire      = tonumber(ARGV[3])
-
-		-- 仅当新上限更大时才更新（防止并发时旧实例覆盖新实例的更大号段）
-		local old_ceil = tonumber(redis.call("HGET", KEYS[1], "seg_ceiling")) or 0
-		if new_ceiling > old_ceil then
-			redis.call("HSET", KEYS[1], "seg_ceiling", new_ceiling)
-		end
-
-		-- 若 cur_seq 低于新号段起点（冷启动），重置到 new_base
-		local cur = tonumber(redis.call("HGET", KEYS[1], "cur_seq")) or 0
-		if cur < new_base then
-			redis.call("HSET", KEYS[1], "cur_seq", new_base)
-		end
-
-		redis.call("EXPIRE", KEYS[1], expire)
-		return new_ceiling
-	`
-	_, err = c.cache.EvalCtx(ctx, allocScript, []string{cacheKey},
-		strconv.FormatUint(newCeiling, 10),
-		strconv.FormatUint(newBase, 10),
-		expireSecs,
-	)
-	if err != nil {
-		logger.Errorf("allocSegment: redis update failed (non-fatal): %v", err)
-	}
-	return newCeiling, nil
-}
-
-// currentMaxSeq 返回当前会话已分配的最大 seq。
-// 优先读 Redis Hash 的 seg_ceiling 字段，降级读 MySQL max_seq。
+// currentMaxSeq 返回当前会话已分配的最大 seq（Lamport 语义下即最后一条消息的 seq）。
+// 优先读 Redis Hash 的 actual_seq 字段（由 SeqSyncer 异步刷入），降级读 MySQL actual_seq。
 // 用于新成员加入时初始化 LastReadSeq。
 func (c *SessionDAO) currentMaxSeq(ctx context.Context, sessionID string) uint64 {
 	cacheKey := sessionInfoPrefix + sessionID
-	if val, err := c.cache.HGetCtx(ctx, cacheKey, "seg_ceiling"); err == nil && val != "" {
+	if val, err := c.cache.HGetCtx(ctx, cacheKey, "actual_seq"); err == nil && val != "" {
 		if seq, err := strconv.ParseUint(val, 10, 64); err == nil {
 			return seq
 		}
 	}
 	// 降级读 MySQL
 	var session model.Session
-	if err := c.db.WithContext(ctx).Select("max_seq").Where("session_id = ?", sessionID).First(&session).Error; err == nil {
-		return session.MaxSeq
+	if err := c.db.WithContext(ctx).Select("actual_seq").Where("session_id = ?", sessionID).First(&session).Error; err == nil {
+		return session.ActualSeq
 	}
 	return 0
 }

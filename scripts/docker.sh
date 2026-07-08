@@ -47,7 +47,6 @@ declare -A SERVICES=(
     ["websocket"]="cmd/websocket/Dockerfile"
     ["llm-rpc"]="cmd/Llm/rpc/Dockerfile"
     ["llm-api"]="cmd/Llm/api/Dockerfile"
-    # ["llm-python"]="cmd/Llm/python/Dockerfile"
 )
 
 # ========== 构建并推送 ==========

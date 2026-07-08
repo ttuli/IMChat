@@ -36,17 +36,26 @@ func NewMessageDAO(mongoUri string) *MessageDAO {
 	return dao
 }
 
-// EnsureIndexes 创建联合唯一索引
+// EnsureIndexes 创建索引：
+//  1. {client_id, msg_id} 联合唯一索引（幂等去重）
+//  2. {session_id, seq} 复合索引（历史消息范围查询 / 未读计数 / seq 播种）
 func (m *MessageDAO) EnsureIndexes(ctx context.Context) error {
 	collection := m.db.Collection(mongoCollMessage)
-	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "client_id", Value: 1},
-			{Key: "msg_id", Value: 1},
+	_, err := collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "client_id", Value: 1},
+				{Key: "msg_id", Value: 1},
+			},
+			Options: options.Index().SetUnique(true),
 		},
-		Options: options.Index().SetUnique(true),
-	}
-	_, err := collection.Indexes().CreateOne(ctx, indexModel)
+		{
+			Keys: bson.D{
+				{Key: "session_id", Value: 1},
+				{Key: "seq", Value: 1},
+			},
+		},
+	})
 	return err
 }
 
@@ -82,7 +91,7 @@ func (m *MessageDAO) FindByConversation(ctx context.Context, conversationID stri
 		seqFilter["$lte"] = endSeq
 	}
 
-	filter := bson.M{"conversation_id": conversationID}
+	filter := bson.M{"session_id": conversationID}
 	if len(seqFilter) > 0 {
 		filter["seq"] = seqFilter
 	}
@@ -109,6 +118,46 @@ func (m *MessageDAO) FindByConversation(ctx context.Context, conversationID stri
 	}
 
 	return messages, nil
+}
+
+// MaxSeq 返回会话当前已持久化的最大 seq，会话无消息时返回 0。
+// 用于 Lamport 分配器进程启动后的播种，防止重启/时钟回拨导致 seq 回退。
+func (m *MessageDAO) MaxSeq(ctx context.Context, sessionID string) (uint64, error) {
+	opts := options.FindOne().
+		SetSort(bson.D{{Key: "seq", Value: -1}}).
+		SetProjection(bson.M{"seq": 1})
+
+	var msg model.Message
+	err := m.db.Collection(mongoCollMessage).
+		FindOne(ctx, bson.M{"session_id": sessionID}, opts).
+		Decode(&msg)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return msg.Seq, nil
+}
+
+// CountUnread 统计会话内 seq 大于游标且非本人发送的消息数。
+// Lamport seq 不连续后未读数不能再用减法计算，改为服务端点查。
+// limit 限制扫描上限（超过按 limit 返回），防止长期未读会话拖垮查询。
+func (m *MessageDAO) CountUnread(ctx context.Context, sessionID string, afterSeq uint64, excludeUser uint64, limit int64) (uint64, error) {
+	filter := bson.M{
+		"session_id":   sessionID,
+		"seq":          bson.M{"$gt": afterSeq},
+		"from_user_id": bson.M{"$ne": excludeUser},
+	}
+	opts := options.Count()
+	if limit > 0 {
+		opts.SetLimit(limit)
+	}
+	n, err := m.db.Collection(mongoCollMessage).CountDocuments(ctx, filter, opts)
+	if err != nil {
+		return 0, err
+	}
+	return uint64(n), nil
 }
 
 // FindByMsgID 根据 msg_id 查询单条消息

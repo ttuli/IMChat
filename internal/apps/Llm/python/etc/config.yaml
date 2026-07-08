@@ -1,9 +1,0 @@
-config_source: 'nacos'
-nacos:
-  host: '${NACOS_HOST}'
-  port: 8848
-  namespace: '${NACOS_NAMESPACE}'
-  user: '${NACOS_USER}'
-  password: '${NACOS_PASSWORD}'
-  dataid: 'llm.python'
-  group: '${NACOS_GROUP}'

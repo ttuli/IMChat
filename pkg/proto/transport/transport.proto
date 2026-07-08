@@ -76,6 +76,12 @@ message WSMessage {
   bytes           payload         = 5;  // 具体内容各业务包自己解析
   uint64          sender_id       = 6;
   int32           version         = 7;
+
+  // 服务端持久化后回填的真实值，非空/非零时覆盖 Payload 内 BaseMessage 的对应字段。
+  // 投递链路直接在 WSMessage 层携带，避免服务端反序列化 Payload 重建。
+  string          msg_id          = 8;
+  string          session_id      = 9;
+  uint64          msg_seq         = 10;
 }
 
 // API 通用响应包装

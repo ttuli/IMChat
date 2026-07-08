@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	model "IM2/internal/model"
@@ -32,17 +31,21 @@ func (s *MessageService) GetHistory(ctx context.Context, conversationID string, 
 }
 
 // PersistMessage 消费NATS消息、生成序号、广播事件、同步落库
-// TODO 改为在消息消费后发送一个ack消息到nats，再由websocket消费发送
 func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
-	// 1. 生成或递增 Seq
-	seq, err := s.svcCtx.SessionDAO.IncrSeq(ctx, msg.SessionId, msg.Preview, msg.Sender)
-	if err != nil {
-		logger.Errorf("Failed to incr seq for conversation %s: %v", msg.SessionId, err)
-		return nil, err
+	// 1. 分配 Lamport Seq（本地无锁生成，不依赖 Redis）。
+	// 进程首次遇到该会话时先从 MongoDB 播种已持久化的最大 seq，
+	// 防止进程重启 + 时钟回拨导致新消息 seq 落后于历史消息。
+	if !s.svcCtx.SeqAllocator.Known(msg.SessionId) {
+		if maxSeq, err := s.svcCtx.MessageDAO.MaxSeq(ctx, msg.SessionId); err != nil {
+			logger.Errorf("Failed to seed seq allocator for session %s: %v", msg.SessionId, err)
+			return nil, err
+		} else {
+			s.svcCtx.SeqAllocator.Observe(msg.SessionId, maxSeq)
+		}
 	}
-	fmt.Println("生成seq", seq)
+	seq := s.svcCtx.SeqAllocator.Alloc(msg.SessionId)
 
-	// 3. 将完整会话状态推送到 SeqSyncer
+	// 2. 将完整会话状态推送到 SeqSyncer（异步批量刷 MySQL actual_seq + Redis 快照）
 	s.svcCtx.SessionDAO.PushSeqUpdate(
 		msg.SessionId, seq,
 		msg.Preview, msg.Sender, msg.Timestamp,
