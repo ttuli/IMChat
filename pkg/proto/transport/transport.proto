@@ -81,7 +81,8 @@ message WSMessage {
   // 投递链路直接在 WSMessage 层携带，避免服务端反序列化 Payload 重建。
   string          msg_id          = 8;
   string          session_id      = 9;
-  uint64          msg_seq         = 10;
+  // Lamport 序号超出 JS Number 安全整数范围，jstype 使 ts-proto 生成 string（Go 侧忽略）
+  uint64          msg_seq         = 10 [jstype = JS_STRING];
 
   // 网关集群内部路由字段：本节点需要投递的目标用户列表。
   // 群消息按节点扇出时由 Message 服务填充（route_target 仍保持群 ID 语义），

@@ -17,7 +17,7 @@ message Message {
   // @gotags: json:"msg_type"
   int32 msg_type = 5;
   // @gotags: json:"seq"
-  uint64 seq = 6;
+  uint64 seq = 6 [jstype = JS_STRING];
   // @gotags: json:"content"
   string content = 7;
   // @gotags: json:"media_url"
@@ -38,9 +38,9 @@ message Session {
   // @gotags: json:"session_key"
   string session_key = 3;
   // @gotags: json:"max_seq"
-  uint64 max_seq = 4;
+  uint64 max_seq = 4 [jstype = JS_STRING];
   // @gotags: json:"actual_seq"
-  uint64 actual_seq = 5;
+  uint64 actual_seq = 5 [jstype = JS_STRING];
   // @gotags: json:"last_content"
   string last_content = 6;
   // @gotags: json:"last_sender"
@@ -62,7 +62,7 @@ message UserSession {
   // @gotags: json:"is_disturb"
   int32 is_disturb = 4;
   // @gotags: json:"last_read_seq"
-  uint64 last_read_seq = 5;
+  uint64 last_read_seq = 5 [jstype = JS_STRING];
   // @gotags: json:"create_time"
   int64 create_time = 6;
   // @gotags: json:"update_time"
@@ -76,9 +76,9 @@ message GetHistoryReq {
   // @gotags: form:"session_id,optional" json:"session_id,optional"
   string session_id = 1;
   // @gotags: form:"start_seq,optional" json:"start_seq,optional"
-  int64 start_seq = 2;
+  int64 start_seq = 2 [jstype = JS_STRING];
   // @gotags: form:"end_seq,optional" json:"end_seq,optional"
-  int64 end_seq = 3;
+  int64 end_seq = 3 [jstype = JS_STRING];
   // @gotags: form:"limit,optional,default=20" json:"limit,optional"
   int32 limit = 4;
 }
@@ -120,7 +120,7 @@ message MarkSessionReadReq {
   // @gotags: json:"session_id"
   string session_id = 1;
   // @gotags: json:"read_seq"
-  uint64 read_seq = 2;
+  uint64 read_seq = 2 [jstype = JS_STRING];
 }
 
 // GetSessionReq 根据 session_id 或 session_key 查询会话

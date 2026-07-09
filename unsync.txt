@@ -1,5 +1,0 @@
-proto:
-    message
-    transport
-
-群消息投递，离线消息，未读计数问题

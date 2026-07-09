@@ -24,7 +24,8 @@ message BaseMessage {
   uint64 from_user_id = 5;        // 发送者ID
   uint64 target = 6;              // 目标ID (私聊=to_user_id, 群聊=group_id, 与SessionType配套使用)
   int64 send_time = 7;            // 发送时间
-  uint64 msg_seq = 8;             // 消息序号 (Lamport: 42bit毫秒时间戳|10bit节点|12bit计数器)
+  // Lamport 序号超出 JS Number 安全整数范围，jstype 使 ts-proto 生成 string（Go 侧忽略）
+  uint64 msg_seq = 8 [jstype = JS_STRING]; // 消息序号 (Lamport: 42bit毫秒时间戳|10bit节点|12bit计数器)
   MessageStatus status = 9;       // 消息状态
   map<string, string> ext = 10;   // 扩展字段
 }
@@ -140,7 +141,7 @@ message PersistAck {
   uint64 target = 4;
   AckStatus ack_status = 5;        // 确认状态
   int64 timestamp = 6;             // 时间戳
-  uint64 seq = 7;                  // 消息序号
+  uint64 seq = 7 [jstype = JS_STRING]; // 消息序号 (Lamport, 超出 JS 安全整数)
   string session_key = 8;          // 本地会话 Key
 }
 
@@ -177,7 +178,7 @@ message Session {
   SessionType type = 2;            // 会话类型
   string session_key = 3;          // 本地会话 Key
   string last_content = 4;         // 最后一条消息摘要文本
-  int64 max_seq = 5;
+  int64 max_seq = 5 [jstype = JS_STRING]; // Lamport 序号 (超出 JS 安全整数)
   uint64 last_sender = 6;
   int64 last_message_time = 7;     // 最后消息时间
   int64 unread_count = 8;          // 未读消息数
