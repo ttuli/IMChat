@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"IM2/internal/apps/Message/rpc/config"
 	model "IM2/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,20 +19,21 @@ const (
 
 // MessageDAO 消息数据访问对象 (MongoDB)
 type MessageDAO struct {
+	c  config.MessageDAOConfig
 	db *mongo.Database
 }
 
 // NewMessageDAO 创建消息DAO
-func NewMessageDAO(mongoUri string) *MessageDAO {
+func NewMessageDAO(c config.MessageDAOConfig) *MessageDAO {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoUri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(c.Dbsource))
 	if err != nil {
 		panic(err)
 	}
 
-	dao := &MessageDAO{db: client.Database(mongoDbName)}
+	dao := &MessageDAO{c: c, db: client.Database(mongoDbName)}
 	_ = dao.EnsureIndexes(context.Background())
 	return dao
 }
@@ -143,15 +145,15 @@ func (m *MessageDAO) MaxSeq(ctx context.Context, sessionID string) (uint64, erro
 // CountUnread 统计会话内 seq 大于游标且非本人发送的消息数。
 // Lamport seq 不连续后未读数不能再用减法计算，改为服务端点查。
 // limit 限制扫描上限（超过按 limit 返回），防止长期未读会话拖垮查询。
-func (m *MessageDAO) CountUnread(ctx context.Context, sessionID string, afterSeq uint64, excludeUser uint64, limit int64) (uint64, error) {
+func (m *MessageDAO) CountUnread(ctx context.Context, sessionID string, afterSeq uint64, excludeUser uint64) (uint64, error) {
 	filter := bson.M{
 		"session_id":   sessionID,
 		"seq":          bson.M{"$gt": afterSeq},
 		"from_user_id": bson.M{"$ne": excludeUser},
 	}
 	opts := options.Count()
-	if limit > 0 {
-		opts.SetLimit(limit)
+	if m.c.UnreadCountLimit > 0 {
+		opts.SetLimit(m.c.UnreadCountLimit)
 	}
 	n, err := m.db.Collection(mongoCollMessage).CountDocuments(ctx, filter, opts)
 	if err != nil {

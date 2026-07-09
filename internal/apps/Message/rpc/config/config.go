@@ -23,6 +23,17 @@ type ListenerConfig struct {
 	MaxDeliver int
 }
 
+type MessageDAOConfig struct {
+	Dbsource string
+	// UnreadCountLimit 单次未读计数的扫描上限
+	UnreadCountLimit int64
+}
+
+type SessionDAOConfig struct {
+	Dbsource string
+	Redisx   redis.RedisConf
+}
+
 type Config struct {
 	zrpc.RpcServerConf
 
@@ -35,12 +46,7 @@ type Config struct {
 	SnowflakeNodeID int64 `json:",optional"`
 
 	DAO struct {
-		MessageDAO struct {
-			Dbsource string
-		}
-		SessionDAO struct {
-			Dbsource string
-			Redisx   redis.RedisConf
-		}
+		MessageDAO MessageDAOConfig
+		SessionDAO SessionDAOConfig
 	}
 }

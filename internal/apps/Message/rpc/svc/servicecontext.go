@@ -33,6 +33,10 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	if c.DAO.MessageDAO.UnreadCountLimit == 0 {
+		c.DAO.MessageDAO.UnreadCountLimit = 100
+	}
+
 	conn, err := nats.Connect(c.Listener.Url)
 	if err != nil {
 		panic(err)
@@ -65,7 +69,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(fmt.Sprintf("init message snowflake node failed: %v", sfErr))
 	}
 
-	msgDao := dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource)
+	msgDao := dao.NewMessageDAO(c.DAO.MessageDAO)
 	ssDao := dao.NewSessionDAO(c.DAO.SessionDAO.Dbsource, c.DAO.SessionDAO.Redisx)
 
 	groupRpc := grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,

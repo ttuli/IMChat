@@ -292,7 +292,7 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 			pipe.Expire(ctx, key, sessionInfoExpire)
 		}
 		for uid, convs := range userTimelines {
-			key := fmt.Sprintf("user:conv:timeline:%d", uid)
+			key := fmt.Sprintf("%s%d", sessionTimelinePrefix, uid)
 			for convID, updateTime := range convs {
 				pipe.ZAdd(ctx, key, redis.Z{
 					Score:  float64(updateTime),
