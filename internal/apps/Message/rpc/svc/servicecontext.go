@@ -6,13 +6,17 @@ import (
 	"os"
 	"strconv"
 
+	"IM2/internal/apps/Group/rpc/client/grouprpc"
 	"IM2/internal/apps/Message/rpc/config"
 	"IM2/internal/apps/Message/rpc/internal/dao"
+	"IM2/internal/apps/Message/rpc/internal/members"
 	"IM2/internal/apps/Message/rpc/internal/seq"
+	"IM2/internal/interceptor"
 	"IM2/pkg/redisx"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/nats-io/nats.go"
+	"github.com/zeromicro/go-zero/zrpc"
 )
 
 type ServiceContext struct {
@@ -24,6 +28,8 @@ type ServiceContext struct {
 	Redis         *redisx.Client
 	SnowflakeNode *snowflake.Node
 	SeqAllocator  *seq.Allocator
+	// Members 群成员来源（Redis 缓存 + Group RPC 回源），群消息扇出与时间线更新共用
+	Members *members.Provider
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -62,6 +68,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	msgDao := dao.NewMessageDAO(c.DAO.MessageDAO.Dbsource)
 	ssDao := dao.NewSessionDAO(c.DAO.SessionDAO.Dbsource, c.DAO.SessionDAO.Redisx)
 
+	groupRpc := grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
+		zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor)))
+	memberProvider := members.NewProvider(redisClient, groupRpc)
+	// SeqSyncer 更新群会话时间线时经此获取成员，避免按 user_session 表反查（含退群用户）
+	ssDao.SetGroupMemberSource(memberProvider.GetMemberIDs)
+
 	return &ServiceContext{
 		Config:        c,
 		NatsConn:      conn,
@@ -72,5 +84,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		SnowflakeNode: sfNode,
 		// Lamport seq 分配器与雪花发号器共用节点 ID（0-1023）
 		SeqAllocator: seq.NewAllocator(nodeID),
+		Members:      memberProvider,
 	}
 }

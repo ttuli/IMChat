@@ -115,6 +115,14 @@ message GetUserActiveSessionsResp {
   repeated Session sessions = 1;
 }
 
+// MarkSessionReadReq 上报会话已读游标
+message MarkSessionReadReq {
+  // @gotags: json:"session_id"
+  string session_id = 1;
+  // @gotags: json:"read_seq"
+  uint64 read_seq = 2;
+}
+
 // GetSessionReq 根据 session_id 或 session_key 查询会话
 message GetSessionReq {
   // @gotags: form:"session_id,optional" json:"session_id,optional"

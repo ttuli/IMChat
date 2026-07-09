@@ -69,6 +69,17 @@ func (s *MessageService) UpdateSession(ctx context.Context, userID uint64, sessi
 	return nil
 }
 
+// MarkSessionRead 前进用户的会话已读游标（单调递增，乱序上报不会回退）
+func (s *MessageService) MarkSessionRead(ctx context.Context, userID uint64, sessionID string, readSeq uint64) error {
+	if sessionID == "" {
+		return xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "session_id 不能为空")
+	}
+	if err := s.svcCtx.SessionDAO.MarkSessionRead(ctx, userID, sessionID, readSeq); err != nil {
+		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "更新已读游标失败")
+	}
+	return nil
+}
+
 // ResolveSessionID 消息消费热路径专用：按 session_key 解析（不存在则创建）会话 ID。
 // 走 SessionDAO 的进程内 LRU 缓存，避免每条消息一次 MySQL 查询。
 func (s *MessageService) ResolveSessionID(ctx context.Context, sessionKey string, sessionType int8) (string, error) {

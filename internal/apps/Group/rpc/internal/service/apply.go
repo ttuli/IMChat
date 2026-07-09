@@ -47,7 +47,7 @@ func (s *GroupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 
 		msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
 		bytes, _ := proto.Marshal(msg)
-		_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
+		err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
 		if err != nil {
 			logger.Errorf("发送nats失败: %v", err)
 		}
@@ -90,7 +90,7 @@ func (s *GroupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 		if len(targetIDs) > 0 {
 			msg, _ := util.ConvertGroupApplyToWSMessage(apply, targetIDs)
 			bytes, _ := proto.Marshal(msg)
-			_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
+			err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
 			if err != nil {
 				logger.Errorf("向管理员发送nats消息失败: %v", err)
 			}
@@ -148,7 +148,7 @@ func (s *GroupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 
 			msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
 			bytes, _ := proto.Marshal(msg)
-			_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
+			err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
 			if err != nil {
 				logger.Errorf("发送nats失败: %v", err)
 			}
@@ -182,7 +182,7 @@ func (s *GroupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 		if len(targetIDs) > 0 {
 			msg, _ := util.ConvertGroupApplyToWSMessage(apply, targetIDs)
 			bytes, _ := proto.Marshal(msg)
-			_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
+			err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
 			if err != nil {
 				logger.Errorf("向相关用户发送nats消息失败: %v", err)
 			}

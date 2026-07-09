@@ -45,10 +45,12 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 	}
 	seq := s.svcCtx.SeqAllocator.Alloc(msg.SessionId)
 
-	// 2. 将完整会话状态推送到 SeqSyncer（异步批量刷 MySQL actual_seq + Redis 快照）
+	// 2. 将完整会话状态推送到 SeqSyncer（异步批量刷 MySQL actual_seq + Redis 快照）。
+	// 会话形态与目标显式传入：sessionId 是雪花 ID，SeqSyncer 无法再按前缀推断。
 	s.svcCtx.SessionDAO.PushSeqUpdate(
 		msg.SessionId, seq,
 		msg.Preview, msg.Sender, msg.Timestamp,
+		util.IsGroupSession(msg.SessionKey), msg.Target,
 	)
 
 	msgid := s.GenerateMsgId()

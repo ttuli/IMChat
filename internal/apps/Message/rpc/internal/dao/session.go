@@ -24,10 +24,11 @@ const (
 
 // SessionDAO 会话数据访问对象 (MySQL + Redis缓存)
 type SessionDAO struct {
-	db        *gorm.DB
-	cache     *redisx.Client
-	seqSyncer *SeqSyncer
-	keyCache  *sessionKeyCache // sessionKey → sessionID 热路径缓存
+	db          *gorm.DB
+	cache       *redisx.Client
+	seqSyncer   *SeqSyncer
+	keyCache    *sessionKeyCache // sessionKey → sessionID 热路径缓存
+	ensureGuard *ttlGuard        // user_session 补偿写入的进程内防重
 }
 
 // NewSessionDAO 创建会话DAO
@@ -42,11 +43,17 @@ func NewSessionDAO(dbSource string, redisConf redis.RedisConf) *SessionDAO {
 		panic(err)
 	}
 	return &SessionDAO{
-		db:        db,
-		cache:     client,
-		seqSyncer: newSeqSyncer(db, client),
-		keyCache:  newSessionKeyCache(65536),
+		db:          db,
+		cache:       client,
+		seqSyncer:   newSeqSyncer(db, client),
+		keyCache:    newSessionKeyCache(65536),
+		ensureGuard: newTTLGuard(30*time.Minute, 65536),
 	}
+}
+
+// SetGroupMemberSource 注入群成员来源，供 SeqSyncer 更新群会话时间线使用
+func (c *SessionDAO) SetGroupMemberSource(src GroupMemberSource) {
+	c.seqSyncer.SetMemberSource(src)
 }
 
 // ResolveSessionIDByKey 消息消费热路径专用：sessionKey → sessionID 解析。
@@ -66,13 +73,16 @@ func (c *SessionDAO) ResolveSessionIDByKey(ctx context.Context, newSessionID str
 
 // PushSeqUpdate 将完整的会话状态推送到 SeqSyncer，由后台批量刷 MySQL + 广播 UpdateSession。
 // 非阻塞：channel 满时打日志丢弃，不影响主链路。
-func (c *SessionDAO) PushSeqUpdate(sessionID string, seq uint64, lastContent string, lastSender uint64, updateTime int64) {
+// isGroup/target 描述会话形态与消息目标（群聊=群ID，单聊=接收方），用于时间线扇出。
+func (c *SessionDAO) PushSeqUpdate(sessionID string, seq uint64, lastContent string, lastSender uint64, updateTime int64, isGroup bool, target uint64) {
 	c.seqSyncer.Push(seqUpdate{
 		sessionID:   sessionID,
 		seq:         seq,
 		lastContent: lastContent,
 		lastSender:  lastSender,
 		updateTime:  updateTime,
+		isGroup:     isGroup,
+		target:      target,
 	})
 }
 
@@ -197,15 +207,57 @@ func (c *SessionDAO) FindUserSessions(ctx context.Context, userID uint64) ([]*mo
 	return userSessions, nil
 }
 
-// ClearUnread 清零未读并更新已读游标
-func (c *SessionDAO) ClearUnread(ctx context.Context, userID uint64, sessionID string, lastReadMsgID, lastReadSeq uint64) error {
-	return c.db.WithContext(ctx).Model(&model.UserSession{}).
-		Where("user_id = ? AND session_id = ?", userID, sessionID).
-		Updates(map[string]any{
-			"unread_count":     0,
-			"last_read_msg_id": lastReadMsgID,
-			"last_read_seq":    lastReadSeq,
-		}).Error
+// MarkSessionRead 前进已读游标。
+// 行不存在时创建（存量数据补偿）；存在时用 GREATEST 保证单调，乱序/并发上报不会回退游标。
+func (c *SessionDAO) MarkSessionRead(ctx context.Context, userID uint64, sessionID string, readSeq uint64) error {
+	return c.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "user_id"}, {Name: "session_id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"last_read_seq": gorm.Expr("GREATEST(last_read_seq, VALUES(last_read_seq))"),
+		}),
+	}).Create(&model.UserSession{
+		UserID:      userID,
+		SessionID:   sessionID,
+		IsTop:       1,
+		IsDisturb:   1,
+		LastReadSeq: readSeq,
+	}).Error
+}
+
+// EnsureUserSessions 确保一批用户在指定会话下的 user_session 行存在（幂等，冲突忽略）。
+// 供消息消费热路径做存量补偿：进程内 ttlGuard 防重，同一会话至多每个周期执行一次。
+// 新行的 last_read_seq 取会话当前 actual_seq：补偿时点之前的消息视为已读，之后正常计未读。
+func (c *SessionDAO) EnsureUserSessions(ctx context.Context, sessionID string, userIDs []uint64) error {
+	if len(userIDs) == 0 || !c.ensureGuard.tryAcquire(sessionID) {
+		return nil
+	}
+
+	maxSeq := c.currentMaxSeq(ctx, sessionID)
+	rows := make([]*model.UserSession, 0, len(userIDs))
+	for _, uid := range userIDs {
+		if uid == 0 {
+			continue
+		}
+		rows = append(rows, &model.UserSession{
+			UserID:      uid,
+			SessionID:   sessionID,
+			IsTop:       1,
+			IsDisturb:   1,
+			LastReadSeq: maxSeq,
+		})
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+
+	if err := c.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		CreateInBatches(&rows, 500).Error; err != nil {
+		// 失败释放防重标记，允许后续消息重试补偿
+		c.ensureGuard.release(sessionID)
+		return err
+	}
+	return nil
 }
 
 // UpdateUserSession 更新用户会话设置 (置顶/免打扰/静音)

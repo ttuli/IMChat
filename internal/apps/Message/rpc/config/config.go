@@ -28,6 +28,9 @@ type Config struct {
 
 	Listener ListenerConfig
 
+	// GroupRpc 群服务客户端：群消息扇出时获取权威成员列表
+	GroupRpc zrpc.RpcClientConf
+
 	// SnowflakeNodeID 本地雪花节点 ID，0-1023，不填时自动从 hostname 派生
 	SnowflakeNodeID int64 `json:",optional"`
 

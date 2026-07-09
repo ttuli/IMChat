@@ -83,6 +83,15 @@ message GetUserActiveSessionsResp {
   repeated Session sessions = 1;
 }
 
+// 上报会话已读游标（单调递增，旧值不会覆盖新值）
+message MarkSessionReadReq {
+  uint64 user_id = 1;
+  string session_id = 2;
+  uint64 read_seq = 3;   // 已读到的最大消息 seq
+}
+
+message MarkSessionReadResp {}
+
 // 根据 session_id 或 conv_key 查询会话；通过 conv_key 查询时若不存在则按给定类型创建
 message GetSessionReq {
   string session_id = 1;  // 按 session_id 查询（精确）
@@ -101,6 +110,7 @@ service MessageRpc {
   rpc UpdateSession(UpdateSessionReq) returns (UpdateSessionResp);
   rpc GetUserSessions(GetUserSessionsReq) returns (GetUserSessionsResp);
   rpc GetUserActiveSessions(GetUserActiveSessionsReq) returns (GetUserActiveSessionsResp);
+  rpc MarkSessionRead(MarkSessionReadReq) returns (MarkSessionReadResp);
 
   // 内部会话管理接口
   rpc GetSession(GetSessionReq) returns (GetSessionResp);

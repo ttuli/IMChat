@@ -154,6 +154,19 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte)
 		}
 		return nil
 	case transport.TargetType_GROUP:
+		// 定向扇出消息：deliver_to 携带本节点需投递的用户，按列表精准投本地连接，
+		// 不再依赖网关侧群成员映射。该字段是集群内部路由信息，投递前清空，不下发客户端。
+		if len(msg.DeliverTo) > 0 {
+			targets := msg.DeliverTo
+			msg.DeliverTo = nil
+			for _, uid := range targets {
+				if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(uid); ok {
+					conn.Send(msg)
+				}
+			}
+			return nil
+		}
+		// 兼容路径：群操作通知等未带 deliver_to 的广播，仍按本地群成员映射投递
 		if err := s.syncGroupMembership(msg); err != nil {
 			return err
 		}

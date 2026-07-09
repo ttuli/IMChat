@@ -43,6 +43,11 @@ func (s *MessageRpcServer) GetUserActiveSessions(ctx context.Context, in *messag
 	return l.GetUserActiveSessions(in)
 }
 
+func (s *MessageRpcServer) MarkSessionRead(ctx context.Context, in *message.MarkSessionReadReq) (*message.MarkSessionReadResp, error) {
+	l := messagerpclogic.NewMarkSessionReadLogic(ctx, s.svcCtx)
+	return l.MarkSessionRead(in)
+}
+
 // 内部会话管理接口
 func (s *MessageRpcServer) GetSession(ctx context.Context, in *message.GetSessionReq) (*message.GetSessionResp, error) {
 	l := messagerpclogic.NewGetSessionLogic(ctx, s.svcCtx)

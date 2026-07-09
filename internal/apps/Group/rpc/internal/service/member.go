@@ -118,7 +118,7 @@ func (s *GroupService) RemoveMember(ctx context.Context, groupID, operatorID, us
 	)
 	if wsMsg != nil {
 		if b, err := proto.Marshal(wsMsg); err == nil {
-			if _, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, b); err != nil {
+			if err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, b); err != nil {
 				logger.Errorf("[RemoveMember] publish nats failed: %v", err)
 			}
 		}
@@ -154,7 +154,7 @@ func (s *GroupService) LeaveGroup(ctx context.Context, groupID, userID uint64) e
 	)
 	if wsMsg != nil {
 		if b, err := proto.Marshal(wsMsg); err == nil {
-			if _, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, b); err != nil {
+			if err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, b); err != nil {
 				logger.Errorf("[LeaveGroup] publish nats failed: %v", err)
 			}
 		}

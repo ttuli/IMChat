@@ -702,6 +702,61 @@ func (x *GetUserActiveSessionsResp) GetSessions() []*Session {
 	return nil
 }
 
+// MarkSessionReadReq 上报会话已读游标
+type MarkSessionReadReq struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"session_id"
+	SessionId string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id"`
+	// @gotags: json:"read_seq"
+	ReadSeq       uint64 `protobuf:"varint,2,opt,name=read_seq,json=readSeq,proto3" json:"read_seq"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MarkSessionReadReq) Reset() {
+	*x = MarkSessionReadReq{}
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MarkSessionReadReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MarkSessionReadReq) ProtoMessage() {}
+
+func (x *MarkSessionReadReq) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MarkSessionReadReq.ProtoReflect.Descriptor instead.
+func (*MarkSessionReadReq) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MarkSessionReadReq) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *MarkSessionReadReq) GetReadSeq() uint64 {
+	if x != nil {
+		return x.ReadSeq
+	}
+	return 0
+}
+
 // GetSessionReq 根据 session_id 或 session_key 查询会话
 type GetSessionReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -717,7 +772,7 @@ type GetSessionReq struct {
 
 func (x *GetSessionReq) Reset() {
 	*x = GetSessionReq{}
-	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[9]
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -729,7 +784,7 @@ func (x *GetSessionReq) String() string {
 func (*GetSessionReq) ProtoMessage() {}
 
 func (x *GetSessionReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[9]
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -742,7 +797,7 @@ func (x *GetSessionReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionReq.ProtoReflect.Descriptor instead.
 func (*GetSessionReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{9}
+	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetSessionReq) GetSessionId() string {
@@ -777,7 +832,7 @@ type GetSessionResp struct {
 
 func (x *GetSessionResp) Reset() {
 	*x = GetSessionResp{}
-	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[10]
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -789,7 +844,7 @@ func (x *GetSessionResp) String() string {
 func (*GetSessionResp) ProtoMessage() {}
 
 func (x *GetSessionResp) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[10]
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -802,7 +857,7 @@ func (x *GetSessionResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionResp.ProtoReflect.Descriptor instead.
 func (*GetSessionResp) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{10}
+	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetSessionResp) GetSession() *Session {
@@ -902,7 +957,12 @@ var file_internal_apps_Message_api_types_message_api_proto_rawDesc = string([]by
 	0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x12, 0x2a, 0x0a, 0x08,
 	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0e,
 	0x2e, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x08,
-	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x72, 0x0a, 0x0d, 0x47, 0x65, 0x74, 0x53,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x4e, 0x0a, 0x12, 0x4d, 0x61, 0x72, 0x6b,
+	0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x61, 0x64, 0x52, 0x65, 0x71, 0x12, 0x1d,
+	0x0a, 0x0a, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x19, 0x0a,
+	0x08, 0x72, 0x65, 0x61, 0x64, 0x5f, 0x73, 0x65, 0x71, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x07, 0x72, 0x65, 0x61, 0x64, 0x53, 0x65, 0x71, 0x22, 0x72, 0x0a, 0x0d, 0x47, 0x65, 0x74, 0x53,
 	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x73,
 	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73,
 	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x65, 0x73, 0x73,
@@ -929,7 +989,7 @@ func file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP() []byte
 	return file_internal_apps_Message_api_types_message_api_proto_rawDescData
 }
 
-var file_internal_apps_Message_api_types_message_api_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_internal_apps_Message_api_types_message_api_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_internal_apps_Message_api_types_message_api_proto_goTypes = []any{
 	(*Message)(nil),                   // 0: types.Message
 	(*Session)(nil),                   // 1: types.Session
@@ -940,8 +1000,9 @@ var file_internal_apps_Message_api_types_message_api_proto_goTypes = []any{
 	(*GetUserSessionsResp)(nil),       // 6: types.GetUserSessionsResp
 	(*GetUserActiveSessionsReq)(nil),  // 7: types.GetUserActiveSessionsReq
 	(*GetUserActiveSessionsResp)(nil), // 8: types.GetUserActiveSessionsResp
-	(*GetSessionReq)(nil),             // 9: types.GetSessionReq
-	(*GetSessionResp)(nil),            // 10: types.GetSessionResp
+	(*MarkSessionReadReq)(nil),        // 9: types.MarkSessionReadReq
+	(*GetSessionReq)(nil),             // 10: types.GetSessionReq
+	(*GetSessionResp)(nil),            // 11: types.GetSessionResp
 }
 var file_internal_apps_Message_api_types_message_api_proto_depIdxs = []int32{
 	0, // 0: types.GetHistoryResp.list:type_name -> types.Message
@@ -966,7 +1027,7 @@ func file_internal_apps_Message_api_types_message_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_apps_Message_api_types_message_api_proto_rawDesc), len(file_internal_apps_Message_api_types_message_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

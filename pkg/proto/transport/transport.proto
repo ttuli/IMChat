@@ -82,6 +82,11 @@ message WSMessage {
   string          msg_id          = 8;
   string          session_id      = 9;
   uint64          msg_seq         = 10;
+
+  // 网关集群内部路由字段：本节点需要投递的目标用户列表。
+  // 群消息按节点扇出时由 Message 服务填充（route_target 仍保持群 ID 语义），
+  // 网关按该列表投递本地连接，投递前清空，不下发给客户端。
+  repeated uint64 deliver_to      = 11;
 }
 
 // API 通用响应包装

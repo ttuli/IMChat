@@ -32,6 +32,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: message.UpdateSessionHandler(serverCtx),
 			},
 			{
+				// 上报会话已读游标
+				Method:  http.MethodPut,
+				Path:    "/session/read",
+				Handler: message.MarkSessionReadHandler(serverCtx),
+			},
+			{
 				// 获取用户的会话列表(根据UserID)
 				Method:  http.MethodGet,
 				Path:    "/sessions/user",

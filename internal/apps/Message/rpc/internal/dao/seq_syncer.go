@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
+	"sync"
 	"time"
 
 	"IM2/internal/model"
 	"IM2/pkg/logger"
-	"IM2/pkg/proto/util"
 	"IM2/pkg/redisx"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -33,6 +32,10 @@ type seqUpdate struct {
 	lastContent string
 	lastSender  uint64
 	updateTime  int64
+	// 会话形态与消息目标由消费方显式传入。
+	// sessionID 是雪花 ID，不再携带 group/private 前缀，无法按前缀推断类型。
+	isGroup bool
+	target  uint64 // 群聊=群ID；单聊=接收方用户ID
 }
 
 // ConvSnapshot 会话快照，同时用作:
@@ -57,6 +60,9 @@ type SessionSnapshot struct {
 //   - 定量：channel 内积压达到 flushBatchLimit（默认 500）时立即触发
 //
 // 多实例并发安全：SQL 使用条件写 (max_seq < ?)，旧 seq 不会覆盖新 seq。
+// GroupMemberSource 按群 ID 获取成员列表（由上层注入，通常带 Redis 缓存 + Group RPC 回源）
+type GroupMemberSource func(ctx context.Context, groupID uint64) ([]uint64, error)
+
 type SeqSyncer struct {
 	db              *gorm.DB
 	cache           *redisx.Client
@@ -65,6 +71,9 @@ type SeqSyncer struct {
 	flushBatchLimit int
 	stopCh          chan struct{}
 	doneCh          chan struct{}
+
+	memberMu     sync.RWMutex
+	memberSource GroupMemberSource
 }
 
 // newSeqSyncer 创建并启动 SeqSyncer 后台 goroutine
@@ -179,6 +188,37 @@ func (s *SeqSyncer) run() {
 	}
 }
 
+// SetMemberSource 注入群成员来源（服务启动时调用一次）
+func (s *SeqSyncer) SetMemberSource(src GroupMemberSource) {
+	s.memberMu.Lock()
+	s.memberSource = src
+	s.memberMu.Unlock()
+}
+
+func (s *SeqSyncer) getMemberSource() GroupMemberSource {
+	s.memberMu.RLock()
+	defer s.memberMu.RUnlock()
+	return s.memberSource
+}
+
+// groupMemberIDs 获取群会话的时间线更新对象。
+// 优先走注入的成员来源（权威、含缓存）；未注入或失败时降级按 user_session 反查
+// （降级结果可能包含已退群用户，仅造成其时间线一次多余更新，无正确性问题）。
+func (s *SeqSyncer) groupMemberIDs(ctx context.Context, convID string, groupID uint64) []uint64 {
+	if src := s.getMemberSource(); src != nil && groupID != 0 {
+		ids, err := src(ctx, groupID)
+		if err == nil {
+			return ids
+		}
+		logger.Errorf("SeqSyncer load members of group %d failed, fallback to user_session: %v", groupID, err)
+	}
+	var userIDs []uint64
+	s.db.WithContext(ctx).Model(&model.UserSession{}).
+		Where("session_id = ?", convID).
+		Pluck("user_id", &userIDs)
+	return userIDs
+}
+
 // batchFlush 将聚合后的会话状态批量写入 MySQL，并更新 Redis 活跃时间线
 func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	if len(latest) == 0 {
@@ -195,7 +235,7 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 
 	for convID, u := range latest {
 		convType := model.SessionTypeSingle
-		if util.IsGroupSession(convID) {
+		if u.isGroup {
 			convType = model.SessionTypeGroup
 		}
 
@@ -218,24 +258,18 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 			continue
 		}
 
-		// 2. 收集需要更新的时间线信息
+		// 2. 收集需要更新的时间线信息（参与者由 seqUpdate 显式携带，不再按 ID 前缀猜测）
 		var userIDs []uint64
-		if util.IsGroupSession(convID) {
-			// 从 DB 查群成员 (UserSession 记录了用户参与了哪些会话)
-			s.db.WithContext(ctx).Model(&model.UserSession{}).
-				Where("session_id = ?", convID).
-				Pluck("user_id", &userIDs)
-		} else if util.IsPrivateSession(convID) {
-			// 单谈直接从 SessionID 提取双方 ID
-			parts := strings.Split(convID, "_")
-			if len(parts) == 3 {
-				u1, _ := strconv.ParseUint(parts[1], 10, 64)
-				u2, _ := strconv.ParseUint(parts[2], 10, 64)
-				userIDs = append(userIDs, u1, u2)
-			}
+		if u.isGroup {
+			userIDs = s.groupMemberIDs(ctx, convID, u.target)
+		} else {
+			userIDs = []uint64{u.lastSender, u.target}
 		}
 
 		for _, uid := range userIDs {
+			if uid == 0 {
+				continue
+			}
 			if userTimelines[uid] == nil {
 				userTimelines[uid] = make(map[string]int64)
 			}
