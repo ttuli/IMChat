@@ -1,7 +1,7 @@
 package service
 
 import (
-	"IM2/interceptor"
+	"IM2/internal/interceptor"
 	"fmt"
 
 	"github.com/zeromicro/go-zero/zrpc"

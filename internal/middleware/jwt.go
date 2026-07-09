@@ -18,8 +18,8 @@ type TokenValidator interface {
 	ValidateToken(ctx context.Context, tokenString string) (uint64, error)
 }
 
-// WithRedisJwtAuth JWT 验证中间件
-func WithRedisJwtAuth(validator TokenValidator) rest.Middleware {
+// WithJwtAuth JWT 验证中间件
+func WithJwtAuth(validator TokenValidator) rest.Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

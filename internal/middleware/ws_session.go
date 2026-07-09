@@ -26,14 +26,14 @@ type SessionVersionChecker interface {
 }
 
 // WithWsSessionAuth WebSocket 连接专用鉴权中间件。
-// 必须叠加在 WithRedisJwtAuth 之后（即 userID 已写入 context）。
+// 必须叠加在 WithJwtAuth 之后（即 userID 已写入 context）。
 //
 // 校验流程：
 //
-//	1. AT 的 exp 已由前置中间件验证通过。
-//	2. 读取 session：session 不存在（TTL 过期）→ 401，客户端刷新 token 后重建 WS。
-//	3. ver 不一致：session 已被新登录覆盖 → ERR_KICKED_OUT，WS 层关闭旧连接。
-//	4. deviceID 为空：token 非法 → 拒绝建连。
+//  1. AT 的 exp 已由前置中间件验证通过。
+//  2. 读取 session：session 不存在（TTL 过期）→ 401，客户端刷新 token 后重建 WS。
+//  3. ver 不一致：session 已被新登录覆盖 → ERR_KICKED_OUT，WS 层关闭旧连接。
+//  4. deviceID 为空：token 非法 → 拒绝建连。
 //
 // 使用示例（路由注册）：
 //
@@ -42,7 +42,7 @@ type SessionVersionChecker interface {
 //	    Path:    "/ws",
 //	    Handler: wsHandler,
 //	}.WithMiddlewares(
-//	    middleware.WithRedisJwtAuth(tokenManager),
+//	    middleware.WithJwtAuth(tokenManager),
 //	    middleware.WithWsSessionAuth(tokenManager),
 //	)
 func WithWsSessionAuth(checker WSSessionChecker) rest.Middleware {
@@ -52,7 +52,7 @@ func WithWsSessionAuth(checker WSSessionChecker) rest.Middleware {
 
 			tokenString := tokenmanager.ExtractToken(r)
 			if tokenString == "" {
-				// 理论上经过 WithRedisJwtAuth 后不会为空，保守兆底
+				// 理论上经过 WithJwtAuth 后不会为空，保守兆底
 				err := xerr.New(transport.ErrorCode_ERR_UNAUTHORIZED, "身份已过期")
 				resultx.ErrorProtoCtx(ctx, w, r, err)
 				return

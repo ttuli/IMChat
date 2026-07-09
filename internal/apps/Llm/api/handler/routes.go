@@ -8,13 +8,13 @@ import (
 
 	llm "IM2/internal/apps/Llm/api/handler/llm"
 	"IM2/internal/apps/Llm/api/svc"
-	"IM2/middleware"
+	"IM2/internal/middleware"
 
 	"github.com/zeromicro/go-zero/rest"
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
-	server.Use(middleware.WithRedisJwtAuth(serverCtx.TokenManager))
+	server.Use(middleware.WithJwtAuth(serverCtx.TokenManager))
 	server.AddRoutes(
 		[]rest.Route{
 			{

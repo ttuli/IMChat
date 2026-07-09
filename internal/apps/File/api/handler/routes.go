@@ -9,7 +9,7 @@ import (
 	callback "IM2/internal/apps/File/api/handler/callback"
 	fileupload "IM2/internal/apps/File/api/handler/fileupload"
 	"IM2/internal/apps/File/api/svc"
-	"IM2/middleware"
+	"IM2/internal/middleware"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -29,7 +29,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{middleware.WithRedisJwtAuth(serverCtx.TokenManager)},
+			[]rest.Middleware{middleware.WithJwtAuth(serverCtx.TokenManager)},
 			[]rest.Route{
 				{
 					// 获取签名

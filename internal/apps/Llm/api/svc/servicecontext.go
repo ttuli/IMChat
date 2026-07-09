@@ -1,7 +1,7 @@
 package svc
 
 import (
-	"IM2/interceptor"
+	"IM2/internal/interceptor"
 	"IM2/internal/apps/Llm/api/config"
 	"IM2/internal/apps/Llm/rpc/client/llm"
 	tokenmanager "IM2/pkg/tokenManager"

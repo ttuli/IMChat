@@ -9,7 +9,7 @@ import (
 	direct "IM2/internal/apps/Auth/api/handler/direct"
 	jwt "IM2/internal/apps/Auth/api/handler/jwt"
 	"IM2/internal/apps/Auth/api/svc"
-	"IM2/middleware"
+	"IM2/internal/middleware"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -38,7 +38,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 
 	server.AddRoutes(
 		rest.WithMiddlewares([]rest.Middleware{
-			middleware.WithRedisJwtAuth(serverCtx.TokenManager),
+			middleware.WithJwtAuth(serverCtx.TokenManager),
 		}, []rest.Route{
 			{
 				Method:  http.MethodPost,

@@ -5,7 +5,7 @@ import (
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/server"
-	"IM2/middleware"
+	"IM2/internal/middleware"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -13,7 +13,7 @@ import (
 // RegisterHandlers 注册 HTTP 处理器
 func RegisterHandlers(s *rest.Server, serverCtx *server.ServiceContext) {
 	wsHandler := NewWSHandler(serverCtx, protocol.NewProtoCodec())
-	s.Use(middleware.WithRedisJwtAuth(serverCtx.TokenManager))
+	s.Use(middleware.WithJwtAuth(serverCtx.TokenManager))
 	s.Use(middleware.WithWsSessionAuth(serverCtx.TokenManager))
 	s.AddRoutes(
 		[]rest.Route{

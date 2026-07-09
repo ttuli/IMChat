@@ -8,16 +8,16 @@ import (
 
 	message "IM2/internal/apps/Message/api/handler/message"
 	"IM2/internal/apps/Message/api/svc"
-	"IM2/middleware"
+	"IM2/internal/middleware"
 
 	"github.com/zeromicro/go-zero/rest"
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
-	server.Use(middleware.WithRedisJwtAuth(serverCtx.TokenManager))
+	server.Use(middleware.WithJwtAuth(serverCtx.TokenManager))
 	server.AddRoutes(
 		rest.WithMiddlewares([]rest.Middleware{
-			middleware.WithRedisJwtAuth(serverCtx.TokenManager),
+			middleware.WithJwtAuth(serverCtx.TokenManager),
 		}, []rest.Route{
 			{
 				// 获取会话

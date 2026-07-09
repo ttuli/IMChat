@@ -1,10 +1,10 @@
 package svc
 
 import (
-	"IM2/interceptor"
 	"IM2/internal/apps/Auth/rpc/config"
 	"IM2/internal/apps/Auth/rpc/internal/service"
 	"IM2/internal/apps/Idgen/rpc/idgenclient"
+	"IM2/internal/interceptor"
 
 	"github.com/zeromicro/go-zero/zrpc"
 )

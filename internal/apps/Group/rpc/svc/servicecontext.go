@@ -1,10 +1,10 @@
 package svc
 
 import (
-	"IM2/interceptor"
 	"IM2/internal/apps/Group/rpc/config"
 	"IM2/internal/apps/Group/rpc/internal/dao"
 	"IM2/internal/apps/Idgen/rpc/idgenclient"
+	"IM2/internal/interceptor"
 
 	"github.com/nats-io/nats.go"
 	"github.com/zeromicro/go-zero/zrpc"

@@ -1,9 +1,9 @@
 package svc
 
 import (
-	"IM2/interceptor"
 	"IM2/internal/apps/Group/api/config"
 	"IM2/internal/apps/Group/rpc/client/grouprpc"
+	"IM2/internal/interceptor"
 	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/zeromicro/go-zero/zrpc"
