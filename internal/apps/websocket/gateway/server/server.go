@@ -7,7 +7,6 @@ import (
 
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/social"
-	protosvc "IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
 
 	"google.golang.org/protobuf/proto"
@@ -96,12 +95,7 @@ func (s *GatewayServer) Stop() error {
 	// 4. 关闭 NATS
 	s.svcCtx.NatsConn.Close()
 
-	// 6. 关闭 Redis (路由 KV)
-	if err := s.svcCtx.RedisClient.Close(); err != nil {
-		logger.Errorf("close redis client failed: %v", err)
-	}
-
-	// 7. 停止遥测总线
+	// 5. 停止遥测总线
 	s.svcCtx.TelemetryBus.Stop()
 
 	fmt.Println("WebSocket Gateway Server logic stopped")
@@ -112,19 +106,6 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte)
 	msg := &transport.WSMessage{}
 	if err := s.svcCtx.Codec.Decode(data, msg); err != nil {
 		s.svcCtx.TelemetryBus.Publish(err)
-		return nil
-	}
-
-	// 拦截内部的群组映射跨节点同步消息
-	if msg.Type == transport.MessageType_USER_GROUP_SYNC {
-		var syncMsg protosvc.UserGroupSync
-		if err := proto.Unmarshal(msg.Payload, &syncMsg); err == nil {
-			for _, gid := range syncMsg.GroupIds {
-				s.svcCtx.ConnectionManager.AddUsersToGroup(gid, []uint64{syncMsg.UserId})
-			}
-		} else {
-			logger.Errorf("[handleSubscribeMessage] unmarshal UserGroupSync failed: %v", err)
-		}
 		return nil
 	}
 
@@ -166,51 +147,27 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte)
 			}
 			return nil
 		}
-		// 兼容路径：群操作通知等未带 deliver_to 的广播，仍按本地群成员映射投递
-		if err := s.syncGroupMembership(msg); err != nil {
-			return err
-		}
+		// 兼容路径：群操作通知等未带 deliver_to 的广播，
+		// 查路由表（Redis，Group 服务直写维护）获取群成员，再过滤本地连接投递。
+		// 集合缺失（TTL 过期且尚无消息触发回源）时无法定位本地成员，跳过；
+		// 消息类通知均已持久化或可由客户端主动拉取对齐。
 		for _, target := range msg.RouteTarget {
-			s.svcCtx.ConnectionManager.SendToGroupLocal(ctx, target, msg)
+			members, err := s.svcCtx.Routes.GetGroupMembers(ctx, target)
+			if err != nil {
+				s.svcCtx.TelemetryBus.Publish(err)
+				logger.Errorf("[handleSubscribeMessage] get members of group %d failed: %v", target, err)
+				continue
+			}
+			if len(members) == 0 {
+				logger.Infof("[handleSubscribeMessage] no route entry for group %d, skip local fanout", target)
+				continue
+			}
+			s.svcCtx.ConnectionManager.SendToUsersLocal(ctx, members, msg)
 		}
 		return nil
 	default:
 		return nil
 	}
-}
-
-// syncGroupMembership 根据群组事件类型增量更新本地 groupMembers 映射。
-// 在消息发送前调用，保证 SendToGroupLocal 使用最新的本地在线成员集合。
-func (s *GatewayServer) syncGroupMembership(msg *transport.WSMessage) error {
-	if msg.Type != transport.MessageType_GROUP_OP_NOTIFICATION {
-		return nil
-	}
-	var notify social.GroupNotification
-	if err := proto.Unmarshal(msg.Payload, &notify); err != nil {
-		logger.Errorf("[syncGroupMembership] unmarshal failed: %v", err)
-		return err
-	}
-
-	groupID := notify.GroupId
-
-	switch notify.OpType {
-	case social.GroupOperationType_GROUP_OP_JOIN:
-		s.svcCtx.ConnectionManager.AddUsersToGroup(groupID, notify.TargetIds)
-
-	case social.GroupOperationType_GROUP_OP_CREATE:
-		members := append(notify.TargetIds, notify.OperatorId)
-		s.svcCtx.ConnectionManager.AddUsersToGroup(groupID, members)
-
-	case social.GroupOperationType_GROUP_OP_LEAVE,
-		social.GroupOperationType_GROUP_OP_KICK:
-		s.svcCtx.ConnectionManager.RemoveUsersFromGroup(groupID, notify.TargetIds)
-
-	case social.GroupOperationType_GROUP_OP_DISMISS:
-		// 解散：直接清除整个群的本地缓存
-		s.svcCtx.ConnectionManager.InvalidateGroupCache(groupID)
-	}
-
-	return nil
 }
 
 func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, data []byte) error {

@@ -16,10 +16,11 @@ import (
 )
 
 // subscribeGroupEvents 订阅网关广播 subject，拦截群操作通知：
-//  1. 失效群成员缓存，下一条群消息回源 Group RPC 获取最新成员
+//  1. 按事件类型增量修正路由表群成员集合——Group 服务在操作落库后已同步直写路由表，
+//     此处重放同样的幂等写入，兜底其直写失败（Redis 瞬时异常）造成的窗口
 //  2. 建群/入群时为成员建立 user_session 行（离线会话索引与已读游标的载体）
 //
-// 事件为 core NATS 广播，可能丢失：成员缓存有 TTL 兜底最终收敛，
+// 事件为 core NATS 广播，可能丢失：成员集合有 TTL + 读路径回源兜底最终收敛，
 // user_session 有消息路径的 EnsureUserSessions 存量补偿。
 // 所有 Message 实例都会收到该广播，操作均幂等，多实例重复执行无副作用。
 func (l *NatsListener) subscribeGroupEvents() error {
@@ -51,8 +52,8 @@ func (l *NatsListener) handleGroupEvent(notify *social.GroupNotification) {
 	defer cancel()
 
 	groupID := notify.GroupId
-	// 任何群操作都可能改变成员集合，先失效缓存
-	l.svcCtx.Members.Invalidate(ctx, groupID)
+	// 按事件类型增量修正路由表（与 Group 服务的同步直写幂等重放）
+	l.syncGroupRoute(ctx, notify)
 
 	switch notify.OpType {
 	case social.GroupOperationType_GROUP_OP_CREATE, social.GroupOperationType_GROUP_OP_JOIN:
@@ -87,8 +88,35 @@ func (l *NatsListener) handleGroupEvent(notify *social.GroupNotification) {
 	case social.GroupOperationType_GROUP_OP_LEAVE,
 		social.GroupOperationType_GROUP_OP_KICK,
 		social.GroupOperationType_GROUP_OP_DISMISS:
-		// 仅失效成员缓存。user_session 行保留作为历史会话入口；
-		// 投递与时间线的成员来源是 Group RPC，退群用户自然不再收到新消息
+		// user_session 行保留作为历史会话入口；
+		// 投递与时间线的成员来源是路由表 + Group RPC，退群用户自然不再收到新消息
+	}
+}
+
+// syncGroupRoute 将群操作事件映射为路由表成员集合的增量写入。
+// 建群事件携带完整成员列表，做全量替换；其余事件只增删差量（集合不存在时不写，
+// 由读路径回源构建全量数据）。所有操作幂等。
+func (l *NatsListener) syncGroupRoute(ctx context.Context, notify *social.GroupNotification) {
+	groupID := notify.GroupId
+	var err error
+	switch notify.OpType {
+	case social.GroupOperationType_GROUP_OP_CREATE:
+		members := append([]uint64{}, notify.TargetIds...)
+		if notify.OperatorId != 0 {
+			members = append(members, notify.OperatorId)
+		}
+		err = l.svcCtx.Routes.ReplaceGroupMembers(ctx, groupID, members, 0)
+	case social.GroupOperationType_GROUP_OP_JOIN:
+		// 集合缺失时不写（applied=false），由消息路径回源构建全量数据
+		_, err = l.svcCtx.Routes.AddGroupMembers(ctx, groupID, notify.TargetIds...)
+	case social.GroupOperationType_GROUP_OP_LEAVE,
+		social.GroupOperationType_GROUP_OP_KICK:
+		err = l.svcCtx.Routes.RemoveGroupMembers(ctx, groupID, notify.TargetIds...)
+	case social.GroupOperationType_GROUP_OP_DISMISS:
+		err = l.svcCtx.Routes.DeleteGroup(ctx, groupID)
+	}
+	if err != nil {
+		logger.Errorf("[NatsListener] sync group %d route failed: %v", groupID, err)
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"IM2/internal/apps/Message/rpc/internal/seq"
 	"IM2/internal/interceptor"
 	"IM2/pkg/redisx"
+	"IM2/pkg/routing"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/nats-io/nats.go"
@@ -28,7 +29,9 @@ type ServiceContext struct {
 	Redis         *redisx.Client
 	SnowflakeNode *snowflake.Node
 	SeqAllocator  *seq.Allocator
-	// Members 群成员来源（Redis 缓存 + Group RPC 回源），群消息扇出与时间线更新共用
+	// Routes 集群路由表（与网关/Group 服务共享）：精准投递的用户路由查询与群成员集合读写
+	Routes *routing.Table
+	// Members 群成员来源（路由表缓存 + Group RPC 回源），群消息扇出与时间线更新共用
 	Members *members.Provider
 }
 
@@ -74,7 +77,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	groupRpc := grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
 		zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor)))
-	memberProvider := members.NewProvider(redisClient, groupRpc)
+	// 路由表与业务缓存共用同一 Redis 实例（网关写入的 ws:route/ws:node 键在此实例上）
+	routes := routing.NewTable(redisClient)
+	memberProvider := members.NewProvider(routes, groupRpc)
 	// SeqSyncer 更新群会话时间线时经此获取成员，避免按 user_session 表反查（含退群用户）
 	ssDao.SetGroupMemberSource(memberProvider.GetMemberIDs)
 
@@ -88,6 +93,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		SnowflakeNode: sfNode,
 		// Lamport seq 分配器与雪花发号器共用节点 ID（0-1023）
 		SeqAllocator: seq.NewAllocator(nodeID),
+		Routes:       routes,
 		Members:      memberProvider,
 	}
 }

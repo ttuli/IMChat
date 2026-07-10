@@ -17,6 +17,7 @@ import (
 	protosvc "IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
+	"IM2/pkg/routing"
 
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
@@ -27,10 +28,6 @@ const (
 	fetchWaitTimeout = 200 * time.Millisecond
 	// 持久化消费者名称（多实例共享，NATS 负载均衡分配消息）
 	durableConsumerName = "message_db_consumer"
-	// 网关用户路由键前缀（与网关 router 的 routeKeyPrefix 保持一致）
-	wsRouteKeyPrefix = "ws:route:"
-	// 网关节点心跳键前缀（与网关 router 的 nodeKeyPrefix 保持一致）
-	wsNodeKeyPrefix = "ws:node:"
 
 	// 默认单批拉取条数
 	defaultFetchBatchSize = 32
@@ -38,18 +35,6 @@ const (
 	defaultWorkers = 8
 	// 每个 worker 的待处理队列长度（打满时 runLoop 阻塞，形成天然背压）
 	workerQueueSize = 128
-)
-
-// routeStatus 用户路由查询结果
-type routeStatus int
-
-const (
-	// routeFallback 未配置精准投递 / 路由状态未知 / 路由指向已死节点 → 广播兜底
-	routeFallback routeStatus = iota
-	// routeOffline 确认不在线（路由键不存在）→ 只存不推
-	routeOffline
-	// routeOnline 路由有效且节点存活 → 精准投递
-	routeOnline
 )
 
 // pendingMsg 已反序列化、待 worker 处理的消息
@@ -310,11 +295,11 @@ func (l *NatsListener) process(m *protosvc.MessageSend) error {
 	// 单聊：查路由表精准投递
 	node, status := l.lookupRoute(ctx, m.Target)
 	switch status {
-	case routeOnline:
+	case routing.RouteOnline:
 		if pubErr := l.svcCtx.NatsConn.Publish(l.nodeSubject(node), deliverMsgData); pubErr != nil {
 			logger.Error(pubErr.Error())
 		}
-	case routeOffline:
+	case routing.RouteOffline:
 		// 确认不在线：只存不推，上线后由客户端拉取
 	default:
 		// 路由状态不可信（Redis 异常 / 路由指向已死节点 / 未配置精准投递）：
@@ -365,68 +350,18 @@ func (l *NatsListener) deliverGroupMessage(ctx context.Context, m *protosvc.Mess
 		return
 	}
 
-	nodeTargets, fallback := l.groupRoutes(ctx, receivers)
+	// 批量路由查询（含节点存活校验）；整体失败时全部接收者广播兜底，不漏投
+	nodeTargets, fallback, err := l.svcCtx.Routes.LookupUsers(ctx, receivers)
+	if err != nil {
+		logger.Errorf("[NatsListener] batch route lookup failed: %v", err)
+		nodeTargets, fallback = nil, receivers
+	}
 	for node, uids := range nodeTargets {
 		l.publishDeliverMsg(l.nodeSubject(node), withDeliverTo(deliverMsg, uids))
 	}
 	if len(fallback) > 0 {
 		l.publishDeliverMsg(l.svcCtx.Config.Listener.BroadcastSubject, withDeliverTo(deliverMsg, fallback))
 	}
-}
-
-// groupRoutes 批量查询接收者路由并按网关节点聚合。
-// 返回 nodeTargets（节点 → 该节点在线用户）与 fallback（路由不可信、需广播兜底的用户）。
-// 路由键不存在的用户视为离线，不出现在任何返回值中（只存不推）。
-func (l *NatsListener) groupRoutes(ctx context.Context, userIDs []uint64) (map[string][]uint64, []uint64) {
-	routeKeys := make([]string, len(userIDs))
-	for i, uid := range userIDs {
-		routeKeys[i] = fmt.Sprintf("%s%d", wsRouteKeyPrefix, uid)
-	}
-	routes, err := l.svcCtx.Redis.MgetCtx(ctx, routeKeys...)
-	if err != nil || len(routes) != len(userIDs) {
-		logger.Errorf("[NatsListener] batch route lookup failed: %v", err)
-		return nil, userIDs
-	}
-
-	// 汇总候选节点并批量校验存活（ws:node:{id} 心跳键存在即存活）
-	nodeAlive := make(map[string]bool)
-	for _, node := range routes {
-		if node != "" {
-			nodeAlive[node] = false
-		}
-	}
-	if len(nodeAlive) > 0 {
-		nodes := make([]string, 0, len(nodeAlive))
-		nodeKeys := make([]string, 0, len(nodeAlive))
-		for node := range nodeAlive {
-			nodes = append(nodes, node)
-			nodeKeys = append(nodeKeys, wsNodeKeyPrefix+node)
-		}
-		if vals, aliveErr := l.svcCtx.Redis.MgetCtx(ctx, nodeKeys...); aliveErr == nil && len(vals) == len(nodes) {
-			for i, v := range vals {
-				if v != "" {
-					nodeAlive[nodes[i]] = true
-				}
-			}
-		}
-		// 存活校验失败时 nodeAlive 保持全 false → 这些用户全部走广播兜底，不漏投
-	}
-
-	nodeTargets := make(map[string][]uint64)
-	var fallback []uint64
-	for i, uid := range userIDs {
-		node := routes[i]
-		switch {
-		case node == "":
-			// 离线：只存不推
-		case nodeAlive[node]:
-			nodeTargets[node] = append(nodeTargets[node], uid)
-		default:
-			// 路由指向已死节点（宕机未清理的脏路由）：广播兜底
-			fallback = append(fallback, uid)
-		}
-	}
-	return nodeTargets, fallback
 }
 
 // withDeliverTo 复制一份仅 deliver_to 不同的投递消息（每个节点的目标列表不同）
@@ -483,9 +418,9 @@ func (l *NatsListener) publishPersistAck(ctx context.Context, pack *message.Pers
 	node, status := l.lookupRoute(ctx, pack.Target)
 	var subject string
 	switch status {
-	case routeOnline:
+	case routing.RouteOnline:
 		subject = l.nodeSubject(node)
-	case routeOffline:
+	case routing.RouteOffline:
 		// 发送方已断线，ACK 无投递意义；消息状态由其重连后拉取对齐
 		return
 	default:
@@ -496,44 +431,17 @@ func (l *NatsListener) publishPersistAck(ctx context.Context, pack *message.Pers
 	}
 }
 
-// routeLookupScript 单次往返完成「查路由 + 校验节点存活」。
-// 路由存在但节点心跳键已消失，说明路由是过期脏数据（节点宕机未清理）。
-// 注：脚本内拼接第二个 key，仅适用于单实例/主从 Redis（本项目部署形态），不兼容 Cluster。
-const routeLookupScript = `
-local node = redis.call('GET', KEYS[1])
-if not node then
-	return {'', 0}
-end
-local alive = redis.call('EXISTS', ARGV[1] .. node)
-return {node, alive}
-`
-
-// lookupRoute 查询用户当前所在网关节点及路由可信度
-func (l *NatsListener) lookupRoute(ctx context.Context, userID uint64) (string, routeStatus) {
+// lookupRoute 查询用户当前所在网关节点及路由可信度。
+// 未配置精准投递时视为路由不可信（走广播兜底）。
+func (l *NatsListener) lookupRoute(ctx context.Context, userID uint64) (string, routing.RouteStatus) {
 	if l.svcCtx.Config.Listener.NodeSubjectPrefix == "" {
-		return "", routeFallback
+		return "", routing.RouteUnknown
 	}
-	raw, err := l.svcCtx.Redis.EvalCtx(ctx, routeLookupScript,
-		[]string{fmt.Sprintf("%s%d", wsRouteKeyPrefix, userID)}, wsNodeKeyPrefix)
+	node, status, err := l.svcCtx.Routes.LookupUser(ctx, userID)
 	if err != nil {
 		logger.Errorf("[NatsListener] lookup route for user %d failed: %v", userID, err)
-		return "", routeFallback
 	}
-
-	row, ok := raw.([]interface{})
-	if !ok || len(row) != 2 {
-		return "", routeFallback
-	}
-	node := fmt.Sprintf("%v", row[0])
-	alive, _ := row[1].(int64)
-
-	if node == "" {
-		return "", routeOffline
-	}
-	if alive == 1 {
-		return node, routeOnline
-	}
-	return "", routeFallback
+	return node, status
 }
 
 // nodeSubject 拼接网关节点专属 subject

@@ -45,6 +45,9 @@ func (s *GroupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 			return nil, nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "直接加入群组失败")
 		}
 
+		// 直写路由表：先于通知发布补路由，新成员能收到本次入群通知与后续群消息
+		s.ensureGroupRoute(ctx, groupID, fromUserID)
+
 		msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
 		bytes, _ := proto.Marshal(msg)
 		err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
@@ -145,6 +148,9 @@ func (s *GroupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 			}); err != nil {
 				return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "添加群成员失败")
 			}
+
+			// 直写路由表：先于通知发布补路由
+			s.ensureGroupRoute(ctx, apply.GroupID, apply.FromUserID)
 
 			msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
 			bytes, _ := proto.Marshal(msg)

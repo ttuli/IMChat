@@ -10,11 +10,11 @@ import (
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/internal/telemetry"
 	"IM2/internal/apps/websocket/gateway/router"
+	"IM2/pkg/routing"
 	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	"github.com/redis/go-redis/v9"
 )
 
 // ServiceContext 服务上下文
@@ -23,7 +23,8 @@ type ServiceContext struct {
 	ConnectionManager connection.Manager
 	Router            *router.Router
 	Subscriber        *router.Subscriber
-	RedisClient       *redis.Client
+	// Routes 集群路由表（Redis）：用户路由由本网关维护，群成员由 Group 服务维护、此处只读
+	Routes            *routing.Table
 	NatsConn          *nats.Conn
 	JetStream         nats.JetStreamContext
 	TokenManager      *tokenmanager.TokenManager
@@ -46,12 +47,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// 网关无状态化：不再初始化 Snowflake 发号器
 	// MsgId 生成已迁移到 Message 服务本地完成
 
-	// 创建 Redis 客户端 (用于路由 KV 存储)
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     c.RouteStore.Host,
-		Password: c.RouteStore.Pass,
-		DB:       0,
-	})
+	// 创建路由表 (Redis KV 存储，与 Message/Group 服务共享同一份路由数据)
+	routes, err := routing.NewTableFromConf(c.RouteStore)
+	if err != nil {
+		log.Fatalf("init route table failed: %v", err)
+	}
 
 	// 创建 NATS 连接 (用于跨节点消息转发)
 	natsUrl := c.Nats.Url
@@ -74,7 +74,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	bus.RegisterHandler(telemetry.DefaultLogHandler)
 
 	// 创建路由器
-	r := router.NewRouter(redisClient, natsConn, codec, nodeID, bus, router.SubjectConfig{
+	r := router.NewRouter(routes, natsConn, codec, nodeID, bus, router.SubjectConfig{
 		NodeSubjectPrefix:     c.Nats.NodeSubjectPrefix,
 		DBSubject:             c.Nats.DBSubject,
 		BroadcastSubject:      c.Nats.BroadcastSubject,
@@ -94,7 +94,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		ConnectionManager: connMgr,
 		Router:            r,
 		Subscriber:        sub,
-		RedisClient:       redisClient,
+		Routes:            routes,
 		NatsConn:          natsConn,
 		JetStream:         js,
 		TokenManager:      tokenmanager.NewTokenManager(c.TokenConfig),

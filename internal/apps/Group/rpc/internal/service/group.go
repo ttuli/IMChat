@@ -8,7 +8,6 @@ import (
 	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	"IM2/pkg/proto/social"
-	"IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
@@ -74,7 +73,13 @@ func (s *GroupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "创建群组失败")
 	}
 
-	// 5. 发送群创建通知
+	// 5. 直写路由表：建群时成员列表完整，全量写入，
+	// 使后续群消息扇出/通知投递无需回源即可命中（失败由读路径回源兜底）
+	if err := s.svcCtx.Routes.ReplaceGroupMembers(ctx, groupID, append([]uint64{ownerID}, targetIds...), 0); err != nil {
+		logger.Errorf("[CreateGroup] write group %d route failed: %v", groupID, err)
+	}
+
+	// 6. 发送群创建通知
 	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
@@ -170,7 +175,12 @@ func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "解散群组失败")
 	}
 
-	// 3. 发送群解散通知
+	// 3. 直写路由表：删除群成员集合
+	if err := s.svcCtx.Routes.DeleteGroup(ctx, groupID); err != nil {
+		logger.Errorf("[DismissGroup] delete group %d route failed: %v", groupID, err)
+	}
+
+	// 4. 发送群解散通知
 	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
 	if wsMsg != nil {
 		bytes, _ := proto.Marshal(wsMsg)
@@ -189,23 +199,11 @@ func (s *GroupService) GetUserGroupIDs(ctx context.Context, userID uint64) ([]ui
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询用户群组失败")
 	}
 
+	// 直写路由表：将用户补进其所属各群的成员集合，
+	// 替代旧的 USER_GROUP_SYNC NATS 广播（不再依赖网关侧本地群成员映射）
 	if len(groupIDs) > 0 {
-		syncMsg := &svc.UserGroupSync{
-			UserId:   userID,
-			GroupIds: groupIDs,
-		}
-		payload, _ := proto.Marshal(syncMsg)
-		wsMsg := &transport.WSMessage{
-			RouteTarget:     []uint64{userID},
-			RouteTargetType: transport.TargetType_USER,
-			Timestamp:       time.Now().UnixMilli(),
-			Type:            transport.MessageType_USER_GROUP_SYNC,
-			Payload:         payload,
-		}
-		bytes, _ := proto.Marshal(wsMsg)
-		err := s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
-		if err != nil {
-			logger.Errorf("发送nats失败: %v", err)
+		if err := s.svcCtx.Routes.AddUserToGroups(ctx, userID, groupIDs); err != nil {
+			logger.Errorf("[GetUserGroupIDs] sync user %d group routes failed: %v", userID, err)
 		}
 	}
 
