@@ -20,6 +20,11 @@ func NewFriendDAO(DataSource string) *FriendDAO {
 	if err != nil {
 		panic(err)
 	}
+
+	if err := db.AutoMigrate(&model.UserFriend{}); err != nil {
+		panic(err)
+	}
+
 	return &FriendDAO{db: db}
 }
 

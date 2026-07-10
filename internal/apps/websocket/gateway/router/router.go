@@ -12,7 +12,10 @@ import (
 	"IM2/pkg/routing"
 
 	"github.com/nats-io/nats.go"
-	"github.com/zeromicro/go-zero/core/logx"
+	"fmt"
+
+	"IM2/pkg/logger"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -53,12 +56,11 @@ func (r *Router) RegisterUser(ctx context.Context, userID uint64) error {
 		// 旧节点可能仍持有该用户的连接：发内部踢下线通知让其清理。
 		// 通知丢失时由路由心跳的冲突检测兜底。
 		if pubErr := r.publisher.PublishToNode(ctx, oldNode, buildKickoffMsg(userID)); pubErr != nil {
-			logx.Errorf("[Router] notify old node %s to kick user %d failed: %v", oldNode, userID, pubErr)
-			r.telemetryBus.Publish(pubErr)
+			r.telemetryBus.Publish(fmt.Errorf("[Router] notify old node %s to kick user %d failed: %w", oldNode, userID, pubErr))
 		}
 	}
 
-	logx.Debugf("[Router] registered user %d on node %s (old=%s)", userID, r.nodeID, oldNode)
+	logger.Infof("[Router] registered user %d on node %s (old=%s)", userID, r.nodeID, oldNode)
 	return nil
 }
 
@@ -85,7 +87,7 @@ func (r *Router) UnregisterUser(ctx context.Context, userID uint64) error {
 		r.telemetryBus.Publish(err)
 		return err
 	}
-	logx.Debugf("[Router] unregistered user %d from node %s", userID, r.nodeID)
+	logger.Infof("[Router] unregistered user %d from node %s", userID, r.nodeID)
 	return nil
 }
 
@@ -97,15 +99,6 @@ func (r *Router) GetUserNode(ctx context.Context, userID uint64) (string, error)
 		return "", err
 	}
 	return nodeID, nil
-}
-
-// IsLocalUser 检查用户是否在本节点
-func (r *Router) IsLocalUser(ctx context.Context, userID uint64) (bool, error) {
-	nodeID, err := r.GetUserNode(ctx, userID)
-	if err != nil {
-		return false, err
-	}
-	return nodeID == r.nodeID, nil
 }
 
 // RouteMessage 路由消息到目标用户
@@ -128,16 +121,6 @@ func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *tra
 	return r.publisher.PublishToNode(ctx, targetNodeID, msg)
 }
 
-// BroadcastToAllNodes 广播消息到所有节点
-// mode 参数控制消费模式：BroadcastAll 所有节点消费，BroadcastQueue 仅一个节点消费
-func (r *Router) BroadcastToAllNodes(ctx context.Context, msg *transport.WSMessage, mode BroadcastMode) error {
-	return r.publisher.BroadcastToAllNodes(ctx, msg, mode)
-}
-
-func (r *Router) RouteMsgToDB(ctx context.Context, msg *transport.WSMessage) error {
-	return r.publisher.PublishToDB(ctx, msg)
-}
-
 // RegisterNode 注册节点信息并开始心跳
 func (r *Router) RegisterNode(ctx context.Context) error {
 	if err := r.table.RegisterNode(ctx, r.nodeID); err != nil {
@@ -146,7 +129,7 @@ func (r *Router) RegisterNode(ctx context.Context) error {
 		}
 		return err
 	}
-	logx.Infof("[Router] registered node %s", r.nodeID)
+	logger.Infof("[Router] registered node %s", r.nodeID)
 	return nil
 }
 
@@ -170,7 +153,7 @@ func (r *Router) StartHeartbeat(ctx context.Context) {
 				return
 			case <-ticker.C:
 				if err := r.NodeHeartbeat(ctx); err != nil {
-					logx.Errorf("[Router] heartbeat failed: %v", err)
+					r.telemetryBus.Publish(fmt.Errorf("[Router] heartbeat failed: %w", err))
 				}
 			}
 		}
@@ -205,15 +188,15 @@ func (r *Router) StartRouteHeartbeat(ctx context.Context, getActiveUserIDs func(
 				for _, uid := range userIDs {
 					owned, err := r.RenewUserRoute(ctx, uid)
 					if err != nil {
-						logx.Errorf("[Router] renew route for user %d failed: %v", uid, err)
+						r.telemetryBus.Publish(fmt.Errorf("[Router] renew route for user %d failed: %w", uid, err))
 						continue
 					}
 					if !owned && onRouteConflict != nil {
-						logx.Infof("[Router] route of user %d taken by another node, cleaning local connection", uid)
+						logger.Infof("[Router] route of user %d taken by another node, cleaning local connection", uid)
 						onRouteConflict(uid)
 					}
 				}
-				logx.Debugf("[Router] renewed routes for %d users", len(userIDs))
+				logger.Infof("[Router] renewed routes for %d users", len(userIDs))
 			}
 		}
 	}()
@@ -225,6 +208,6 @@ func (r *Router) UnregisterNode(ctx context.Context) error {
 		r.telemetryBus.Publish(err)
 		return err
 	}
-	logx.Infof("[Router] unregistered node %s", r.nodeID)
+	logger.Infof("[Router] unregistered node %s", r.nodeID)
 	return nil
 }

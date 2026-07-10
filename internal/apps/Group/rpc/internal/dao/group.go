@@ -35,6 +35,11 @@ func NewGroupDAO(dbSource string, redisSource redis.RedisConf) *GroupDAO {
 		panic(err)
 	}
 
+	if err := db.AutoMigrate(&model.Group{}, &model.GroupMember{}); err != nil {
+		panic(err)
+	}
+
+
 	client, err := redisx.NewClient(redisSource,
 		redisx.WithDefaultTTL(time.Duration(cacheExpireSeconds)*time.Second),
 		redisx.WithKeyPrefix("group:id:"),

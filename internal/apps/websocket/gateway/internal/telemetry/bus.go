@@ -146,7 +146,7 @@ func (b *Bus) dispatch(event ErrorEvent) {
 }
 
 // DefaultLogHandler 默认日志处理器
-// 使用 logx 输出错误事件详情
+// 使用 logger 输出错误事件详情
 func DefaultLogHandler(event ErrorEvent) {
 	logger.Errorf("[TelemetryBus] node=%s component=%s operation=%s err=%v",
 		event.NodeID, event.Component, event.Operation, event.Err)

@@ -39,6 +39,11 @@ func NewUserDAO(dbSource string, redisSource redis.RedisConf) *UserDAO {
 		panic(err)
 	}
 
+	if err := db.AutoMigrate(&model.UserInfo{}); err != nil {
+		panic(err)
+	}
+
+
 	redisClient, err := redisx.NewClient(redisSource)
 	if err != nil {
 		panic(err)

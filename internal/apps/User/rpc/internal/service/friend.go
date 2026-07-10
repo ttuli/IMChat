@@ -66,7 +66,7 @@ func (s *UserService) DeleteFriend(ctx context.Context, userID, friendID uint64)
 
 	if msg, err := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_DELETED, friendRecord, userID); err == nil {
 		if data, err := proto.Marshal(msg); err == nil {
-			if _, err := s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data); err != nil {
+			if err := s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data); err != nil {
 				logger.Error("DeleteFriend publish error: " + err.Error())
 			}
 		}

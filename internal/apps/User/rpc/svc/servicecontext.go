@@ -17,15 +17,10 @@ type ServiceContext struct {
 	FriendApplyDAO *dao.FriendApplyDAO
 	IdGenerator    idgenclient.Idgen
 	NatsConn       *nats.Conn
-	Js             nats.JetStreamContext
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	nast, err := nats.Connect(c.NATS.Url)
-	if err != nil {
-		panic(err)
-	}
-	js, err := nast.JetStream()
 	if err != nil {
 		panic(err)
 	}
@@ -40,6 +35,5 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		FriendApplyDAO: dao.NewFriendApplyDAO(c.DAO.FriendApplyDAO),
 		IdGenerator:    idGenerator,
 		NatsConn:       nast,
-		Js:             js,
 	}
 }

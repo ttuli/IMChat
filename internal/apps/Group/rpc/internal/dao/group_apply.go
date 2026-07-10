@@ -18,6 +18,11 @@ func NewApplyDAO(dbSource string) *ApplyDAO {
 	if err != nil {
 		panic(err)
 	}
+
+	if err := db.AutoMigrate(&model.GroupApply{}); err != nil {
+		panic(err)
+	}
+
 	return &ApplyDAO{DB: db}
 }
 

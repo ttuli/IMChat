@@ -29,7 +29,7 @@ type Provider struct {
 func NewProvider(routes *routing.Table, groupRpc grouprpc.GroupRpc) *Provider {
 	return &Provider{
 		routes:   routes,
-		groupRpc: groupRpc,
+		// groupRpc: groupRpc,
 	}
 }
 

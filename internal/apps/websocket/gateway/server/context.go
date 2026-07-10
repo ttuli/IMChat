@@ -44,9 +44,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// 创建编解码器
 	codec := protocol.NewProtoCodec()
 
-	// 网关无状态化：不再初始化 Snowflake 发号器
-	// MsgId 生成已迁移到 Message 服务本地完成
-
 	// 创建路由表 (Redis KV 存储，与 Message/Group 服务共享同一份路由数据)
 	routes, err := routing.NewTableFromConf(c.RouteStore)
 	if err != nil {
@@ -85,7 +82,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	connMgr := connection.NewDefaultManager(nodeID, r)
 
 	// 创建订阅者
-	sub := router.NewSubscriber(natsConn, nodeID, func(err error) {
+	sub := router.NewSubscriber(natsConn, func(err error) {
 		bus.Publish(err)
 	})
 

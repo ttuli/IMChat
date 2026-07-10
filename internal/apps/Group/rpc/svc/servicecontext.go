@@ -17,18 +17,13 @@ type ServiceContext struct {
 	ApplyDAO    *dao.ApplyDAO
 	IdGenerator idgenclient.Idgen
 	Nats        *nats.Conn
-	Js          nats.JetStreamContext
 	// Routes 集群路由表：成员关系变更后同步直写群成员集合，
-	// 替代旧的 USER_GROUP_SYNC NATS 广播（由网关维护本地映射）方案
+	// 替代旧 of USER_GROUP_SYNC NATS 广播（由网关维护本地映射）方案
 	Routes *routing.Table
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	nc, err := nats.Connect(c.NATS.Url)
-	if err != nil {
-		panic(err)
-	}
-	js, err := nc.JetStream()
 	if err != nil {
 		panic(err)
 	}
@@ -52,7 +47,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		ApplyDAO:    dao.NewApplyDAO(c.DAO.ApplyDAO),
 		IdGenerator: idGenerator,
 		Nats:        nc,
-		Js:          js,
 		Routes:      routes,
 	}
 }

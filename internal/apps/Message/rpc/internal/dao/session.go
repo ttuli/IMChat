@@ -38,6 +38,11 @@ func NewSessionDAO(dbSource string, redisConf redis.RedisConf) *SessionDAO {
 		panic(err)
 	}
 
+	if err := db.AutoMigrate(&model.Session{}, &model.UserSession{}); err != nil {
+		panic(err)
+	}
+
+
 	client, err := redisx.NewClient(redisConf)
 	if err != nil {
 		panic(err)

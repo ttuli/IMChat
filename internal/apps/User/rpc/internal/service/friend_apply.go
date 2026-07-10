@@ -47,7 +47,7 @@ func (s *UserService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 
 		msg, _ := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_ADD, friendRecord, toUserID)
 		data, _ := proto.Marshal(msg)
-		_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
+		err = s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
 		if err != nil {
 			logger.Error(err.Error())
 		}
@@ -80,7 +80,7 @@ func (s *UserService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 
 	msg, _ := util.ConvertFriendApplyToWSMessage(apply, toUserID)
 	data, _ := proto.Marshal(msg)
-	_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
+	err = s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -137,7 +137,7 @@ func (s *UserService) HandleFriendApply(ctx context.Context, applyID, operatorID
 
 	msg, _ := util.ConvertFriendApplyToWSMessage(apply, apply.FromUserID)
 	data, _ := proto.Marshal(msg)
-	_, err = s.svcCtx.Js.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
+	err = s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
 	if err != nil {
 		logger.Error(err.Error())
 	}

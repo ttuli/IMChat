@@ -15,16 +15,14 @@ type MessageHandler func(ctx context.Context, data []byte) error
 // Subscriber NATS 消息订阅者
 type Subscriber struct {
 	nc            *nats.Conn
-	nodeID        string
 	subscriptions []*nats.Subscription
 	errHandler    func(error)
 }
 
 // NewSubscriber 创建订阅者
-func NewSubscriber(nc *nats.Conn, nodeID string, errHandler func(error)) *Subscriber {
+func NewSubscriber(nc *nats.Conn, errHandler func(error)) *Subscriber {
 	return &Subscriber{
 		nc:         nc,
-		nodeID:     nodeID,
 		errHandler: errHandler,
 	}
 }
