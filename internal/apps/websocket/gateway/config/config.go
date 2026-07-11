@@ -17,23 +17,14 @@ type Config struct {
 	RouteStore redis.RedisConf
 
 	// NATS 配置 (用于跨节点消息转发)
-	Nats NatsConf
+	Nats struct {
+		Url string `json:"url"`
+	}
 
 	// token 配置
 	TokenConfig tokenmanager.TokenConfig
 }
 
-// NatsConf NATS 配置
-type NatsConf struct {
-	// NATS 服务器地址，例如 nats://localhost:4222
-	Url string `json:"url"`
-
-	NodeSubjectPrefix     string
-	BroadcastSubject      string
-	QueueBroadcastSubject string
-	QueueName             string
-	DBSubject             string
-}
 
 // WebSocketConf WebSocket 配置
 type WebSocketConf struct {

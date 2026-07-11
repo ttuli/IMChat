@@ -6,10 +6,8 @@ import (
 	"time"
 
 	"IM2/pkg/logger"
-	"IM2/pkg/proto/social"
+	nats_util "IM2/pkg/nats"
 	"IM2/pkg/proto/transport"
-
-	"google.golang.org/protobuf/proto"
 )
 
 type GatewayServer struct {
@@ -30,9 +28,6 @@ func (s *GatewayServer) Start() error {
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 
-	// 0. 启动遥测总线
-	s.svcCtx.TelemetryBus.Start(s.ctx)
-
 	// 1. 注册节点
 	if err := s.svcCtx.Router.RegisterNode(s.ctx); err != nil {
 		return fmt.Errorf("register node failed: %w", err)
@@ -50,17 +45,12 @@ func (s *GatewayServer) Start() error {
 	})
 
 	// 4. 订阅跨节点路由消息
-	nodeSubject := fmt.Sprintf("%s%s", s.svcCtx.Config.Nats.NodeSubjectPrefix, s.svcCtx.Config.WebSocket.NodeID)
-
-	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, nodeSubject, s.handleSubscribeMessage); err != nil {
+	nodeSubject := nats_util.NodeSubjectPrefix + s.svcCtx.Config.WebSocket.NodeID
+	if err := s.svcCtx.Nats.Subscribe(nodeSubject, s.handleSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe route message failed: %w", err)
 	}
-	if err := s.svcCtx.Subscriber.Subscribe(s.ctx, s.svcCtx.Config.Nats.BroadcastSubject, s.handleSubscribeMessage); err != nil {
+	if err := s.svcCtx.Nats.Subscribe(nats_util.BroadcastSubject, s.handleSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe broadcast message failed: %w", err)
-	}
-	if err := s.svcCtx.Subscriber.QueueSubscribe(s.ctx, s.svcCtx.Config.Nats.QueueBroadcastSubject,
-		s.svcCtx.Config.Nats.QueueName, s.handleQueueSubscribeMessage); err != nil {
-		return fmt.Errorf("subscribe notice failed: %w", err)
 	}
 
 	fmt.Println("WebSocket Gateway Server logic started successfully")
@@ -77,10 +67,8 @@ func (s *GatewayServer) Stop() error {
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
 
-	// 1. 关闭订阅
-	if err := s.svcCtx.Subscriber.Close(); err != nil {
-		logger.Errorf("close subscriber failed: %v", err)
-	}
+	// 1. 停止订阅（不再消费新消息）
+	s.svcCtx.Nats.Unsubscribe()
 
 	// 2. 关闭连接管理器 (断开所有连接)
 	if err := s.svcCtx.ConnectionManager.Close(); err != nil {
@@ -93,35 +81,29 @@ func (s *GatewayServer) Stop() error {
 	}
 
 	// 4. 关闭 NATS
-	s.svcCtx.NatsConn.Close()
-
-	// 5. 停止遥测总线
-	s.svcCtx.TelemetryBus.Stop()
+	s.svcCtx.Nats.Close()
 
 	fmt.Println("WebSocket Gateway Server logic stopped")
 	return nil
 }
 
-func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte) error {
-	msg := &transport.WSMessage{}
-	if err := s.svcCtx.Codec.Decode(data, msg); err != nil {
-		s.svcCtx.TelemetryBus.Publish(err)
-		return nil
-	}
-
+// handleSubscribeMessage 处理跨节点路由消息与全节点广播消息。
+// 由 nats_util.Client.Subscribe 完成解码后回调，签名不带 ctx/data：
+// 下游 Redis 查询复用 s.ctx（网关生命周期，非单次消息的超时控制）。
+func (s *GatewayServer) handleSubscribeMessage(msg *transport.WSMessage) {
 	// 拦截跨节点踢下线通知：用户在其他节点重新注册了路由，本节点持有的连接已过时。
 	if msg.Type == transport.MessageType_USER_KICKOFF {
 		for _, target := range msg.RouteTarget {
 			// 二次校验：若路由当前已指回本节点（用户快速切换后又连回来了），
 			// 说明这是迟到的过期通知，忽略，避免误踢最新连接。
-			if node, _ := s.svcCtx.Router.GetUserNode(ctx, target); node == s.svcCtx.Config.WebSocket.NodeID {
+			if node, _ := s.svcCtx.Router.GetUserNode(s.ctx, target); node == s.svcCtx.Config.WebSocket.NodeID {
 				continue
 			}
 			if conn, ok := s.svcCtx.ConnectionManager.GetLocalConnection(target); ok {
 				conn.Kick("账号在其他设备登录")
 			}
 		}
-		return nil
+		return
 	}
 
 	// 获取本地连接
@@ -133,7 +115,6 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte)
 				conn.Send(msg)
 			}
 		}
-		return nil
 	case transport.TargetType_GROUP:
 		// 定向扇出消息：deliver_to 携带本节点需投递的用户，按列表精准投本地连接，
 		// 不再依赖网关侧群成员映射。该字段是集群内部路由信息，投递前清空，不下发客户端。
@@ -145,16 +126,15 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte)
 					conn.Send(msg)
 				}
 			}
-			return nil
+			return
 		}
 		// 兼容路径：群操作通知等未带 deliver_to 的广播，
 		// 查路由表（Redis，Group 服务直写维护）获取群成员，再过滤本地连接投递。
 		// 集合缺失（TTL 过期且尚无消息触发回源）时无法定位本地成员，跳过；
 		// 消息类通知均已持久化或可由客户端主动拉取对齐。
 		for _, target := range msg.RouteTarget {
-			members, err := s.svcCtx.Routes.GetGroupMembers(ctx, target)
+			members, err := s.svcCtx.Routes.GetGroupMembers(s.ctx, target)
 			if err != nil {
-				s.svcCtx.TelemetryBus.Publish(err)
 				logger.Errorf("[handleSubscribeMessage] get members of group %d failed: %v", target, err)
 				continue
 			}
@@ -162,42 +142,7 @@ func (s *GatewayServer) handleSubscribeMessage(ctx context.Context, data []byte)
 				logger.Infof("[handleSubscribeMessage] no route entry for group %d, skip local fanout", target)
 				continue
 			}
-			s.svcCtx.ConnectionManager.SendToUsersLocal(ctx, members, msg)
-		}
-		return nil
-	default:
-		return nil
-	}
-}
-
-func (s *GatewayServer) handleQueueSubscribeMessage(ctx context.Context, data []byte) error {
-	msg := &transport.WSMessage{}
-	if err := s.svcCtx.Codec.Decode(data, msg); err != nil {
-		s.svcCtx.TelemetryBus.Publish(err)
-		return nil
-	}
-
-	switch msg.Type {
-	case transport.MessageType_GROUP_REQUEST:
-		var apply social.GroupApply
-		if err := proto.Unmarshal(msg.Payload, &apply); err != nil {
-			s.svcCtx.TelemetryBus.Publish(err)
-			return nil
-		}
-		for _, manager := range msg.RouteTarget {
-			err := s.svcCtx.ConnectionManager.SendToUser(ctx, manager, msg)
-			if err != nil {
-				s.svcCtx.TelemetryBus.Publish(err)
-			}
-		}
-
-		if apply.HandlerId != 0 {
-			err := s.svcCtx.ConnectionManager.SendToUser(ctx, apply.SenderId, msg)
-			if err != nil {
-				s.svcCtx.TelemetryBus.Publish(err)
-			}
+			s.svcCtx.ConnectionManager.SendToUsersLocal(s.ctx, members, msg)
 		}
 	}
-
-	return nil
 }

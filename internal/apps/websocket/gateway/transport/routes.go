@@ -3,7 +3,6 @@ package transport
 import (
 	"net/http"
 
-	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/server"
 	"IM2/internal/middleware"
 
@@ -12,7 +11,7 @@ import (
 
 // RegisterHandlers 注册 HTTP 处理器
 func RegisterHandlers(s *rest.Server, serverCtx *server.ServiceContext) {
-	wsHandler := NewWSHandler(serverCtx, protocol.NewProtoCodec())
+	wsHandler := NewWSHandler(serverCtx)
 	s.Use(middleware.WithJwtAuth(serverCtx.TokenManager))
 	s.Use(middleware.WithWsSessionAuth(serverCtx.TokenManager))
 	s.AddRoutes(

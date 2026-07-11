@@ -7,9 +7,9 @@ import (
 	"IM2/internal/apps/websocket/gateway/config"
 	"IM2/internal/apps/websocket/gateway/connection"
 	"IM2/internal/apps/websocket/gateway/dispatch"
-	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/internal/apps/websocket/gateway/server"
 
+	"IM2/pkg/logger"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/resultx"
 	tokenmanager "IM2/pkg/tokenManager"
@@ -27,14 +27,13 @@ var upgrader = websocket.Upgrader{
 // WSHandler WebSocket 处理器
 type WSHandler struct {
 	svcCtx *server.ServiceContext
-	codec  protocol.Codec
 }
 
 // NewWSHandler 创建 WebSocket 处理器
-func NewWSHandler(svcCtx *server.ServiceContext, codec protocol.Codec) *WSHandler {
+func NewWSHandler(svcCtx *server.ServiceContext) *WSHandler {
 	upgrader.ReadBufferSize = svcCtx.Config.WebSocket.ReadBufferSize
 	upgrader.WriteBufferSize = svcCtx.Config.WebSocket.WriteBufferSize
-	return &WSHandler{svcCtx: svcCtx, codec: codec}
+	return &WSHandler{svcCtx: svcCtx}
 }
 
 // Handle 处理 WebSocket 连接
@@ -54,10 +53,10 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// 创建连接
-	conn := connection.NewConnection(userID, wsConn, h.codec, h.svcCtx.Config.WebSocket.Version)
+	conn := connection.NewConnection(userID, wsConn, h.svcCtx.Config.WebSocket.Version)
 	// 注册连接
 	if err := h.svcCtx.ConnectionManager.AddConnection(conn.UserID, conn); err != nil {
-		h.svcCtx.TelemetryBus.Publish(err)
+		logger.Errorf("[WSHandler] add connection for user %d failed: %v", userID, err)
 		conn.SendError(&transport.ErrorMessage{
 			ErrorCode: int32(transport.ErrorCode_ERR_INTERNAL_SERVER),
 			ErrorMsg:  "与服务器建立连接失败",
@@ -70,7 +69,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// 若只 Close 不摘除 map 条目，路由心跳会把该用户重新注册到本节点，
 	// 造成"路由指向本节点但连接已死"的静默漏推。
 	if err := h.svcCtx.Router.RegisterUser(ctx, conn.UserID); err != nil {
-		h.svcCtx.TelemetryBus.Publish(err)
+		logger.Errorf("[WSHandler] register route for user %d failed: %v", userID, err)
 		conn.SendError(&transport.ErrorMessage{
 			ErrorCode: int32(transport.ErrorCode_ERR_INTERNAL_SERVER),
 			ErrorMsg:  "与服务器建立连接失败",

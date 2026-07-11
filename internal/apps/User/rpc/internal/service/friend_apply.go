@@ -5,12 +5,10 @@ import (
 	"time"
 
 	model "IM2/internal/model"
-	"IM2/pkg/logger"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
 
-	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -46,11 +44,7 @@ func (s *UserService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 		friendRecord, _ := s.svcCtx.FriendDAO.FindFriendRelation(ctx, fromUserID, toUserID)
 
 		msg, _ := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_ADD, friendRecord, toUserID)
-		data, _ := proto.Marshal(msg)
-		err = s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
-		if err != nil {
-			logger.Error(err.Error())
-		}
+		s.svcCtx.Notifier.Publish(ctx, msg)
 		return nil, friendRecord, nil
 	}
 
@@ -79,11 +73,7 @@ func (s *UserService) NewFriendApply(ctx context.Context, fromUserID, toUserID u
 	}
 
 	msg, _ := util.ConvertFriendApplyToWSMessage(apply, toUserID)
-	data, _ := proto.Marshal(msg)
-	err = s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
-	if err != nil {
-		logger.Error(err.Error())
-	}
+	s.svcCtx.Notifier.Publish(ctx, msg)
 
 	return apply, nil, nil
 }
@@ -136,11 +126,7 @@ func (s *UserService) HandleFriendApply(ctx context.Context, applyID, operatorID
 	apply.RejectReason = rejectReason
 
 	msg, _ := util.ConvertFriendApplyToWSMessage(apply, apply.FromUserID)
-	data, _ := proto.Marshal(msg)
-	err = s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data)
-	if err != nil {
-		logger.Error(err.Error())
-	}
+	s.svcCtx.Notifier.Publish(ctx, msg)
 	return apply, nil
 }
 

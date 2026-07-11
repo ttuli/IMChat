@@ -10,9 +10,9 @@ import (
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/user"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -28,10 +28,9 @@ const (
 
 // Connection WebSocket 连接
 type Connection struct {
-	UserID   uint64
-	Conn     *websocket.Conn
-	Codec    protocol.Codec
-	Version  int32
+	UserID  uint64
+	Conn    *websocket.Conn
+	Version int32
 
 	sendChan  chan []byte
 	closeChan chan struct{}
@@ -41,11 +40,10 @@ type Connection struct {
 }
 
 // NewConnection 创建新连接
-func NewConnection(userID uint64, conn *websocket.Conn, codec protocol.Codec, version int32) *Connection {
+func NewConnection(userID uint64, conn *websocket.Conn, version int32) *Connection {
 	return &Connection{
 		UserID:    userID,
 		Conn:      conn,
-		Codec:     codec,
 		Version:   version,
 		sendChan:  make(chan []byte, 256),
 		closeChan: make(chan struct{}),
@@ -55,7 +53,7 @@ func NewConnection(userID uint64, conn *websocket.Conn, codec protocol.Codec, ve
 // Send 发送消息
 func (c *Connection) Send(msg *transport.WSMessage) error {
 	msg.Version = c.Version
-	data, err := c.Codec.Encode(msg)
+	data, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}
@@ -145,7 +143,7 @@ func (c *Connection) ReadPump(ctx context.Context, handler func(*transport.WSMes
 		}
 
 		msg := &transport.WSMessage{}
-		if err := c.Codec.Decode(data, msg); err != nil {
+		if err := proto.Unmarshal(data, msg); err != nil {
 			logx.Errorf("[Connection] user %d decode error: %v", c.UserID, err)
 			continue
 		}

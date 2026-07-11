@@ -12,7 +12,6 @@ import (
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
 
-	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -75,19 +74,14 @@ func (s *GroupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 
 	// 5. 直写路由表：建群时成员列表完整，全量写入，
 	// 使后续群消息扇出/通知投递无需回源即可命中（失败由读路径回源兜底）
-	if err := s.svcCtx.Routes.ReplaceGroupMembers(ctx, groupID, append([]uint64{ownerID}, targetIds...), 0); err != nil {
+	allMemberIDs := append([]uint64{ownerID}, targetIds...)
+	if err := s.svcCtx.Routes.ReplaceGroupMembers(ctx, groupID, allMemberIDs, 0); err != nil {
 		logger.Errorf("[CreateGroup] write group %d route failed: %v", groupID, err)
 	}
 
-	// 6. 发送群创建通知
+	// 6. 发送群创建通知（成员列表已知，随消息携带定向投递）
 	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
-	if wsMsg != nil {
-		bytes, _ := proto.Marshal(wsMsg)
-		err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
-		if err != nil {
-			logger.Errorf("发送nats失败: %v", err)
-		}
-	}
+	s.publishGroupNotify(wsMsg, allMemberIDs)
 
 	return group, nil
 }
@@ -165,7 +159,10 @@ func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 		return xerr.New(transport.ErrorCode_ERR_FORBIDDEN, "只有群主可以解散群")
 	}
 
-	// 2. 在事务中删除所有成员和群组
+	// 2. 成员数据随解散删除：先取成员快照，供解散通知定向投递
+	memberIDs := s.groupMemberSnapshot(ctx, groupID)
+
+	// 3. 在事务中删除所有成员和群组
 	if err := s.svcCtx.GroupDAO.Transaction(ctx, func(tx *gorm.DB) error {
 		if err := tx.Where("group_id = ?", groupID).Delete(&model.GroupMember{}).Error; err != nil {
 			return err
@@ -175,20 +172,14 @@ func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "解散群组失败")
 	}
 
-	// 3. 直写路由表：删除群成员集合
+	// 4. 直写路由表：删除群成员集合
 	if err := s.svcCtx.Routes.DeleteGroup(ctx, groupID); err != nil {
 		logger.Errorf("[DismissGroup] delete group %d route failed: %v", groupID, err)
 	}
 
-	// 4. 发送群解散通知
+	// 5. 发送群解散通知
 	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
-	if wsMsg != nil {
-		bytes, _ := proto.Marshal(wsMsg)
-		err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
-		if err != nil {
-			logger.Errorf("发送nats失败: %v", err)
-		}
-	}
+	s.publishGroupNotify(wsMsg, memberIDs)
 
 	return nil
 }

@@ -12,11 +12,11 @@ import (
 	"IM2/internal/apps/Message/rpc/internal/members"
 	"IM2/internal/apps/Message/rpc/internal/seq"
 	"IM2/internal/interceptor"
+	nats_util "IM2/pkg/nats"
 	"IM2/pkg/redisx"
 	"IM2/pkg/routing"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/nats-io/nats.go"
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
@@ -24,8 +24,7 @@ type ServiceContext struct {
 	Config        config.Config
 	MessageDAO    *dao.MessageDAO
 	SessionDAO    *dao.SessionDAO
-	NatsConn      *nats.Conn
-	Js            nats.JetStreamContext
+	Nats          *nats_util.Client
 	Redis         *redisx.Client
 	SnowflakeNode *snowflake.Node
 	SeqAllocator  *seq.Allocator
@@ -40,16 +39,17 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		c.DAO.MessageDAO.UnreadCountLimit = 100
 	}
 
-	conn, err := nats.Connect(c.Listener.Url)
-	if err != nil {
-		panic(err)
-	}
-	js, err := conn.JetStream()
+	nc, err := nats_util.NewClient(c.Listener.Url)
 	if err != nil {
 		panic(err)
 	}
 
 	redisClient, err := redisx.NewClient(c.DAO.SessionDAO.Redisx)
+	if err != nil {
+		panic(err)
+	}
+
+	routeRedisClient, err := redisx.NewClient(c.RouteStore)
 	if err != nil {
 		panic(err)
 	}
@@ -78,15 +78,14 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	groupRpc := grouprpc.NewGroupRpc(zrpc.MustNewClient(c.GroupRpc,
 		zrpc.WithUnaryClientInterceptor(interceptor.ClientPureErrorInterceptor)))
 	// 路由表与业务缓存共用同一 Redis 实例（网关写入的 ws:route/ws:node 键在此实例上）
-	routes := routing.NewTable(redisClient)
+	routes := routing.NewTable(routeRedisClient)
 	memberProvider := members.NewProvider(routes, groupRpc)
 	// SeqSyncer 更新群会话时间线时经此获取成员，避免按 user_session 表反查（含退群用户）
 	ssDao.SetGroupMemberSource(memberProvider.GetMemberIDs)
 
 	return &ServiceContext{
 		Config:        c,
-		NatsConn:      conn,
-		Js:            js,
+		Nats:          nc,
 		MessageDAO:    msgDao,
 		SessionDAO:    ssDao,
 		Redis:         redisClient,

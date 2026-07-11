@@ -5,16 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"IM2/internal/apps/websocket/gateway/internal/protocol"
-	"IM2/internal/apps/websocket/gateway/internal/telemetry"
+	"IM2/pkg/logger"
+	nats_util "IM2/pkg/nats"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/user"
 	"IM2/pkg/routing"
-
-	"github.com/nats-io/nats.go"
-	"fmt"
-
-	"IM2/pkg/logger"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -26,19 +21,17 @@ const routeHeartbeatInterval = 5 * time.Minute
 // Router 消息路由器：路由表数据委托 routing 包维护（Redis），
 // 本层负责节点身份、心跳编排与跨节点通知（NATS）。
 type Router struct {
-	table        *routing.Table
-	nodeID       string
-	publisher    *Publisher
-	telemetryBus *telemetry.Bus
+	table  *routing.Table
+	nodeID string
+	nats   *nats_util.Client
 }
 
 // NewRouter 创建路由器
-func NewRouter(table *routing.Table, nc *nats.Conn, codec protocol.Codec, nodeID string, bus *telemetry.Bus, subjectConfig SubjectConfig) *Router {
+func NewRouter(table *routing.Table, nats *nats_util.Client, nodeID string) *Router {
 	return &Router{
-		table:        table,
-		nodeID:       nodeID,
-		publisher:    NewPublisher(nc, codec, nodeID, subjectConfig),
-		telemetryBus: bus,
+		table:  table,
+		nodeID: nodeID,
+		nats:   nats,
 	}
 }
 
@@ -48,16 +41,14 @@ func NewRouter(table *routing.Table, nc *nats.Conn, codec protocol.Codec, nodeID
 func (r *Router) RegisterUser(ctx context.Context, userID uint64) error {
 	oldNode, err := r.table.RegisterUser(ctx, userID, r.nodeID)
 	if err != nil {
-		r.telemetryBus.Publish(err)
+		logger.Errorf("[Router] register user %d failed: %v", userID, err)
 		return err
 	}
 
 	if oldNode != "" {
 		// 旧节点可能仍持有该用户的连接：发内部踢下线通知让其清理。
 		// 通知丢失时由路由心跳的冲突检测兜底。
-		if pubErr := r.publisher.PublishToNode(ctx, oldNode, buildKickoffMsg(userID)); pubErr != nil {
-			r.telemetryBus.Publish(fmt.Errorf("[Router] notify old node %s to kick user %d failed: %w", oldNode, userID, pubErr))
-		}
+		r.nats.PublishToNode(oldNode, buildKickoffMsg(userID))
 	}
 
 	logger.Infof("[Router] registered user %d on node %s (old=%s)", userID, r.nodeID, oldNode)
@@ -84,7 +75,7 @@ func buildKickoffMsg(userID uint64) *transport.WSMessage {
 // UnregisterUser 取消用户路由（仅当路由仍指向本节点时删除）
 func (r *Router) UnregisterUser(ctx context.Context, userID uint64) error {
 	if err := r.table.UnregisterUser(ctx, userID, r.nodeID); err != nil {
-		r.telemetryBus.Publish(err)
+		logger.Errorf("[Router] unregister user %d failed: %v", userID, err)
 		return err
 	}
 	logger.Infof("[Router] unregistered user %d from node %s", userID, r.nodeID)
@@ -95,37 +86,17 @@ func (r *Router) UnregisterUser(ctx context.Context, userID uint64) error {
 func (r *Router) GetUserNode(ctx context.Context, userID uint64) (string, error) {
 	nodeID, err := r.table.GetUserNode(ctx, userID)
 	if err != nil {
-		r.telemetryBus.Publish(err)
+		logger.Errorf("[Router] get node for user %d failed: %v", userID, err)
 		return "", err
 	}
 	return nodeID, nil
-}
-
-// RouteMessage 路由消息到目标用户
-func (r *Router) RouteMessage(ctx context.Context, targetUserID uint64, msg *transport.WSMessage) error {
-	// 获取目标用户所在节点
-	targetNodeID, err := r.GetUserNode(ctx, targetUserID)
-	if err != nil {
-		return err
-	}
-	if targetNodeID == "" {
-
-		return nil
-	}
-
-	// 如果在本节点，返回错误让调用者处理本地发送
-	if targetNodeID == r.nodeID {
-		return errors.New("target user is on local node")
-	}
-
-	return r.publisher.PublishToNode(ctx, targetNodeID, msg)
 }
 
 // RegisterNode 注册节点信息并开始心跳
 func (r *Router) RegisterNode(ctx context.Context) error {
 	if err := r.table.RegisterNode(ctx, r.nodeID); err != nil {
 		if !errors.Is(err, routing.ErrNodeAlreadyRegistered) {
-			r.telemetryBus.Publish(err)
+			logger.Errorf("[Router] register node %s failed: %v", r.nodeID, err)
 		}
 		return err
 	}
@@ -136,7 +107,7 @@ func (r *Router) RegisterNode(ctx context.Context) error {
 // NodeHeartbeat 节点心跳续期
 func (r *Router) NodeHeartbeat(ctx context.Context) error {
 	if err := r.table.RenewNode(ctx, r.nodeID); err != nil {
-		r.telemetryBus.Publish(err)
+		logger.Errorf("[Router] renew node %s heartbeat failed: %v", r.nodeID, err)
 		return err
 	}
 	return nil
@@ -153,7 +124,7 @@ func (r *Router) StartHeartbeat(ctx context.Context) {
 				return
 			case <-ticker.C:
 				if err := r.NodeHeartbeat(ctx); err != nil {
-					r.telemetryBus.Publish(fmt.Errorf("[Router] heartbeat failed: %w", err))
+					logger.Errorf("[Router] heartbeat failed: %v", err)
 				}
 			}
 		}
@@ -166,7 +137,7 @@ func (r *Router) StartHeartbeat(ctx context.Context) {
 func (r *Router) RenewUserRoute(ctx context.Context, userID uint64) (owned bool, err error) {
 	owned, err = r.table.RenewUser(ctx, userID, r.nodeID)
 	if err != nil {
-		r.telemetryBus.Publish(err)
+		logger.Errorf("[Router] renew route for user %d failed: %v", userID, err)
 		return false, err
 	}
 	return owned, nil
@@ -188,7 +159,7 @@ func (r *Router) StartRouteHeartbeat(ctx context.Context, getActiveUserIDs func(
 				for _, uid := range userIDs {
 					owned, err := r.RenewUserRoute(ctx, uid)
 					if err != nil {
-						r.telemetryBus.Publish(fmt.Errorf("[Router] renew route for user %d failed: %w", uid, err))
+						logger.Errorf("[Router] renew route for user %d failed: %v", uid, err)
 						continue
 					}
 					if !owned && onRouteConflict != nil {
@@ -205,7 +176,7 @@ func (r *Router) StartRouteHeartbeat(ctx context.Context, getActiveUserIDs func(
 // UnregisterNode 取消节点注册
 func (r *Router) UnregisterNode(ctx context.Context) error {
 	if err := r.table.UnregisterNode(ctx, r.nodeID); err != nil {
-		r.telemetryBus.Publish(err)
+		logger.Errorf("[Router] unregister node %s failed: %v", r.nodeID, err)
 		return err
 	}
 	logger.Infof("[Router] unregistered node %s", r.nodeID)

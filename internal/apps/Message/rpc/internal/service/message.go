@@ -170,14 +170,7 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 		logger.Errorf("Failed to create WSMessage: %v", err)
 		return nil
 	}
-	payload, err := proto.Marshal(ws)
-	if err != nil {
-		logger.Errorf("Failed to marshal WSMessage: %v", err)
-		return nil
-	}
-	if err := s.svcCtx.NatsConn.Publish(s.svcCtx.Config.Listener.BroadcastSubject, payload); err != nil {
-		logger.Errorf("Failed to publish NATS message: %v", err)
-	}
+	s.svcCtx.Nats.Broadcast(ws)
 
 	return nil
 }

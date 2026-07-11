@@ -15,6 +15,12 @@ const (
 
 	// streamMaxBytes 物理存储上限，防止长时间积压耗尽磁盘（超限后按最旧丢弃）。
 	streamMaxBytes = 4 * 1024 * 1024 * 1024 // 4 GiB
+
+	// NATS 统一 Subject 与前缀定义
+	NodeSubjectPrefix = "ws.node."
+	BroadcastSubject  = "ws.broadcast"
+	DBSubject         = "ws.db"
+	DLQSubject        = "ws.dlq"
 )
 
 // InitStream 创建或校准 WS_MESSAGES Stream。

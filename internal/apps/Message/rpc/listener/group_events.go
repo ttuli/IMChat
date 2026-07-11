@@ -7,11 +7,11 @@ import (
 	"IM2/internal/apps/Message/rpc/internal/service"
 	"IM2/internal/model"
 	"IM2/pkg/logger"
+	nats_util "IM2/pkg/nats"
 	"IM2/pkg/proto/social"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 
-	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -24,11 +24,7 @@ import (
 // user_session 有消息路径的 EnsureUserSessions 存量补偿。
 // 所有 Message 实例都会收到该广播，操作均幂等，多实例重复执行无副作用。
 func (l *NatsListener) subscribeGroupEvents() error {
-	sub, err := l.svcCtx.NatsConn.Subscribe(l.svcCtx.Config.Listener.BroadcastSubject, func(natsMsg *nats.Msg) {
-		var ws transport.WSMessage
-		if err := proto.Unmarshal(natsMsg.Data, &ws); err != nil {
-			return
-		}
+	return l.svcCtx.Nats.Subscribe(nats_util.BroadcastSubject, func(ws *transport.WSMessage) {
 		if ws.Type != transport.MessageType_GROUP_OP_NOTIFICATION {
 			return
 		}
@@ -39,11 +35,6 @@ func (l *NatsListener) subscribeGroupEvents() error {
 		}
 		l.handleGroupEvent(&notify)
 	})
-	if err != nil {
-		return err
-	}
-	l.groupEventSub = sub
-	return nil
 }
 
 // handleGroupEvent 处理单条群操作通知
@@ -117,15 +108,5 @@ func (l *NatsListener) syncGroupRoute(ctx context.Context, notify *social.GroupN
 	}
 	if err != nil {
 		logger.Errorf("[NatsListener] sync group %d route failed: %v", groupID, err)
-	}
-}
-
-// unsubscribeGroupEvents 退订群操作通知
-func (l *NatsListener) unsubscribeGroupEvents() {
-	if l.groupEventSub != nil {
-		if err := l.groupEventSub.Unsubscribe(); err != nil && err != nats.ErrConnectionClosed {
-			logger.Errorf("[NatsListener] unsubscribe group events failed: %v", err)
-		}
-		l.groupEventSub = nil
 	}
 }

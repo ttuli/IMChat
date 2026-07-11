@@ -106,6 +106,18 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取签名失败")
 	}
 
+	// 先算 callback，再构建 policy，把 callback 作为精确匹配条件写入 conditions，
+	// 客户端一旦替换 callback blob 或篡改 callbackBody 中的 id 都会被 OSS 表单校验拒绝
+	var callbackParam types.CallbackParam
+	callbackParam.CallbackUrl = callbackUrl
+	callbackParam.CallbackBody = fmt.Sprintf("file_name=${object}&size=${size}&mime_type=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}&id=%v&file_type=%v", id, req.FileType)
+	callbackParam.CallbackBodyType = "application/x-www-form-urlencoded"
+	callback_str, err := json.Marshal(callbackParam)
+	if err != nil {
+		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取签名失败")
+	}
+	callbackBase64 := base64.StdEncoding.EncodeToString(callback_str)
+
 	// 构建policy
 	utcTime := time.Now().UTC()
 	date := utcTime.Format("20060102")
@@ -118,6 +130,7 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 			map[string]string{"x-oss-credential": fmt.Sprintf("%v/%v/%v/%v/aliyun_v4_request", *cred.AccessKeyId, date, region, product)},
 			map[string]string{"x-oss-date": utcTime.Format("20060102T150405Z")},
 			map[string]string{"x-oss-security-token": *cred.SecurityToken},
+			map[string]string{"callback": callbackBase64},
 		},
 	}
 
@@ -152,15 +165,6 @@ func (l *GetPostSignatureLogic) GetPostSignature(req *types.GetPostSignatureReq)
 	h := hmac.New(hmacHash, h4Key)
 	io.WriteString(h, stringToSign)
 	signature := hex.EncodeToString(h.Sum(nil))
-	var callbackParam types.CallbackParam
-	callbackParam.CallbackUrl = callbackUrl
-	callbackParam.CallbackBody = fmt.Sprintf("file_name=${object}&size=${size}&mime_type=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}&id=%v&file_type=%v", id, req.FileType)
-	callbackParam.CallbackBodyType = "application/x-www-form-urlencoded"
-	callback_str, err := json.Marshal(callbackParam)
-	if err != nil {
-		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_INTERNAL_SERVER, "获取签名失败")
-	}
-	callbackBase64 := base64.StdEncoding.EncodeToString(callback_str)
 	// 构建返回给前端的表单
 	policyToken := &types.PolicyToken{
 		Policy:               stringToSign,

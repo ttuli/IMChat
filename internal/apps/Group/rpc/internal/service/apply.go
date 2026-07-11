@@ -11,7 +11,6 @@ import (
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
 
-	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -49,11 +48,7 @@ func (s *GroupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 		s.ensureGroupRoute(ctx, groupID, fromUserID)
 
 		msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
-		bytes, _ := proto.Marshal(msg)
-		err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
-		if err != nil {
-			logger.Errorf("发送nats失败: %v", err)
-		}
+		s.publishGroupNotify(msg, s.groupMemberSnapshot(ctx, groupID))
 
 		return nil, member, nil
 	}
@@ -92,11 +87,7 @@ func (s *GroupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 		}
 		if len(targetIDs) > 0 {
 			msg, _ := util.ConvertGroupApplyToWSMessage(apply, targetIDs)
-			bytes, _ := proto.Marshal(msg)
-			err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
-			if err != nil {
-				logger.Errorf("向管理员发送nats消息失败: %v", err)
-			}
+			s.svcCtx.Notifier.Publish(ctx, msg)
 		}
 	}
 
@@ -153,12 +144,7 @@ func (s *GroupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 			s.ensureGroupRoute(ctx, apply.GroupID, apply.FromUserID)
 
 			msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
-			bytes, _ := proto.Marshal(msg)
-			err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
-			if err != nil {
-				logger.Errorf("发送nats失败: %v", err)
-			}
-
+			s.publishGroupNotify(msg, s.groupMemberSnapshot(ctx, apply.GroupID))
 		}
 	}
 
@@ -187,11 +173,7 @@ func (s *GroupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 
 		if len(targetIDs) > 0 {
 			msg, _ := util.ConvertGroupApplyToWSMessage(apply, targetIDs)
-			bytes, _ := proto.Marshal(msg)
-			err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, bytes)
-			if err != nil {
-				logger.Errorf("向相关用户发送nats消息失败: %v", err)
-			}
+			s.svcCtx.Notifier.Publish(ctx, msg)
 		}
 	}
 

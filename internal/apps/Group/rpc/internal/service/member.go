@@ -11,7 +11,6 @@ import (
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
 
-	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -109,28 +108,25 @@ func (s *GroupService) RemoveMember(ctx context.Context, groupID, operatorID, us
 		return xerr.New(transport.ErrorCode_ERR_FORBIDDEN, "无权移除成员")
 	}
 
-	// 4. 移除成员
+	// 4. 摘除前快照成员列表供通知定向投递：被踢用户也收到本次通知
+	memberIDs := s.groupMemberSnapshot(ctx, groupID)
+
+	// 5. 移除成员
 	if err := s.svcCtx.GroupDAO.DeleteMember(ctx, groupID, userID); err != nil {
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "移除成员失败")
 	}
 
-	// 5. 直写路由表：先于通知发布摘除路由，被踢用户不再收到该群后续消息
+	// 6. 直写路由表：先于通知发布摘除路由，被踢用户不再收到该群后续消息
 	if err := s.svcCtx.Routes.RemoveGroupMembers(ctx, groupID, userID); err != nil {
 		logger.Errorf("[RemoveMember] remove group %d route member %d failed: %v", groupID, userID, err)
 	}
 
-	// 6. 发送群组通知（踢人）
+	// 7. 发送群组通知（踢人）
 	wsMsg := util.NewGroupOperationMsg(
 		social.GroupOperationType_GROUP_OP_KICK,
 		groupID, []uint64{userID}, operatorID, nil,
 	)
-	if wsMsg != nil {
-		if b, err := proto.Marshal(wsMsg); err == nil {
-			if err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, b); err != nil {
-				logger.Errorf("[RemoveMember] publish nats failed: %v", err)
-			}
-		}
-	}
+	s.publishGroupNotify(wsMsg, memberIDs)
 
 	return nil
 }
@@ -150,28 +146,25 @@ func (s *GroupService) LeaveGroup(ctx context.Context, groupID, userID uint64) e
 		return xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "群主不能退出群聊，请先转让群主或解散群")
 	}
 
-	// 3. 删除成员
+	// 3. 摘除前快照成员列表供通知定向投递
+	memberIDs := s.groupMemberSnapshot(ctx, groupID)
+
+	// 4. 删除成员
 	if err := s.svcCtx.GroupDAO.DeleteMember(ctx, groupID, userID); err != nil {
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "退出群聊失败")
 	}
 
-	// 4. 直写路由表：摘除该成员的群路由
+	// 5. 直写路由表：摘除该成员的群路由
 	if err := s.svcCtx.Routes.RemoveGroupMembers(ctx, groupID, userID); err != nil {
 		logger.Errorf("[LeaveGroup] remove group %d route member %d failed: %v", groupID, userID, err)
 	}
 
-	// 5. 发送群组通知（主动退群）
+	// 6. 发送群组通知（主动退群）
 	wsMsg := util.NewGroupOperationMsg(
 		social.GroupOperationType_GROUP_OP_LEAVE,
 		groupID, []uint64{userID}, userID, nil,
 	)
-	if wsMsg != nil {
-		if b, err := proto.Marshal(wsMsg); err == nil {
-			if err = s.svcCtx.Nats.Publish(s.svcCtx.Config.NATS.BroadcastSubject, b); err != nil {
-				logger.Errorf("[LeaveGroup] publish nats failed: %v", err)
-			}
-		}
-	}
+	s.publishGroupNotify(wsMsg, memberIDs)
 
 	return nil
 }

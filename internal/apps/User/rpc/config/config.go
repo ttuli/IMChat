@@ -18,10 +18,12 @@ type Config struct {
 	}
 
 	NATS struct {
-		Url                   string
-		BroadcastSubject      string
-		QueueBroadcastSubject string
+		Url string
 	}
+
+	// RouteStore 集群路由表 Redis（须与网关/Message 服务指向同一实例）。
+	// 缺省时复用 UserDAO.RedisSource。
+	RouteStore redis.RedisConf `json:",optional"`
 
 	IDRpc      zrpc.RpcClientConf
 	MessageRpc zrpc.RpcClientConf

@@ -54,8 +54,6 @@ type NatsListener struct {
 	wg        sync.WaitGroup
 	dlq       DLQHandler
 	workerChs []chan *pendingMsg
-	// groupEventSub 群操作通知订阅（维护成员缓存与 user_session）
-	groupEventSub *nats.Subscription
 }
 
 func NewNatsListener(c config.Config, svcCtx *svc.ServiceContext) *NatsListener {
@@ -64,14 +62,16 @@ func NewNatsListener(c config.Config, svcCtx *svc.ServiceContext) *NatsListener 
 		svcCtx: svcCtx,
 		ctx:    ctx,
 		cancel: cancel,
-		dlq:    NewNatsDLQHandler(svcCtx.NatsConn, svcCtx.Config.Listener.DLQSubject, nil),
+		dlq:    NewNatsDLQHandler(svcCtx.Nats.Conn(), nats_util.DLQSubject, nil),
 	}
 }
 
 func (l *NatsListener) Listen() error {
+	js := l.svcCtx.Nats.JetStream()
+
 	// Stream 只保留需要持久化重放的落库队列；
 	// 广播/节点 subject 走 core NATS，不纳入 Stream（避免无意义落盘）
-	err := nats_util.InitStream(l.svcCtx.Js, []string{l.svcCtx.Config.Listener.DBSubject})
+	err := nats_util.InitStream(js, []string{nats_util.DBSubject})
 	if err != nil {
 		return err
 	}
@@ -82,18 +82,18 @@ func (l *NatsListener) Listen() error {
 	}
 
 	// 检查并自动更新已存在的 Durable Consumer 配置，防止配置冲突（如 MaxDeliver 校验失败）
-	if info, infoErr := l.svcCtx.Js.ConsumerInfo("WS_MESSAGES", durableConsumerName); infoErr == nil {
+	if info, infoErr := js.ConsumerInfo("WS_MESSAGES", durableConsumerName); infoErr == nil {
 		if info.Config.MaxDeliver != maxDeliver {
 			cfg := info.Config
 			cfg.MaxDeliver = maxDeliver
-			if _, updateErr := l.svcCtx.Js.UpdateConsumer("WS_MESSAGES", &cfg); updateErr != nil {
-				_ = l.svcCtx.Js.DeleteConsumer("WS_MESSAGES", durableConsumerName)
+			if _, updateErr := js.UpdateConsumer("WS_MESSAGES", &cfg); updateErr != nil {
+				_ = js.DeleteConsumer("WS_MESSAGES", durableConsumerName)
 			}
 		}
 	}
 
 	// Pull Consumer：多个服务实例共享同一个 Durable，NATS 自动负载均衡
-	sub, err := l.svcCtx.Js.PullSubscribe(l.svcCtx.Config.Listener.DBSubject, durableConsumerName, nats.MaxDeliver(maxDeliver))
+	sub, err := js.PullSubscribe(nats_util.DBSubject, durableConsumerName, nats.MaxDeliver(maxDeliver))
 	if err != nil {
 		return err
 	}
@@ -286,27 +286,17 @@ func (l *NatsListener) process(m *protosvc.MessageSend) error {
 		return nil
 	}
 
-	deliverMsgData, err := proto.Marshal(deliverMsg)
-	if err != nil {
-		logger.Errorf("[NatsListener] marshal deliver message failed: %v", err)
-		return nil // 已持久化，不触发重投
-	}
-
 	// 单聊：查路由表精准投递
 	node, status := l.lookupRoute(ctx, m.Target)
 	switch status {
 	case routing.RouteOnline:
-		if pubErr := l.svcCtx.NatsConn.Publish(l.nodeSubject(node), deliverMsgData); pubErr != nil {
-			logger.Error(pubErr.Error())
-		}
+		l.svcCtx.Nats.PublishToNode(node, deliverMsg)
 	case routing.RouteOffline:
 		// 确认不在线：只存不推，上线后由客户端拉取
 	default:
-		// 路由状态不可信（Redis 异常 / 路由指向已死节点 / 未配置精准投递）：
+		// 路由状态不可信（Redis 异常 / 路由指向已死节点）：
 		// 广播兜底，由持有连接的网关节点完成本地投递，避免静默漏推
-		if pubErr := l.svcCtx.NatsConn.Publish(l.svcCtx.Config.Listener.BroadcastSubject, deliverMsgData); pubErr != nil {
-			logger.Error(pubErr.Error())
-		}
+		l.svcCtx.Nats.Broadcast(deliverMsg)
 	}
 	return nil
 }
@@ -316,7 +306,7 @@ func (l *NatsListener) process(m *protosvc.MessageSend) error {
 // 流程：权威成员列表（Redis 缓存 + Group RPC 回源）→ 排除发送者 → 批量路由查询 →
 // 按网关节点聚合，每个节点只发一条消息，deliver_to 携带该节点需投递的用户列表。
 //   - 确认离线的成员：只存不推，上线后由客户端按会话 seq 增量拉取
-//   - 路由不可信（Redis 异常/节点已死/未配置精准投递）的成员：广播兜底（仍带 deliver_to，
+//   - 路由不可信（Redis 异常/节点已死）的成员：广播兜底（仍带 deliver_to，
 //     各网关按本地连接过滤投递，不依赖网关侧群成员映射）
 //   - 成员列表获取失败：退化为旧的全节点广播（不带 deliver_to，网关走本地群成员映射），
 //     保证 Group RPC 故障时不静默丢投
@@ -325,7 +315,7 @@ func (l *NatsListener) deliverGroupMessage(ctx context.Context, m *protosvc.Mess
 	memberIDs, err := l.svcCtx.Members.GetMemberIDs(ctx, groupID)
 	if err != nil || len(memberIDs) == 0 {
 		logger.Errorf("[NatsListener] get members of group %d failed (broadcast fallback): %v", groupID, err)
-		l.publishDeliverMsg(l.svcCtx.Config.Listener.BroadcastSubject, deliverMsg)
+		l.svcCtx.Nats.Broadcast(deliverMsg)
 		return
 	}
 
@@ -344,12 +334,6 @@ func (l *NatsListener) deliverGroupMessage(ctx context.Context, m *protosvc.Mess
 		return
 	}
 
-	// 未配置精准投递：所有接收者广播兜底（带 deliver_to，网关按本地连接过滤）
-	if l.svcCtx.Config.Listener.NodeSubjectPrefix == "" {
-		l.publishDeliverMsg(l.svcCtx.Config.Listener.BroadcastSubject, withDeliverTo(deliverMsg, receivers))
-		return
-	}
-
 	// 批量路由查询（含节点存活校验）；整体失败时全部接收者广播兜底，不漏投
 	nodeTargets, fallback, err := l.svcCtx.Routes.LookupUsers(ctx, receivers)
 	if err != nil {
@@ -357,10 +341,10 @@ func (l *NatsListener) deliverGroupMessage(ctx context.Context, m *protosvc.Mess
 		nodeTargets, fallback = nil, receivers
 	}
 	for node, uids := range nodeTargets {
-		l.publishDeliverMsg(l.nodeSubject(node), withDeliverTo(deliverMsg, uids))
+		l.svcCtx.Nats.PublishToNode(node, withDeliverTo(deliverMsg, uids))
 	}
 	if len(fallback) > 0 {
-		l.publishDeliverMsg(l.svcCtx.Config.Listener.BroadcastSubject, withDeliverTo(deliverMsg, fallback))
+		l.svcCtx.Nats.Broadcast(withDeliverTo(deliverMsg, fallback))
 	}
 }
 
@@ -377,18 +361,6 @@ func withDeliverTo(msg *transport.WSMessage, targets []uint64) *transport.WSMess
 		SessionId:       msg.SessionId,
 		MsgSeq:          msg.MsgSeq,
 		DeliverTo:       targets,
-	}
-}
-
-// publishDeliverMsg 序列化并发布投递消息，失败仅记录（消息已持久化，靠拉取兜底）
-func (l *NatsListener) publishDeliverMsg(subject string, msg *transport.WSMessage) {
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		logger.Errorf("[NatsListener] marshal deliver message failed: %v", err)
-		return
-	}
-	if err := l.svcCtx.NatsConn.Publish(subject, data); err != nil {
-		logger.Error(err.Error())
 	}
 }
 
@@ -409,34 +381,20 @@ func (l *NatsListener) publishPersistAck(ctx context.Context, pack *message.Pers
 		SessionId:       pack.SessionId,
 		MsgSeq:          pack.Seq,
 	}
-	data, err := proto.Marshal(wsMsg)
-	if err != nil {
-		logger.Errorf("[NatsListener] marshal ack WSMessage failed: %v", err)
-		return
-	}
 
 	node, status := l.lookupRoute(ctx, pack.Target)
-	var subject string
 	switch status {
 	case routing.RouteOnline:
-		subject = l.nodeSubject(node)
+		l.svcCtx.Nats.PublishToNode(node, wsMsg)
 	case routing.RouteOffline:
 		// 发送方已断线，ACK 无投递意义；消息状态由其重连后拉取对齐
-		return
 	default:
-		subject = l.svcCtx.Config.Listener.BroadcastSubject
-	}
-	if pubErr := l.svcCtx.NatsConn.Publish(subject, data); pubErr != nil {
-		logger.Error(pubErr.Error())
+		l.svcCtx.Nats.Broadcast(wsMsg)
 	}
 }
 
 // lookupRoute 查询用户当前所在网关节点及路由可信度。
-// 未配置精准投递时视为路由不可信（走广播兜底）。
 func (l *NatsListener) lookupRoute(ctx context.Context, userID uint64) (string, routing.RouteStatus) {
-	if l.svcCtx.Config.Listener.NodeSubjectPrefix == "" {
-		return "", routing.RouteUnknown
-	}
 	node, status, err := l.svcCtx.Routes.LookupUser(ctx, userID)
 	if err != nil {
 		logger.Errorf("[NatsListener] lookup route for user %d failed: %v", userID, err)
@@ -444,16 +402,11 @@ func (l *NatsListener) lookupRoute(ctx context.Context, userID uint64) (string, 
 	return node, status
 }
 
-// nodeSubject 拼接网关节点专属 subject
-func (l *NatsListener) nodeSubject(nodeID string) string {
-	return l.svcCtx.Config.Listener.NodeSubjectPrefix + nodeID
-}
-
 // Stop 停止监听并释放资源：先停拉取，待 worker 处理完队列内消息后返回
 func (l *NatsListener) Stop() error {
-	l.unsubscribeGroupEvents()
+	l.svcCtx.Nats.Unsubscribe()
 	l.cancel()
 	l.wg.Wait()
-	// 注意：l.svcCtx.NatsConn 的生命周期现在由外层控制，不应在这里 Close
+	// 注意：l.svcCtx.Nats 的生命周期现在由外层控制，不应在这里 Close
 	return nil
 }

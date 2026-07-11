@@ -5,12 +5,10 @@ import (
 	"database/sql"
 
 	model "IM2/internal/model"
-	"IM2/pkg/logger"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
 
-	"github.com/gogo/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -64,12 +62,9 @@ func (s *UserService) DeleteFriend(ctx context.Context, userID, friendID uint64)
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询好友关系失败")
 	}
 
-	if msg, err := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_DELETED, friendRecord, userID); err == nil {
-		if data, err := proto.Marshal(msg); err == nil {
-			if err := s.svcCtx.NatsConn.Publish(s.svcCtx.Config.NATS.BroadcastSubject, data); err != nil {
-				logger.Error("DeleteFriend publish error: " + err.Error())
-			}
-		}
+	// 通知被删除的一方（操作方由 RPC 返回值感知）
+	if msg, err := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_DELETED, friendRecord, friendID); err == nil {
+		s.svcCtx.Notifier.Publish(ctx, msg)
 	}
 
 	return nil

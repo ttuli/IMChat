@@ -6,6 +6,7 @@ import (
 
 	"IM2/internal/apps/websocket/gateway/internal/protocol"
 	"IM2/pkg/logger"
+	nats_util "IM2/pkg/nats"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
@@ -42,7 +43,7 @@ func (h *Dispatcher) processMessage(msg *transport.WSMessage) error {
 	// 这样下游消费者可获取完整消息体（含图片尺寸、视频时长等），无需依赖 MessageSend 的固定格式
 	newMsg, err := repack()
 	if err != nil {
-		h.svcCtx.TelemetryBus.Publish(err)
+		logger.Errorf("[Dispatcher] repack message failed: %v", err)
 		h.conn.Send(protocol.NewAckMessage(base, message.AckStatus_ACK_STATUS_FAILED))
 		return err
 	}
@@ -60,18 +61,18 @@ func (h *Dispatcher) processMessage(msg *transport.WSMessage) error {
 	}
 	newMsgBytes, err := proto.Marshal(msgSend)
 	if err != nil {
-		h.svcCtx.TelemetryBus.Publish(err)
+		logger.Errorf("[Dispatcher] marshal message failed: %v", err)
 		h.conn.Send(protocol.NewAckMessage(base, message.AckStatus_ACK_STATUS_FAILED))
 		return err
 	}
 
 	dedupKey := fmt.Sprintf("%d:%s", base.FromUserId, base.ClientId)
-	if _, err := h.svcCtx.JetStream.Publish(
-		h.svcCtx.Config.Nats.DBSubject,
+	if _, err := h.svcCtx.Nats.JetStream().Publish(
+		nats_util.DBSubject,
 		newMsgBytes,
 		nats.MsgId(dedupKey),
 	); err != nil {
-		h.svcCtx.TelemetryBus.Publish(err)
+		logger.Errorf("[Dispatcher] publish to db queue failed: %v", err)
 		h.conn.Send(protocol.NewAckMessage(base, message.AckStatus_ACK_STATUS_FAILED))
 		return err
 	}
