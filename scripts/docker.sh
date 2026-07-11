@@ -4,7 +4,15 @@
 #
 # 用法:
 #   构建并推送所有镜像:    TAG=xxx REGISTRY=xxx ./scripts/docker.sh build-push
-#   构建并推送单个服务:    TAG=xxx REGISTRY=xxx ./scripts/docker.sh build-push user-api
+#   构建并推送指定服务:    TAG=xxx REGISTRY=xxx ./scripts/docker.sh build-push user-api group-rpc
+#
+# 环境变量:
+#   REGISTRY      镜像仓库前缀 (默认 registry.cn-shenzhen.aliyuncs.com/im2)
+#   TAG           镜像标签 (默认 latest)
+#   BUILD_CACHE   buildx 跨次构建缓存后端: none(默认) | gha | registry
+#                 - none:     不使用跨次缓存 (本地构建)
+#                 - gha:      GitHub Actions 缓存 (需在 CI 导出 ACTIONS_* 运行时令牌)
+#                 - registry: 缓存推送到 ${REGISTRY}/<service>:buildcache
 #
 
 set -euo pipefail
@@ -32,6 +40,7 @@ log_header() { echo -e "\n${BOLD}${CYAN}=== $* ===${NC}\n"; }
 
 REGISTRY="${REGISTRY:-registry.cn-shenzhen.aliyuncs.com/im2}"
 TAG="${TAG:-latest}"
+BUILD_CACHE="${BUILD_CACHE:-none}"
 
 declare -A SERVICES=(
     ["idgen-rpc"]="cmd/Idgen/rpc/Dockerfile"
@@ -49,48 +58,83 @@ declare -A SERVICES=(
     ["llm-api"]="cmd/Llm/api/Dockerfile"
 )
 
+# ========== 构建缓存 ==========
+
+# 按服务生成 buildx 缓存参数，结果写入全局数组 CACHE_ARGS
+build_cache_args() {
+    local service="$1"
+    CACHE_ARGS=()
+    case "$BUILD_CACHE" in
+        none) ;;
+        gha)
+            # 每个服务独立 scope，避免互相覆盖缓存
+            CACHE_ARGS=(
+                --cache-from "type=gha,scope=${service}"
+                --cache-to   "type=gha,mode=max,scope=${service}"
+            )
+            ;;
+        registry)
+            # image-manifest/oci-mediatypes 提升对各类 registry(含 ACR) 的兼容性
+            local ref="${REGISTRY}/${service}:buildcache"
+            CACHE_ARGS=(
+                --cache-from "type=registry,ref=${ref}"
+                --cache-to   "type=registry,ref=${ref},mode=max,image-manifest=true,oci-mediatypes=true"
+            )
+            ;;
+        *)
+            log_error "未知 BUILD_CACHE: ${BUILD_CACHE} (可选 none|gha|registry)"
+            exit 1
+            ;;
+    esac
+}
+
 # ========== 构建并推送 ==========
 
 do_build_push() {
-    if [[ "$SERVICE" == "all" ]]; then
-        log_header "构建并推送所有 IM2 镜像 → ${REGISTRY} (TAG: ${TAG})"
-        local services_to_build=("${!SERVICES[@]}")
+    local requested=("$@")
+    local services_to_build=()
+
+    if [[ ${#requested[@]} -eq 0 || "${requested[0]}" == "all" ]]; then
+        log_header "构建并推送所有 IM2 镜像 → ${REGISTRY} (TAG: ${TAG}, CACHE: ${BUILD_CACHE})"
+        services_to_build=("${!SERVICES[@]}")
     else
-        if [[ -z "${SERVICES[$SERVICE]+_}" ]]; then
-            log_error "未知服务: $SERVICE"
-            exit 1
-        fi
-        log_header "构建并推送 IM2 镜像 ${SERVICE} → ${REGISTRY} (TAG: ${TAG})"
-        local services_to_build=("$SERVICE")
+        local svc
+        for svc in "${requested[@]}"; do
+            if [[ -z "${SERVICES[$svc]+_}" ]]; then
+                log_error "未知服务: $svc"
+                exit 1
+            fi
+        done
+        log_header "构建并推送 IM2 镜像 [${requested[*]}] → ${REGISTRY} (TAG: ${TAG}, CACHE: ${BUILD_CACHE})"
+        services_to_build=("${requested[@]}")
     fi
 
     local success=0
     local failed_services=()
 
+    local service
     for service in "${services_to_build[@]}"; do
         local dockerfile="${SERVICES[$service]}"
         local image="${REGISTRY}/${service}:${TAG}"
         local latest_image="${REGISTRY}/${service}:latest"
 
-        log_info "构建 ${BOLD}${service}${NC} → ${image}"
-        if docker build \
+        build_cache_args "$service"
+
+        # buildx --push：构建与推送合并为一步（容器驱动下镜像不落本地，必须直接推送）
+        # --provenance=false：保持与旧 docker build 一致的单一 manifest，避免生成 image index
+        log_info "构建并推送 ${BOLD}${service}${NC} → ${image}"
+        if docker buildx build \
             -f "${PROJECT_ROOT}/${dockerfile}" \
             -t "${image}" \
             -t "${latest_image}" \
+            ${CACHE_ARGS[@]+"${CACHE_ARGS[@]}"} \
+            --provenance=false \
+            --push \
             "${PROJECT_ROOT}"; then
-
-            log_info "推送 ${BOLD}${service}${NC} ..."
-
-            # 一次推送所有标签（registry/name 部分需相同）
-            if docker push --all-tags "${REGISTRY}/${service}"; then
-                log_info "${GREEN}✓${NC} ${BOLD}${service}${NC} 推送成功 (${TAG} + latest)"
-                ((success++)) || true
-            else
-                log_error "✗ ${BOLD}${service}${NC} 推送失败"
-                failed_services+=("${service}")
-            fi
+            log_info "${GREEN}✓${NC} ${BOLD}${service}${NC} 构建并推送成功 (${TAG} + latest)"
+            ((success++)) || true
         else
-            log_error "✗ ${BOLD}${service}${NC} 构建失败"
+            log_error "✗ ${BOLD}${service}${NC} 构建/推送失败"
             failed_services+=("${service}")
         fi
     done
@@ -111,12 +155,12 @@ do_build_push() {
 # ========== 参数解析 ==========
 
 ACTION="${1:-}"
-SERVICE="${2:-all}"
+shift || true
 
 case "$ACTION" in
-    build-push) do_build_push ;;
+    build-push) do_build_push "$@" ;;
     *)
-        log_error "用法: $0 build-push [服务名|all]"
+        log_error "用法: $0 build-push [服务名... | all]"
         exit 1
         ;;
 esac
