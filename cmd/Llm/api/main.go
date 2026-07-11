@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 
 	"IM2/internal/apps/Llm/api/config"
@@ -19,15 +18,8 @@ var configPath = flag.String("f",
 	configparser.DefaultConfigPath("Llm/api"),
 	"the config file")
 
-func RegisterServices(cfg any, server *rest.Server) error {
-	if c, ok := cfg.(*config.Config); ok {
-		if c == nil {
-			return fmt.Errorf("config 不能为空")
-		}
-		handler.RegisterHandlers(server, svc.NewServiceContext(*c))
-	} else {
-		return fmt.Errorf("config 不是正确的配置类型")
-	}
+func RegisterServices(c *config.Config, server *rest.Server) error {
+	handler.RegisterHandlers(server, svc.NewServiceContext(*c))
 	return nil
 }
 
@@ -35,15 +27,9 @@ func main() {
 	flag.Parse()
 	runner := service.NewServiceRunner(
 		service.NewRestService(RegisterServices,
-			service.WithRestConf(func(cfg any) *rest.RestConf {
-				if c, ok := cfg.(*config.Config); ok {
-					return &c.RestConf
-				}
-				return nil
-			}),
+			func(c *config.Config) *rest.RestConf { return &c.RestConf },
 		),
 		*configPath,
-		&config.Config{},
 		service.WithName("Llm API Service"),
 		service.WithLogger("/var/log/im/llm.api.log", logger.LoggerEnvDev),
 	)

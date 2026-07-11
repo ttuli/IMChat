@@ -9,12 +9,8 @@ import (
 // ConfigParser 配置解析器接口
 type ConfigParser interface {
 	// Load 加载配置到目标结构体
-	// filepath: 配置文件路径（对于Nacos是本地配置文件路径，对于File是业务配置文件路径）
 	// v: 目标配置结构体指针
 	Load(v any) error
-
-	// MustLoad 加载配置，失败时panic（保持向后兼容）
-	MustLoad(v any)
 }
 
 func DefaultConfigPath(serviceName string) string {

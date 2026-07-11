@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
@@ -20,15 +19,8 @@ var configPath = flag.String("f",
 	configparser.DefaultConfigPath("File/api"),
 	"the config file")
 
-func RegisterServices(cfg any, server *rest.Server) error {
-	if c, ok := cfg.(*config.Config); ok {
-		if c == nil {
-			return fmt.Errorf("config 不能为空")
-		}
-		handler.RegisterHandlers(server, svc.NewServiceContext(*c))
-	} else {
-		return fmt.Errorf("config 不是正确的配置类型")
-	}
+func RegisterServices(c *config.Config, server *rest.Server) error {
+	handler.RegisterHandlers(server, svc.NewServiceContext(*c))
 	return nil
 }
 
@@ -38,15 +30,9 @@ func main() {
 	os.Setenv("OSS_ACCESS_KEY_SECRET",os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET"))
 	runner := service.NewServiceRunner(
 		service.NewRestService(RegisterServices,
-			service.WithRestConf(func(cfg any) *rest.RestConf {
-				if c, ok := cfg.(*config.Config); ok {
-					return &c.RestConf
-				}
-				return nil
-			}),
+			func(c *config.Config) *rest.RestConf { return &c.RestConf },
 		),
 		*configPath,
-		&config.Config{},
 		service.WithName("File API Service"),
 		service.WithLogger("/var/log/im/file.api.log", logger.LoggerEnvDev),
 	)

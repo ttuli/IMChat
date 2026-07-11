@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"IM2/internal/apps/Idgen/rpc/idgen"
 	"IM2/internal/apps/Idgen/rpc/server"
 	"IM2/internal/apps/Idgen/rpc/svc"
+	"IM2/internal/interceptor"
 	configparser "IM2/pkg/configParser"
 	"IM2/pkg/logger"
 	"IM2/pkg/service"
@@ -30,27 +30,21 @@ func main() {
 
 	var svcCtx *svc.ServiceContext
 
-	registerServices := func(cfg any) (*zrpc.RpcServer, error) {
-		if c, ok := cfg.(*config.Config); ok {
-			if c == nil {
-				return nil, fmt.Errorf("config 不能为空")
+	registerServices := func(c *config.Config) (*zrpc.RpcServer, error) {
+		svcCtx = svc.NewServiceContext(*c) // 赋值给外部变量
+		server := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
+			idgen.RegisterIdgenServer(grpcServer, server.NewIdgenServer(svcCtx))
+			if c.Mode == zservice.DevMode || c.Mode == zservice.TestMode {
+				reflection.Register(grpcServer)
 			}
-			svcCtx = svc.NewServiceContext(*c) // 赋值给外部变量
-			server := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-				idgen.RegisterIdgenServer(grpcServer, server.NewIdgenServer(svcCtx))
-				if c.Mode == zservice.DevMode || c.Mode == zservice.TestMode {
-					reflection.Register(grpcServer)
-				}
-			})
-			return server, nil
-		}
-		return nil, fmt.Errorf("config 不是正确的配置类型")
+		})
+		return server, nil
 	}
 
 	runner := service.NewServiceRunner(
-		service.NewRpcService(registerServices),
+		service.NewRpcService(registerServices,
+			service.WithUnaryInterceptors(interceptor.ServerErrorInterceptor)),
 		*configPath,
-		&config.Config{},
 		service.WithName("Idgen RPC Service"),
 		service.WithLogger("/var/log/im/idgen.rpc.log", logger.LoggerEnvDev),
 		service.WithBeforeExit(func() error {

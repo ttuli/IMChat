@@ -12,7 +12,7 @@ type fileParser struct {
 }
 
 type FileConfig struct {
-	Path string `mapstructure:"path"`
+	Path string `json:"path,optional"`
 }
 
 // NewFileParser 创建本地文件配置解析器
@@ -34,11 +34,4 @@ func (p *fileParser) Load(v any) error {
 	}
 
 	return nil
-}
-
-// MustLoad 加载配置，失败时panic（使用go-zero的conf.MustLoad）
-func (p *fileParser) MustLoad(v any) {
-
-	// 使用go-zero的conf.MustLoad加载配置
-	conf.MustLoad(p.FileConfig.Path, v)
 }

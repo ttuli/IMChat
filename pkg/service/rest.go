@@ -6,58 +6,42 @@ import (
 	"github.com/zeromicro/go-zero/rest"
 )
 
-// RestConfExtractor 从配置中提取 RestConf
-type RestConfExtractor func(cfg any) *rest.RestConf
+type RegisterRestServicesFunc[T any] func(c *T, server *rest.Server) error
+
+// RestConfExtractor 从业务配置中取出 rest.RestConf
+type RestConfExtractor[T any] func(c *T) *rest.RestConf
 
 // RestService 通用的 REST API 服务实现
-type RestService struct {
-	registerServices  RegisterRestServicesFunc
-	server            *rest.Server      // rest 服务器
-	restConf          *rest.RestConf    // rest 配置
-	restConfExtractor RestConfExtractor // rest 配置提取器
-}
-
-type RegisterRestServicesFunc func(cfg any, server *rest.Server) error
-
-// RestOption 函数选项类型
-type RestOption func(*RestService)
-
-// WithRestConf 设置 REST 配置提取器
-func WithRestConf(extractor RestConfExtractor) RestOption {
-	return func(rs *RestService) {
-		rs.restConfExtractor = extractor
-	}
+// T 为业务配置结构体类型
+type RestService[T any] struct {
+	registerServices RegisterRestServicesFunc[T]
+	extractRestConf  RestConfExtractor[T]
+	server           *rest.Server // rest 服务器
 }
 
 // NewRestService 创建通用的 RestService
-func NewRestService(registerServices RegisterRestServicesFunc, opts ...RestOption) *RestService {
-	rs := &RestService{
+// extractRestConf 为必填参数：REST 配置的可获取性在编译期保证，替代原先的运行期检查
+func NewRestService[T any](registerServices RegisterRestServicesFunc[T], extractRestConf RestConfExtractor[T]) *RestService[T] {
+	return &RestService[T]{
 		registerServices: registerServices,
+		extractRestConf:  extractRestConf,
 	}
-	for _, opt := range opts {
-		opt(rs)
-	}
-	return rs
 }
 
 // Load 加载配置并初始化服务
-func (rs *RestService) Load(cfg any) error {
-	// 使用提取器从 cfg 中提取配置
-	if rs.restConfExtractor != nil {
-		rs.restConf = rs.restConfExtractor(cfg)
+func (rs *RestService[T]) Load(c *T) error {
+	restConf := rs.extractRestConf(c)
+	if restConf == nil {
+		return fmt.Errorf("从配置中未提取到 REST 配置")
 	}
 
-	if rs.restConf == nil {
-		return fmt.Errorf("REST 配置不能为空，请使用 WithRestConf 设置提取器")
-	}
-
-	server, err := rest.NewServer(*rs.restConf, rest.WithCors("*"))
+	server, err := rest.NewServer(*restConf, rest.WithCors("*"))
 	if err != nil {
 		return fmt.Errorf("创建 rest 服务器失败: %w", err)
 	}
 	rs.server = server
 
-	if err := rs.registerServices(cfg, server); err != nil {
+	if err := rs.registerServices(c, server); err != nil {
 		return fmt.Errorf("注册服务失败: %w", err)
 	}
 
@@ -65,7 +49,9 @@ func (rs *RestService) Load(cfg any) error {
 }
 
 // Start 启动服务
-func (rs *RestService) Start() error {
+// 注意：go-zero 的 rest.Server.Start 是阻塞调用且不返回错误，
+// 启动失败（如端口被占用）时其内部会直接退出进程，此处无法捕获启动错误
+func (rs *RestService[T]) Start() error {
 	if rs.server == nil {
 		return fmt.Errorf("服务器未初始化，请先调用 Load 方法")
 	}
@@ -78,9 +64,12 @@ func (rs *RestService) Start() error {
 }
 
 // Stop 停止服务
-func (rs *RestService) Stop() error {
+func (rs *RestService[T]) Stop() error {
 	if rs.server != nil {
 		rs.server.Stop()
 	}
 	return nil
 }
+
+// 确保 RestService 实现了 Service 接口
+var _ Service[struct{}] = (*RestService[struct{}])(nil)

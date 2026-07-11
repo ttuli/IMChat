@@ -1,10 +1,12 @@
 package configparser
 
 import (
-	"IM2/pkg/env"
 	"fmt"
+	"os"
 
-	"github.com/spf13/viper"
+	"IM2/pkg/env"
+
+	"github.com/zeromicro/go-zero/core/conf"
 )
 
 // ConfigSourceType 配置源类型
@@ -13,76 +15,67 @@ type ConfigSourceType string
 const (
 	ConfigSourceNacos ConfigSourceType = "nacos" // Nacos配置中心
 	ConfigSourceFile  ConfigSourceType = "file"  // 本地文件（go-zero conf）
+	ConfigSourceEtcd  ConfigSourceType = "etcd"  // etcd 键值存储
 )
 
-// LocalConfig 本地配置文件结构（用于决定使用哪种解析器）
-type LocalConfig struct {
-	ConfigSource ConfigSourceType `mapstructure:"config_source" yaml:"config_source"`
-	NacosConfig  `mapstructure:"nacos" yaml:"nacos"`
-	FileConfig   `mapstructure:"file" yaml:"file"`
+// localConfig 引导配置文件结构（用于决定使用哪种解析器）
+// 注意：这里用具名字段而非匿名内嵌——go-zero conf 会把匿名字段扁平化上提，
+// 无法按 nacos/file 子键映射，与 viper 语义不同。
+type localConfig struct {
+	ConfigSource ConfigSourceType `json:"config_source,optional"`
+	Nacos        NacosConfig      `json:"nacos,optional"`
+	File         FileConfig       `json:"file,optional"`
+	Etcd         EtcdConfig       `json:"etcd,optional"`
 }
 
-type ConfigLoader struct {
-	configFile string
-	config     LocalConfig
-	parser     ConfigParser
-}
-
-func NewConfigLoader(configFile string) *ConfigLoader {
-	return &ConfigLoader{
-		configFile: configFile,
-	}
-}
-
-// Load 加载配置文件
-// v: 目标配置结构体指针
-func (l *ConfigLoader) Load(v any) error {
-	if l.configFile == "" {
+// Load 读取引导配置文件，按 config_source 选择解析器，将业务配置加载到 v。
+// configFile: 引导配置文件路径；v: 目标配置结构体指针。
+func Load(configFile string, v any) error {
+	if configFile == "" {
 		return fmt.Errorf("配置文件路径不能为空")
 	}
 
-	vi := viper.New()
-	vi.SetConfigFile(l.configFile)
-
-	// 1. 读取配置文件到 viper 实例中
-	if err := vi.ReadInConfig(); err == nil {
-
-		// --- 新增逻辑：处理环境变量替换 ---
-		// 将所有设置项导出为 map，处理后再重新加载回去
-		settings := vi.AllSettings()
-
-		env.ExpandEnvMap(settings)
-		if err := vi.MergeConfigMap(settings); err != nil {
-			return fmt.Errorf("合并环境变量配置失败: %w", err)
-		}
-
-		// 2. 解析到结构体
-		if err := vi.Unmarshal(&l.config); err == nil {
-			if l.config.ConfigSource != "" {
-				l.parser = createParserByType(l.config)
-				if err := l.parser.Load(v); err != nil {
-					return fmt.Errorf("加载配置文件失败: %w", err)
-				}
-			} else {
-				return fmt.Errorf("配置类型不能为空")
-			}
-		} else {
-			return fmt.Errorf("解析本地配置文件失败: %w", err)
-		}
-	} else {
+	content, err := os.ReadFile(configFile)
+	if err != nil {
 		return fmt.Errorf("读取配置文件失败: %w", err)
 	}
-	return nil
+
+	local, err := parseLocalConfig(content)
+	if err != nil {
+		return err
+	}
+
+	parser, err := createParserByType(local)
+	if err != nil {
+		return err
+	}
+	return parser.Load(v)
 }
 
-// createParserByType 根据类型创建解析器
-func createParserByType(c LocalConfig) ConfigParser {
+// parseLocalConfig 展开环境变量并解析引导配置。
+// 与 Nacos 业务配置一样走 go-zero conf，保证两条加载路径解析行为一致。
+func parseLocalConfig(content []byte) (localConfig, error) {
+	var local localConfig
+	expanded := env.ExpandEnv(string(content))
+	if err := conf.LoadFromYamlBytes([]byte(expanded), &local); err != nil {
+		return local, fmt.Errorf("解析本地配置文件失败: %w", err)
+	}
+	if local.ConfigSource == "" {
+		return local, fmt.Errorf("配置类型(config_source)不能为空")
+	}
+	return local, nil
+}
+
+// createParserByType 根据类型创建解析器，未知类型返回错误而非 nil，避免上层空指针崩溃。
+func createParserByType(c localConfig) (ConfigParser, error) {
 	switch c.ConfigSource {
 	case ConfigSourceFile:
-		return NewFileParser(c.FileConfig)
+		return NewFileParser(c.File), nil
 	case ConfigSourceNacos:
-		return NewNacosParser(c.NacosConfig)
+		return NewNacosParser(c.Nacos), nil
+	case ConfigSourceEtcd:
+		return NewEtcdParser(c.Etcd), nil
 	default:
-		return nil
+		return nil, fmt.Errorf("不支持的配置源类型: %q", c.ConfigSource)
 	}
 }

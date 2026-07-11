@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 
 	"IM2/internal/apps/websocket/gateway/config"
@@ -24,12 +23,7 @@ func main() {
 	var wsServer *gwserver.GatewayServer
 
 	// 服务注册函数
-	registerServices := func(cfg any, server *rest.Server) error {
-		c, ok := cfg.(*config.Config)
-		if !ok {
-			return fmt.Errorf("config types error")
-		}
-
+	registerServices := func(c *config.Config, server *rest.Server) error {
 		svcCtx := gwserver.NewServiceContext(*c)
 		wsServer = gwserver.NewGatewayServer(svcCtx)
 
@@ -40,15 +34,9 @@ func main() {
 
 	runner := service.NewServiceRunner(
 		service.NewRestService(registerServices,
-			service.WithRestConf(func(cfg any) *rest.RestConf {
-				if c, ok := cfg.(*config.Config); ok {
-					return &c.RestConf
-				}
-				return nil
-			}),
+			func(c *config.Config) *rest.RestConf { return &c.RestConf },
 		),
 		*configPath,
-		&config.Config{},
 		service.WithName("websocket-gateway"),
 		service.WithLogger("/var/log/im/websocket.gateway.log", logger.LoggerEnvDev),
 		service.WithHooks(&service.LifecycleHooks{

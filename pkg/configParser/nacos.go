@@ -3,7 +3,6 @@ package configparser
 import (
 	"IM2/pkg/env"
 	"fmt"
-	"os"
 
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -16,18 +15,18 @@ type nacosParser struct {
 }
 
 type NacosConfig struct {
-	Host                string `mapstructure:"host"`
-	Port                uint64 `mapstructure:"port"`
-	Namespace           string `mapstructure:"namespace"`
-	User                string `mapstructure:"user"`
-	Password            string `mapstructure:"password"`
-	DataId              string `mapstructure:"dataid"`
-	Group               string `mapstructure:"group"`
-	LogDir              string `mapstructure:"logdir"`
-	CacheDir            string `mapstructure:"cachedir"`
-	LogLevel            string `mapstructure:"loglevel"`
-	TimeoutMs           uint64 `mapstructure:"timeoutms"`
-	NotLoadCacheAtStart bool   `mapstructure:"notloadcacheatstart"`
+	Host                string `json:"host,optional"`
+	Port                uint64 `json:"port,optional"`
+	Namespace           string `json:"namespace,optional"`
+	User                string `json:"user,optional"`
+	Password            string `json:"password,optional"`
+	DataId              string `json:"dataid,optional"`
+	Group               string `json:"group,optional"`
+	LogDir              string `json:"logdir,optional"`
+	CacheDir            string `json:"cachedir,optional"`
+	LogLevel            string `json:"loglevel,optional"`
+	TimeoutMs           uint64 `json:"timeoutms,optional"`
+	NotLoadCacheAtStart bool   `json:"notloadcacheatstart,optional"`
 }
 
 // NewNacosParser 创建Nacos配置解析器
@@ -40,20 +39,14 @@ func NewNacosParser(c NacosConfig) ConfigParser {
 // Load 加载配置，返回错误而不是panic
 func (p *nacosParser) Load(v any) error {
 	nc := p.NacosConfig
-	// 优先使用环境变量，环境变量优先级高于配置文件
-	// 这样可以在不修改配置文件的情况下，通过环境变量覆盖敏感信息
-	if nacosUser := os.Getenv(nc.User); nacosUser != "" {
-		nc.User = nacosUser
-	}
-	if nacosPassword := os.Getenv(nc.Password); nacosPassword != "" {
-		nc.Password = nacosPassword
-	} else if nc.Password == "" {
-		// 如果环境变量和配置文件都没有密码，返回错误
-		return fmt.Errorf("NACOS_PASSWORD 环境变量未设置，且配置文件中也没有密码")
-	}
+	// 敏感信息通过配置文件里的 ${NACOS_USER}/${NACOS_PASSWORD} 占位符在引导阶段展开，
+	// 此处只做必填校验。host 不设默认值：漏配时若回退到某个公网域名，会把带凭证的
+	// 连接指向不受控主机，造成凭证泄露，因此直接报错。
 	if nc.Host == "" {
-		// 如果配置文件中也没有设置，使用默认值
-		nc.Host = "nacos.com"
+		return fmt.Errorf("NACOS 地址(host)未配置")
+	}
+	if nc.Password == "" {
+		return fmt.Errorf("NACOS 密码(NACOS_PASSWORD)未配置")
 	}
 
 	sc := []constant.ServerConfig{
@@ -106,18 +99,7 @@ func (p *nacosParser) Load(v any) error {
 		return err
 	}
 
-	// if err := json.Unmarshal([]byte(content), v); err != nil {
-	// 	return fmt.Errorf("反序列化配置失败: %w", err)
-	// }
-
 	return nil
-}
-
-// MustLoad 加载配置，失败时panic（保持向后兼容）
-func (p *nacosParser) MustLoad(v any) {
-	if err := p.Load(v); err != nil {
-		panic(err)
-	}
 }
 
 // 确保 nacosParser 实现了 ConfigParser 接口

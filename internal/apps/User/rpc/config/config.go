@@ -26,5 +26,4 @@ type Config struct {
 	RouteStore redis.RedisConf `json:",optional"`
 
 	IDRpc      zrpc.RpcClientConf
-	MessageRpc zrpc.RpcClientConf
 }
