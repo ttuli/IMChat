@@ -58,7 +58,7 @@ func InitStream(js nats.JetStreamContext, subjects []string) error {
 	return err
 }
 
-// sameSubjects 比较两个 subject 集合是否一致（忽略顺序）
+// sameSubjects 比较两个 subject 集合是否一致(忽略顺序)
 func sameSubjects(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
