@@ -17,6 +17,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/nacos-group/nacos-sdk-go v1.1.6
 	github.com/nats-io/nats.go v1.48.0
+	github.com/redis/go-redis/v9 v9.16.0
 	github.com/volcengine/volcengine-go-sdk v1.2.20
 	github.com/zeromicro/go-zero v1.9.3
 	go.etcd.io/etcd/client/v3 v3.5.15
@@ -84,7 +85,6 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/redis/go-redis/v9 v9.16.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect

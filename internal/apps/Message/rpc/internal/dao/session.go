@@ -77,7 +77,7 @@ func (c *SessionDAO) ResolveSessionIDByKey(ctx context.Context, newSessionID str
 }
 
 // PushSeqUpdate 将完整的会话状态推送到 SeqSyncer，由后台批量刷 MySQL + 广播 UpdateSession。
-// 非阻塞：channel 满时打日志丢弃，不影响主链路。
+// 通常非阻塞；channel 打满且短暂等待无效时降级为同步直写（阻塞调用方但不丢事件）。
 // isGroup/target 描述会话形态与消息目标（群聊=群ID，单聊=接收方），用于时间线扇出。
 func (c *SessionDAO) PushSeqUpdate(sessionID string, seq uint64, lastContent string, lastSender uint64, updateTime int64, isGroup bool, target uint64) {
 	c.seqSyncer.Push(seqUpdate{

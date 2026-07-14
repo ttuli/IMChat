@@ -2,8 +2,40 @@ package routing
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	red "github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/stores/redis"
 )
+
+// pipelineGet 以 pipeline 单键 GET 批量读取（替代 MGET：多键命令在 Redis Cluster
+// 下要求全部 key 位于同一哈希槽，pipeline 中的单键命令则由客户端按槽路由，
+// 单实例/主从/Cluster 部署形态均兼容）。不存在的 key 返回空串。
+func (t *Table) pipelineGet(ctx context.Context, keys []string) ([]string, error) {
+	cmds := make([]*red.StringCmd, len(keys))
+	err := t.client.PipelinedCtx(ctx, func(pipe redis.Pipeliner) error {
+		for i, k := range keys {
+			cmds[i] = pipe.Get(ctx, k)
+		}
+		return nil
+	})
+	if err != nil && !errors.Is(err, red.Nil) {
+		return nil, err
+	}
+	vals := make([]string, len(keys))
+	for i, cmd := range cmds {
+		v, cmdErr := cmd.Result()
+		if cmdErr != nil {
+			if errors.Is(cmdErr, red.Nil) {
+				continue
+			}
+			return nil, cmdErr
+		}
+		vals[i] = v
+	}
+	return vals, nil
+}
 
 // registerUserScript 原子地抢占路由并返回旧持有节点。
 // 单次往返完成「读旧值 + 写新值」，消除并发注册时的读写间隙。
@@ -40,18 +72,6 @@ if cur == ARGV[1] then
 	return 1
 end
 return 0
-`
-
-// lookupUserScript 单次往返完成「查路由 + 校验节点存活」。
-// 路由存在但节点心跳键已消失，说明路由是过期脏数据（节点宕机未清理）。
-// 注：脚本内拼接第二个 key，仅适用于单实例/主从 Redis（本项目部署形态），不兼容 Cluster。
-const lookupUserScript = `
-local node = redis.call('GET', KEYS[1])
-if not node then
-	return {'', 0}
-end
-local alive = redis.call('EXISTS', ARGV[1] .. node)
-return {node, alive}
 `
 
 // RegisterUser 原子注册用户路由到指定节点。
@@ -94,26 +114,25 @@ func (t *Table) GetUserNode(ctx context.Context, userID uint64) (string, error) 
 	return t.client.GetCtx(ctx, userRouteKey(userID))
 }
 
-// LookupUser 查询用户路由并校验目标节点存活（单次 Lua 往返）。
+// LookupUser 查询用户路由并校验目标节点存活。
+// 路由存在但节点心跳键已消失，说明路由是过期脏数据（节点宕机未清理）。
+// 拆为两次单键读而非 Lua 内拼接第二个键，兼容 Redis Cluster（动态拼 key 会触发
+// CROSSSLOT 错误）；两次读取间的竞态窗口最多把状态误判为 RouteUnknown，
+// 由调用方广播兜底，不会漏投。
 // Redis 异常时返回 RouteUnknown 与 err，调用方应广播兜底。
 func (t *Table) LookupUser(ctx context.Context, userID uint64) (node string, status RouteStatus, err error) {
-	raw, err := t.client.EvalCtx(ctx, lookupUserScript,
-		[]string{userRouteKey(userID)}, nodeKeyPrefix)
+	node, err = t.client.GetCtx(ctx, userRouteKey(userID))
 	if err != nil {
 		return "", RouteUnknown, err
 	}
-
-	row, ok := raw.([]interface{})
-	if !ok || len(row) != 2 {
-		return "", RouteUnknown, fmt.Errorf("routing: unexpected lookup result %v", raw)
-	}
-	node = fmt.Sprintf("%v", row[0])
-	alive, _ := row[1].(int64)
-
 	if node == "" {
 		return "", RouteOffline, nil
 	}
-	if alive == 1 {
+	alive, err := t.client.GetCtx(ctx, nodeKey(node))
+	if err != nil {
+		return "", RouteUnknown, err
+	}
+	if alive != "" {
 		return node, RouteOnline, nil
 	}
 	return "", RouteUnknown, nil
@@ -132,12 +151,12 @@ func (t *Table) LookupUsers(ctx context.Context, userIDs []uint64) (nodeTargets 
 	for i, uid := range userIDs {
 		routeKeys[i] = userRouteKey(uid)
 	}
-	routes, err := t.client.MgetCtx(ctx, routeKeys...)
+	routes, err := t.pipelineGet(ctx, routeKeys)
 	if err != nil {
 		return nil, nil, err
 	}
 	if len(routes) != len(userIDs) {
-		return nil, nil, fmt.Errorf("routing: mget returned %d rows for %d users", len(routes), len(userIDs))
+		return nil, nil, fmt.Errorf("routing: pipeline get returned %d rows for %d users", len(routes), len(userIDs))
 	}
 
 	// 汇总候选节点并批量校验存活（ws:node:{id} 心跳键存在即存活）
@@ -155,7 +174,7 @@ func (t *Table) LookupUsers(ctx context.Context, userIDs []uint64) (nodeTargets 
 			nodeKeys = append(nodeKeys, nodeKey(node))
 		}
 		// 存活校验失败时 nodeAlive 保持全 false → 这些用户全部进 fallback，不漏投
-		if vals, aliveErr := t.client.MgetCtx(ctx, nodeKeys...); aliveErr == nil && len(vals) == len(nodes) {
+		if vals, aliveErr := t.pipelineGet(ctx, nodeKeys); aliveErr == nil && len(vals) == len(nodes) {
 			for i, v := range vals {
 				if v != "" {
 					nodeAlive[nodes[i]] = true

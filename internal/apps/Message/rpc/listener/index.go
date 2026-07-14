@@ -46,7 +46,9 @@ type pendingMsg struct {
 // NatsListener 监听 NATS 消息，委托 MessageService 完成业务处理（持久化等）。
 //
 // 消费模型：单 goroutine 批量 Fetch，按 sessionKey 哈希分发到固定 worker——
-// 同会话消息在实例内严格串行（保证 seq 单调与处理顺序），不同会话并行。
+// 同会话消息在实例内严格串行（保证处理顺序），不同会话并行。
+// 跨实例的 seq 单调性由 JetStream stream sequence 作为 Lamport 时钟源保证，
+// 不依赖实例间物理时钟对齐。
 type NatsListener struct {
 	svcCtx    *svc.ServiceContext
 	ctx       context.Context
@@ -165,8 +167,19 @@ func (l *NatsListener) runLoop(sub *nats.Subscription, batch int) {
 func (l *NatsListener) runWorker(ch chan *pendingMsg) {
 	defer l.wg.Done()
 	for pm := range ch {
-		l.finishMsg(pm.natsMsg, l.process(pm.send))
+		l.finishMsg(pm.natsMsg, l.process(pm.send, streamSeqOf(pm.natsMsg)))
 	}
+}
+
+// streamSeqOf 提取消息的 JetStream stream sequence（Lamport seq 的跨实例时钟源，
+// 保证多实例消费同一会话时 seq 顺序与消息进入 stream 的顺序一致）；
+// 元数据缺失时返回 0，分配器退化为本地逻辑时钟。
+func streamSeqOf(msg *nats.Msg) uint64 {
+	meta, err := msg.Metadata()
+	if err != nil {
+		return 0
+	}
+	return meta.Sequence.Stream
 }
 
 // sessionWorkerIndex 按会话 key 哈希选择 worker，保证同会话消息串行处理
@@ -208,7 +221,7 @@ func (l *NatsListener) finishMsg(msg *nats.Msg, err error) {
 }
 
 // process 处理单条消息：会话解析 → 持久化 → 二级 ACK → 投递
-func (l *NatsListener) process(m *protosvc.MessageSend) error {
+func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error {
 	msgSvc := service.NewMessageService(l.svcCtx)
 
 	ctx, cancel := context.WithTimeout(l.ctx, 5*time.Second)
@@ -234,7 +247,7 @@ func (l *NatsListener) process(m *protosvc.MessageSend) error {
 		}
 	}
 
-	dbMsg, err := msgSvc.PersistMessage(ctx, m)
+	dbMsg, err := msgSvc.PersistMessage(ctx, m, streamSeq)
 	if err != nil {
 		// 持久化失败：二级 ACK（失败）投递给发送方
 		pack := &message.PersistAck{

@@ -30,11 +30,14 @@ func (s *MessageService) GetHistory(ctx context.Context, conversationID string, 
 	return messages, nil
 }
 
-// PersistMessage 消费NATS消息、生成序号、广播事件、同步落库
-func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend) (*model.Message, error) {
-	// 1. 分配 Lamport Seq（本地无锁生成，不依赖 Redis）。
+// PersistMessage 消费NATS消息、生成序号、广播事件、同步落库。
+// streamSeq 是该消息的 JetStream stream sequence，作为 Lamport 时间戳源，
+// 保证多实例并发消费同一会话时 seq 顺序与消息进入 stream 的顺序一致
+//（不受实例间物理时钟倾斜影响）。
+func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend, streamSeq uint64) (*model.Message, error) {
+	// 1. 分配 Lamport Seq（本地生成，不依赖 Redis）。
 	// 进程首次遇到该会话时先从 MongoDB 播种已持久化的最大 seq，
-	// 防止进程重启 + 时钟回拨导致新消息 seq 落后于历史消息。
+	// 防止进程重启 + stream 重建导致新消息 seq 落后于历史消息。
 	if !s.svcCtx.SeqAllocator.Known(msg.SessionId) {
 		if maxSeq, err := s.svcCtx.MessageDAO.MaxSeq(ctx, msg.SessionId); err != nil {
 			logger.Errorf("Failed to seed seq allocator for session %s: %v", msg.SessionId, err)
@@ -43,7 +46,7 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 			s.svcCtx.SeqAllocator.Observe(msg.SessionId, maxSeq)
 		}
 	}
-	seq := s.svcCtx.SeqAllocator.Alloc(msg.SessionId)
+	seq := s.svcCtx.SeqAllocator.Alloc(msg.SessionId, streamSeq)
 
 	// 2. 将完整会话状态推送到 SeqSyncer（异步批量刷 MySQL actual_seq + Redis 快照）。
 	// 会话形态与目标显式传入：sessionId 是雪花 ID，SeqSyncer 无法再按前缀推断。

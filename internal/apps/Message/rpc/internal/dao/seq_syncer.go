@@ -59,9 +59,26 @@ type SessionSnapshot struct {
 //   - 定时：每隔 flushInterval（默认 3 秒）触发一次
 //   - 定量：channel 内积压达到 flushBatchLimit（默认 500）时立即触发
 //
-// 多实例并发安全：SQL 使用条件写 (max_seq < ?)，旧 seq 不会覆盖新 seq。
+// 多实例并发安全：MySQL 按 seq 条件更新（GREATEST/IF），Redis 快照经 Lua 按 seq
+// 条件写，时间线 ZSET 用 ZAddGT——旧 seq / 旧批次不会覆盖新状态。
+//
 // GroupMemberSource 按群 ID 获取成员列表（由上层注入，通常带 Redis 缓存 + Group RPC 回源）
 type GroupMemberSource func(ctx context.Context, groupID uint64) ([]uint64, error)
+
+// snapshotUpdateScript 仅当新 seq 更大时更新会话快照，无论是否更新都续期。
+// seq 是 uint64，超出 Lua number（double，53 bit）的精确整数范围，故用
+// 字符串比较：先比长度再比字典序（等长十进制字符串的字典序即数值序）。
+// KEYS[1] = session:info:{convID}
+// ARGV = seq, last_content, last_sender, expire_seconds
+const snapshotUpdateScript = `
+local cur = redis.call('HGET', KEYS[1], 'actual_seq')
+local new = ARGV[1]
+if (not cur) or (#cur < #new) or (#cur == #new and cur < new) then
+	redis.call('HSET', KEYS[1], 'actual_seq', ARGV[1], 'last_content', ARGV[2], 'last_sender', ARGV[3])
+end
+redis.call('EXPIRE', KEYS[1], ARGV[4])
+return 1
+`
 
 type SeqSyncer struct {
 	db              *gorm.DB
@@ -102,17 +119,21 @@ func (s *SeqSyncer) Push(u seqUpdate) {
 	case s.ch <- u:
 		return
 	default:
-		// 2. channel 满时，退化为带超时的阻塞等待（例如最多阻塞 200ms）
-		// 这样既能给后台协程消化数据的时间，又不会导致主链路无限阻塞
-		timer := time.NewTimer(200 * time.Millisecond)
-		defer timer.Stop()
+	}
 
-		select {
-		case s.ch <- u:
-			return
-		case <-timer.C:
-			logger.Errorf("[BACKPRESSURE ALERT] SeqSyncer channel full and 200ms timeout reached, drop update for session %s seq %d", u.sessionID, u.seq)
-		}
+	// 2. channel 满时，退化为带超时的阻塞等待，给后台协程消化数据的时间
+	timer := time.NewTimer(200 * time.Millisecond)
+	defer timer.Stop()
+
+	select {
+	case s.ch <- u:
+	case <-timer.C:
+		// 3. 超时仍未入队：降级为同步直写，保证事件不丢——否则会话表 actual_seq
+		// 与 Redis 时间线将长期滞后（若此后该会话无新消息则永久 stale）。
+		// 代价是阻塞当前消费 worker，形成对上游拉取的真实背压；
+		// 与后台批量刷盘并发时由 MySQL/Redis 的 seq 条件写保证不回退。
+		logger.Errorf("[BACKPRESSURE ALERT] SeqSyncer channel full, degrade to synchronous flush for session %s seq %d", u.sessionID, u.seq)
+		s.batchFlush(map[string]seqUpdate{u.sessionID: u})
 	}
 }
 
@@ -239,11 +260,19 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 			convType = model.SessionTypeGroup
 		}
 
-		// 1. MySQL Upsert：不存在则创建，存在则只更新 actual_seq / last_content / last_sender / update_time。
+		// 1. MySQL Upsert：不存在则创建，存在则按 seq 条件更新——仅当新 seq 更大时
+		// 才覆盖，保证多实例批量刷盘 / 同步直写并发时旧批次不能回退新状态。
+		// 注意赋值顺序：MySQL 按 SET 从左到右求值，actual_seq 必须放在最后更新，
+		// 否则前面字段的比较条件会读到已被覆盖的新值。
 		res := s.db.WithContext(ctx).
 			Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "session_id"}},
-				DoUpdates: clause.AssignmentColumns([]string{"actual_seq", "last_content", "last_sender", "update_time"}),
+				Columns: []clause.Column{{Name: "session_id"}},
+				DoUpdates: clause.Set{
+					{Column: clause.Column{Name: "last_content"}, Value: gorm.Expr("IF(VALUES(actual_seq) > actual_seq, VALUES(last_content), last_content)")},
+					{Column: clause.Column{Name: "last_sender"}, Value: gorm.Expr("IF(VALUES(actual_seq) > actual_seq, VALUES(last_sender), last_sender)")},
+					{Column: clause.Column{Name: "update_time"}, Value: gorm.Expr("IF(VALUES(actual_seq) > actual_seq, VALUES(update_time), update_time)")},
+					{Column: clause.Column{Name: "actual_seq"}, Value: gorm.Expr("GREATEST(actual_seq, VALUES(actual_seq))")},
+				},
 			}).
 			Create(&model.Session{
 				SessionID:   convID,
@@ -280,21 +309,23 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	// 3. 批量更新 Redis：
 	//    a) session:info:{convID} Hash：actual_seq / last_content / last_sender 会话快照。
 	//       Lamport 分配器不再经过 Redis，快照统一由此处异步维护（最多滞后一个刷盘周期）。
-	//    b) user:conv:timeline:{uid} ZSET：member = convID，score = updateTime
+	//       通过 Lua 按 seq 条件写，并发刷盘时旧批次不能回退新快照。
+	//    b) user:conv:timeline:{uid} ZSET：member = convID，score = updateTime。
+	//       ZAddGT 只允许 score 前进，防止并发时旧 updateTime 回退时间线排序。
 	err := s.cache.PipelinedCtx(ctx, func(pipe redis.Pipeliner) error {
 		for convID, u := range latest {
 			key := sessionInfoPrefix + convID
-			pipe.HSet(ctx, key,
-				"actual_seq", strconv.FormatUint(u.seq, 10),
-				"last_content", u.lastContent,
-				"last_sender", strconv.FormatUint(u.lastSender, 10),
+			pipe.Eval(ctx, snapshotUpdateScript, []string{key},
+				strconv.FormatUint(u.seq, 10),
+				u.lastContent,
+				strconv.FormatUint(u.lastSender, 10),
+				int(sessionInfoExpire.Seconds()),
 			)
-			pipe.Expire(ctx, key, sessionInfoExpire)
 		}
 		for uid, convs := range userTimelines {
 			key := fmt.Sprintf("%s%d", sessionTimelinePrefix, uid)
 			for convID, updateTime := range convs {
-				pipe.ZAdd(ctx, key, redis.Z{
+				pipe.ZAddGT(ctx, key, redis.Z{
 					Score:  float64(updateTime),
 					Member: convID,
 				})

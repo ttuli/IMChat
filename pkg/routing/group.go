@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
 // replaceGroupScript 原子全量替换成员集合并续期。
@@ -41,17 +43,16 @@ end
 return n
 `
 
-// addUserToGroupsScript 将单个用户增量写入多个群集合（同样仅写已存在的集合）。
+// addUserToGroupScript 将单个用户增量写入单个群集合（同样仅写已存在的集合）。
+// 单键脚本，经 pipeline 逐群执行以兼容 Redis Cluster（多键脚本要求所有 key
+// 同哈希槽）；各群集合间无跨键不变量，拆分执行不影响正确性。
 // ARGV[1] = 用户 ID。
-const addUserToGroupsScript = `
-local n = 0
-for i = 1, #KEYS do
-	if redis.call('EXISTS', KEYS[i]) == 1 then
-		redis.call('SADD', KEYS[i], ARGV[1])
-		n = n + 1
-	end
+const addUserToGroupScript = `
+if redis.call('EXISTS', KEYS[1]) == 0 then
+	return 0
 end
-return n
+redis.call('SADD', KEYS[1], ARGV[1])
+return 1
 `
 
 // ReplaceGroupMembers 全量替换群成员集合（回源权威数据后的原子回填）。
@@ -105,12 +106,13 @@ func (t *Table) AddUserToGroups(ctx context.Context, userID uint64, groupIDs []u
 	if len(groupIDs) == 0 {
 		return nil
 	}
-	keys := make([]string, len(groupIDs))
-	for i, gid := range groupIDs {
-		keys[i] = groupMemberKey(gid)
-	}
-	_, err := t.client.EvalCtx(ctx, addUserToGroupsScript, keys, strconv.FormatUint(userID, 10))
-	return err
+	uid := strconv.FormatUint(userID, 10)
+	return t.client.PipelinedCtx(ctx, func(pipe redis.Pipeliner) error {
+		for _, gid := range groupIDs {
+			pipe.Eval(ctx, addUserToGroupScript, []string{groupMemberKey(gid)}, uid)
+		}
+		return nil
+	})
 }
 
 // GetGroupMembers 读取群成员集合。集合不存在或为空返回 nil
