@@ -33,7 +33,7 @@ func InitLogger(logPath, serviceName string, env LoggerEnv) {
 		// 1. 配置 Lumberjack 日志轮转
 		logRotator = &lumberjack.Logger{
 			Filename:   logPath, // 日志文件路径
-			MaxSize:    100,     // 单个日志文件最大 100MB
+			MaxSize:    200,     // 单个日志文件最大 200MB
 			MaxBackups: 5,       // 最多保留 5 个旧文件
 			MaxAge:     30,      // 旧文件最多保留 30 天
 			Compress:   true,    // 是否压缩旧文件 (gzip)
