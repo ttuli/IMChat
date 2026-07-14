@@ -1,34 +1,25 @@
 // WebSocket 连接数压测脚本
 //
 // 目标：测试网关（websocket-gateway）能同时承载多少条长连接。
-// 流程：读取账号或 token -> 批量登录换取 token -> 按速率爬升建立 WS 连接 ->
-// 保持一段时间（读循环消费服务端 ping/消息，维持连接）-> 输出建连成功/失败、
-// 在线峰值、建连延迟分布。
+// 流程：自动生成批量虚拟账号和设备ID -> 直接调用 TokenManager 生成 Token 并注册 session 到 Redis ->
+// 按速率爬升建立 WS 连接 -> 保持一段时间（读循环消费服务端 ping/消息，维持连接）-> 
+// 输出建连成功/失败、在线峰值、建连延迟分布。
 //
-// 关键约束：网关对同一 userID 的新连接会踢掉旧连接，且登录会递增会话 version
-// 使旧 token 的 WS 鉴权失效。因此每条并发连接必须使用「不同账号」。请通过
-// -accounts 提供足量的已注册账号，或用 -tokens 提供预先签发、互不冲突的 token。
+// 关键约束：网关对同一 userID 的新连接会踢掉旧连接。因此每条并发连接必须使用「不同账号」。
+// 本脚本会通过配置自动递增生成 UserID 和对应的 Token，完美解决踢连问题并免去了注册账号的麻烦。
 //
 // 用法示例：
 //
-//	# accounts.csv 每行： 账号(数字用户ID),密码[,设备ID]
-//	go run ./scripts/loadtest/ws_conn \
-//	    -host 127.0.0.1:8888 -path /ws \
-//	    -login-url http://127.0.0.1:8888 \
-//	    -accounts accounts.csv -n 5000 -rate 300 -hold 60s
+//	# 执行前请确保已配置好 config.yaml 并在项目根目录存在 .env
+//	go run .
 //
-//	# 直接使用 token 列表（每行一个 AT），跳过登录
-//	go run ./scripts/loadtest/ws_conn -host 127.0.0.1:8888 -tokens tokens.txt -n 2000
 package main
 
 import (
-	"bufio"
 	"context"
 	"crypto/tls"
-	"encoding/json"
-	"flag"
+
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"net/url"
@@ -42,65 +33,122 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
+	zredis "github.com/zeromicro/go-zero/core/stores/redis"
+	"gopkg.in/yaml.v3"
+
+	tokenmanager "IM2/pkg/tokenManager"
 )
 
-var (
-	flagHost     = flag.String("host", "127.0.0.1:8888", "网关地址 host:port")
-	flagPath     = flag.String("path", "/ws", "WebSocket 路径")
-	flagTLS      = flag.Bool("tls", false, "使用 wss（TLS）")
-	flagInsecure = flag.Bool("insecure", false, "跳过 TLS 证书校验")
-	flagLoginURL = flag.String("login-url", "", "登录服务基址，如 http://127.0.0.1:8888；用 -accounts 时必填")
-	flagAccounts = flag.String("accounts", "", "账号文件：每行 账号,密码[,设备ID]")
-	flagTokens   = flag.String("tokens", "", "token 文件：每行一个 AccessToken（与 -accounts 二选一）")
-	flagNum      = flag.Int("n", 0, "目标连接数；0 表示使用全部账号/token")
-	flagRate     = flag.Int("rate", 200, "建连爬升速率（条/秒）")
-	flagHold     = flag.Duration("hold", 30*time.Second, "全部建连后保持时长")
-	flagDialTO   = flag.Duration("dial-timeout", 10*time.Second, "单条连接握手超时")
-	flagLoginTO  = flag.Duration("login-timeout", 10*time.Second, "单次登录超时")
-	flagLoginC   = flag.Int("login-c", 50, "登录阶段并发数")
-)
+// ---------- 配置结构 ----------
 
-// 运行期计数器
+type Config struct {
+	Host     string `yaml:"host"`
+	Path     string `yaml:"path"`
+	TLS      bool   `yaml:"tls"`
+	Insecure bool   `yaml:"insecure"`
+
+	JWTExpire int64  `yaml:"jwt_expire"`
+
+	Num         int    `yaml:"num"`
+	StartUserID uint64 `yaml:"start_user_id"`
+	Rate        int    `yaml:"rate"`
+	Hold        string `yaml:"hold"`
+	DialTimeout string `yaml:"dial_timeout"`
+
+	// 解析后的 duration，不写入 YAML
+	holdDur        time.Duration
+	dialTimeoutDur time.Duration
+}
+
+func (c *Config) parseDurations() error {
+	var err error
+	if c.holdDur, err = time.ParseDuration(c.Hold); err != nil {
+		return fmt.Errorf("hold 格式错误: %w", err)
+	}
+	if c.dialTimeoutDur, err = time.ParseDuration(c.DialTimeout); err != nil {
+		return fmt.Errorf("dial_timeout 格式错误: %w", err)
+	}
+	return nil
+}
+
+func loadConfig() (Config, error) {
+	var cfg Config
+	data, err := os.ReadFile("config.yaml")
+	if err != nil {
+		return cfg, fmt.Errorf("读取配置文件 config.yaml 失败: %w", err)
+	}
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return cfg, fmt.Errorf("解析配置文件失败: %w", err)
+	}
+
+	// 校验必填项
+	if cfg.Host == "" {
+		return cfg, fmt.Errorf("配置项不能为空: host")
+	}
+	if cfg.Path == "" {
+		return cfg, fmt.Errorf("配置项不能为空: path")
+	}
+	if cfg.Num <= 0 {
+		return cfg, fmt.Errorf("配置项无效或为空: num (必须 > 0)")
+	}
+	if cfg.StartUserID <= 0 {
+		return cfg, fmt.Errorf("配置项无效或为空: start_user_id (必须 > 0)")
+	}
+	if cfg.Rate <= 0 {
+		return cfg, fmt.Errorf("配置项无效或为空: rate (必须 > 0)")
+	}
+	if cfg.Hold == "" {
+		return cfg, fmt.Errorf("配置项不能为空: hold")
+	}
+	if cfg.DialTimeout == "" {
+		return cfg, fmt.Errorf("配置项不能为空: dial_timeout")
+	}
+	if cfg.JWTExpire <= 0 {
+		return cfg, fmt.Errorf("配置项无效或为空: jwt_expire (必须 > 0)")
+	}
+
+	if err := cfg.parseDurations(); err != nil {
+		return cfg, err
+	}
+	return cfg, nil
+}
+
+// ---------- 运行期计数器 ----------
+
 var (
-	established atomic.Int64 // 累计建连成功
-	failed      atomic.Int64 // 累计建连失败
-	active      atomic.Int64 // 当前在线
-	peakActive  atomic.Int64 // 在线峰值
+	established atomic.Int64
+	failed      atomic.Int64
+	active      atomic.Int64
+	peakActive  atomic.Int64
 
 	failMu    sync.Mutex
 	failKinds = map[string]int64{}
 
 	connMu sync.Mutex
-	conns  []*websocket.Conn // 保存以便结束时统一关闭
+	conns  []*websocket.Conn
 
 	dialMu   sync.Mutex
 	dialLats []time.Duration
 )
 
-type credential struct {
-	account  string
-	password string
-	deviceID string
-	token    string // 直接提供 token 时填充
-}
+// ---------- 主流程 ----------
 
 func main() {
-	flag.Parse()
 
-	creds, err := loadCredentials()
+	// 1. 加载环境变量
+	_ = godotenv.Load(".env") // 尝试加载当前目录的 .env
+	_ = godotenv.Load("../../../.env") // 尝试加载项目根目录的 .env
+
+	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "加载账号/token 失败: %v\n", err)
+		fmt.Fprintf(os.Stderr, "加载配置失败: %v\n", err)
 		os.Exit(1)
 	}
-	if len(creds) == 0 {
-		fmt.Fprintln(os.Stderr, "没有可用的账号或 token")
+	if cfg.Num <= 0 {
+		fmt.Fprintln(os.Stderr, "目标连接数(num)必须大于0")
 		os.Exit(1)
 	}
-	n := *flagNum
-	if n <= 0 || n > len(creds) {
-		n = len(creds)
-	}
-	creds = creds[:n]
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -112,21 +160,21 @@ func main() {
 		cancel()
 	}()
 
-	// 阶段一：登录换 token（若已提供 token 则跳过）
-	tokens := resolveTokens(ctx, creds)
+	// 2. 生成 Token 并写入 Redis
+	tokens, tm := generateAndRegisterTokens(ctx, cfg)
 	if len(tokens) == 0 {
-		fmt.Fprintln(os.Stderr, "没有拿到任何有效 token，无法建连")
+		fmt.Fprintln(os.Stderr, "没有生成任何有效 token，无法建连")
 		os.Exit(1)
 	}
-	fmt.Printf("准备建连：目标 %d 条，有效 token %d 个\n", n, len(tokens))
+	fmt.Printf("准备建连：目标 %d 条，有效 token %d 个\n", cfg.Num, len(tokens))
 
-	// 阶段二：按速率爬升建连
+	// 3. 按速率爬升建连
 	fmt.Println("========== 开始建立 WS 连接 ==========")
 	stopProgress := make(chan struct{})
 	go progressLoop(stopProgress)
 
 	var wg sync.WaitGroup
-	rate := *flagRate
+	rate := cfg.Rate
 	if rate < 1 {
 		rate = 1
 	}
@@ -145,40 +193,131 @@ loop:
 		wg.Add(1)
 		go func(token string) {
 			defer wg.Done()
-			dialOne(ctx, token)
+			dialOne(ctx, cfg, token)
 		}(tk)
 	}
-	wg.Wait() // 等待全部拨号发起完成（读循环仍在后台维持连接）
+	wg.Wait()
 	rampCost := time.Since(start)
 	close(stopProgress)
 
 	fmt.Printf("\n建连爬升完成：耗时 %.1fs，成功 %d，失败 %d，当前在线 %d\n",
 		rampCost.Seconds(), established.Load(), failed.Load(), active.Load())
 
-	// 阶段三：保持
+	// 4. 保持
 	if active.Load() > 0 && ctx.Err() == nil {
-		fmt.Printf("保持连接 %s（观察服务端是否踢连/掉线）...\n", *flagHold)
-		holdCtx, holdCancel := context.WithTimeout(ctx, *flagHold)
+		fmt.Printf("保持连接 %s（观察服务端是否踢连/掉线）...\n", cfg.holdDur)
+		holdCtx, holdCancel := context.WithTimeout(ctx, cfg.holdDur)
 		holdLoop(holdCtx)
 		holdCancel()
 	}
 
-	// 阶段四：收尾
+	// 5. 收尾
 	closeAll()
+	cleanupTokens(context.Background(), tm, cfg)
 	report(rampCost)
 }
 
-// dialOne 建立单条 WS 连接并启动读循环维持它。
-func dialOne(ctx context.Context, token string) {
+// ---------- Token 生成与清理 ----------
+
+func generateAndRegisterTokens(ctx context.Context, cfg Config) ([]string, *tokenmanager.TokenManager) {
+	redisHost := os.Getenv("REDIS_TOKEN_HOST")
+	redisPass := os.Getenv("REDIS_TOKEN_PASS")
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	if redisHost == "" || jwtSecret == "" {
+		fmt.Println("未读取到 REDIS_TOKEN_HOST 或 JWT_SECRET 环境变量，请确保 .env 文件存在并且已配置")
+		os.Exit(1)
+	}
+
+	tmConfig := tokenmanager.TokenConfig{
+		RedisConf: zredis.RedisConf{
+			Host: redisHost,
+			Pass: redisPass,
+			Type: "node",
+		},
+	}
+	tmConfig.JWTConfig.Secret = jwtSecret
+	tmConfig.JWTConfig.Expire = cfg.JWTExpire
+	tmConfig.JWTConfig.RefreshExpire = cfg.JWTExpire + 86400
+
+	tm := tokenmanager.NewTokenManager(tmConfig)
+
+	fmt.Printf("========== 批量生成并注册 %d 个账号的 Token ==========\n", cfg.Num)
+	
+	tokens := make([]string, cfg.Num)
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 100) // 限制并发数为 100
+	var successCount atomic.Int64
+
+	for i := 0; i < cfg.Num; i++ {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(idx int) {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			userID := cfg.StartUserID + uint64(idx)
+			deviceID := fmt.Sprintf("device%02d", idx+1)
+
+			// 调用 tokenmanager.OnLogin()：
+			// 1. 写 session:{userID} 
+			// 2. 生成带 version 的 AT
+			accessToken, _, err := tm.OnLogin(ctx, userID, tokenmanager.LoginOptions{
+				MachineID:  deviceID,
+				RememberMe: false, // 压测时默认 false 即可
+			})
+			
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "生成 Token 失败 (userID=%d): %v\n", userID, err)
+				return
+			}
+			tokens[idx] = accessToken
+			successCount.Add(1)
+		}(i)
+	}
+	wg.Wait()
+
+	// 过滤掉生成失败的空 token
+	validTokens := make([]string, 0, successCount.Load())
+	for _, tk := range tokens {
+		if tk != "" {
+			validTokens = append(validTokens, tk)
+		}
+	}
+	
+	fmt.Printf("Token 生成完毕：成功 %d 个\n", len(validTokens))
+	return validTokens, tm
+}
+
+func cleanupTokens(ctx context.Context, tm *tokenmanager.TokenManager, cfg Config) {
+	fmt.Printf("\n清理 Redis 测试数据中 (共 %d 个账号)...\n", cfg.Num)
+	
+	keys := make([]string, cfg.Num)
+	for i := 0; i < cfg.Num; i++ {
+		userID := cfg.StartUserID + uint64(i)
+		keys[i] = fmt.Sprintf("session:%d", userID)
+	}
+
+	_, err := tm.DelCtx(ctx, keys...)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "批量清理 Redis 数据失败: %v\n", err)
+		return
+	}
+	fmt.Println("Redis 测试数据清理完毕。")
+}
+
+// ---------- 连接建立与维持 ----------
+
+func dialOne(ctx context.Context, cfg Config, token string) {
 	scheme := "ws"
-	if *flagTLS {
+	if cfg.TLS {
 		scheme = "wss"
 	}
-	u := url.URL{Scheme: scheme, Host: *flagHost, Path: *flagPath, RawQuery: "token=" + url.QueryEscape(token)}
+	u := url.URL{Scheme: scheme, Host: cfg.Host, Path: cfg.Path, RawQuery: "token=" + url.QueryEscape(token)}
 
 	dialer := websocket.Dialer{
-		HandshakeTimeout: *flagDialTO,
-		TLSClientConfig:  &tls.Config{InsecureSkipVerify: *flagInsecure},
+		HandshakeTimeout: cfg.dialTimeoutDur,
+		TLSClientConfig:  &tls.Config{InsecureSkipVerify: cfg.Insecure},
 	}
 
 	t0 := time.Now()
@@ -201,8 +340,6 @@ func dialOne(ctx context.Context, token string) {
 	conns = append(conns, c)
 	connMu.Unlock()
 
-	// 读循环：消费服务端消息与 ping（gorilla 默认自动回 pong），
-	// 出错即认为连接断开。
 	go func() {
 		defer func() {
 			active.Add(-1)
@@ -210,7 +347,7 @@ func dialOne(ctx context.Context, token string) {
 		}()
 		for {
 			if _, _, err := c.ReadMessage(); err != nil {
-				if ctx.Err() == nil { // 非主动关闭
+				if ctx.Err() == nil { 
 					recordFail("read: " + dialErrKind(err, nil))
 				}
 				return
@@ -219,7 +356,6 @@ func dialOne(ctx context.Context, token string) {
 	}()
 }
 
-// holdLoop 保持阶段，仅打印在线数直到超时或被取消。
 func holdLoop(ctx context.Context) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -243,163 +379,6 @@ func closeAll() {
 	}
 }
 
-// ---------- token 获取 ----------
-
-func resolveTokens(ctx context.Context, creds []credential) []string {
-	// 已直接提供 token
-	if creds[0].token != "" {
-		out := make([]string, 0, len(creds))
-		for _, c := range creds {
-			if c.token != "" {
-				out = append(out, c.token)
-			}
-		}
-		return out
-	}
-
-	if *flagLoginURL == "" {
-		fmt.Fprintln(os.Stderr, "使用 -accounts 时必须提供 -login-url")
-		os.Exit(2)
-	}
-
-	fmt.Printf("========== 批量登录 %d 个账号 ==========\n", len(creds))
-	client := &http.Client{Timeout: *flagLoginTO}
-	tokens := make([]string, len(creds))
-	var loginOK, loginFail atomic.Int64
-
-	sem := make(chan struct{}, *flagLoginC)
-	var wg sync.WaitGroup
-	for i := range creds {
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(idx int) {
-			defer wg.Done()
-			defer func() { <-sem }()
-			tk, err := login(ctx, client, *flagLoginURL, creds[idx])
-			if err != nil {
-				loginFail.Add(1)
-				recordFail("login: " + classifyLoginErr(err))
-				return
-			}
-			tokens[idx] = tk
-			loginOK.Add(1)
-		}(i)
-	}
-	wg.Wait()
-	fmt.Printf("登录完成：成功 %d，失败 %d\n", loginOK.Load(), loginFail.Load())
-
-	out := make([]string, 0, len(tokens))
-	for _, t := range tokens {
-		if t != "" {
-			out = append(out, t)
-		}
-	}
-	return out
-}
-
-type loginResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Data    struct {
-		Token        string `json:"token"`
-		RefreshToken string `json:"refresh_token"`
-	} `json:"data"`
-}
-
-func login(ctx context.Context, client *http.Client, baseURL string, c credential) (string, error) {
-	deviceID := c.deviceID
-	if deviceID == "" {
-		deviceID = "loadtest-" + c.account
-	}
-	// account 为数字用户ID，直接以数字形式写入 JSON
-	body := fmt.Sprintf(`{"account":%s,"password":%q,"device_id":%q,"remeber_me":false}`,
-		c.account, c.password, deviceID)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		strings.TrimRight(baseURL, "/")+"/auth/login", strings.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
-
-	var lr loginResponse
-	if err := json.Unmarshal(raw, &lr); err != nil {
-		return "", fmt.Errorf("解析登录响应失败(status=%d): %s", resp.StatusCode, truncate(string(raw), 120))
-	}
-	if lr.Data.Token == "" {
-		return "", fmt.Errorf("登录未返回 token(code=%d msg=%s)", lr.Code, lr.Message)
-	}
-	return lr.Data.Token, nil
-}
-
-// ---------- 账号/token 文件加载 ----------
-
-func loadCredentials() ([]credential, error) {
-	if *flagTokens != "" {
-		lines, err := readLines(*flagTokens)
-		if err != nil {
-			return nil, err
-		}
-		creds := make([]credential, 0, len(lines))
-		for _, ln := range lines {
-			creds = append(creds, credential{token: ln})
-		}
-		return creds, nil
-	}
-	if *flagAccounts == "" {
-		return nil, fmt.Errorf("必须提供 -accounts 或 -tokens")
-	}
-	lines, err := readLines(*flagAccounts)
-	if err != nil {
-		return nil, err
-	}
-	creds := make([]credential, 0, len(lines))
-	for _, ln := range lines {
-		parts := strings.Split(ln, ",")
-		if len(parts) < 2 {
-			return nil, fmt.Errorf("账号行格式错误(应为 账号,密码[,设备ID]): %q", ln)
-		}
-		c := credential{
-			account:  strings.TrimSpace(parts[0]),
-			password: strings.TrimSpace(parts[1]),
-		}
-		if len(parts) >= 3 {
-			c.deviceID = strings.TrimSpace(parts[2])
-		}
-		creds = append(creds, c)
-	}
-	return creds, nil
-}
-
-func readLines(path string) ([]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	var out []string
-	sc := bufio.NewScanner(f)
-	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" || strings.HasPrefix(ln, "#") {
-			continue
-		}
-		out = append(out, ln)
-	}
-	return out, sc.Err()
-}
-
-// ---------- 统计与输出 ----------
-
 func updatePeak(cur int64) {
 	for {
 		old := peakActive.Load()
@@ -410,7 +389,6 @@ func updatePeak(cur int64) {
 }
 
 func droppedCount() int64 {
-	// 已建连但当前不在线的数量（保持阶段掉线）
 	d := established.Load() - active.Load()
 	if d < 0 {
 		return 0
@@ -488,7 +466,7 @@ func dialErrKind(err error, resp *http.Response) string {
 	switch {
 	case strings.Contains(msg, "i/o timeout"), strings.Contains(msg, "deadline exceeded"):
 		return "timeout"
-	case strings.Contains(msg, "refused"): // Unix: connection refused / Windows: actively refused
+	case strings.Contains(msg, "refused"):
 		return "connection refused"
 	case strings.Contains(msg, "reset by peer"), strings.Contains(msg, "connection reset"), strings.Contains(msg, "forcibly closed"):
 		return "connection reset"
@@ -498,20 +476,6 @@ func dialErrKind(err error, resp *http.Response) string {
 		return "closed by server"
 	case strings.Contains(msg, "no such host"):
 		return "dns error"
-	default:
-		return truncate(msg, 48)
-	}
-}
-
-func classifyLoginErr(err error) string {
-	msg := err.Error()
-	switch {
-	case strings.Contains(msg, "未返回 token"):
-		return "鉴权失败(账号/密码错误)"
-	case strings.Contains(msg, "timeout"), strings.Contains(msg, "deadline"):
-		return "timeout"
-	case strings.Contains(msg, "refused"): // Unix: connection refused / Windows: actively refused
-		return "connection refused"
 	default:
 		return truncate(msg, 48)
 	}
