@@ -88,6 +88,10 @@ var (
 	totalAckDup  atomic.Int64
 	totalRecv    atomic.Int64
 	connActive   atomic.Int64
+
+	// readWg 跟踪所有读循环；报告前必须等它们退出，
+	// 否则 report 读取 sender.ackLats 会与读循环的追加产生数据竞争。
+	readWg sync.WaitGroup
 )
 
 type sender struct {
@@ -182,7 +186,24 @@ func main() {
 		}
 	}
 
+	// 等读循环全部退出后统计数据才稳定（ackLats 由读循环独占写入）
+	waitReadLoops(5 * time.Second)
+
 	report(senders, sendDur)
+}
+
+// waitReadLoops 等待所有读循环退出（带超时兜底，防止个别连接卡住阻塞报告）。
+func waitReadLoops(timeout time.Duration) {
+	done := make(chan struct{})
+	go func() {
+		readWg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(timeout):
+		fmt.Fprintf(os.Stderr, "警告：等待读循环退出超时(%s)，部分统计可能不完整\n", timeout)
+	}
 }
 
 // sendLoop 按速率/数量向单条连接持续发送 CHAT_TEXT。
@@ -327,7 +348,11 @@ func dialAll(ctx context.Context, senders []*sender) []*websocket.Conn {
 			}
 			conns[idx] = c
 			connActive.Add(1)
-			go readLoop(c, senders[idx])
+			readWg.Add(1)
+			go func() {
+				defer readWg.Done()
+				readLoop(c, senders[idx])
+			}()
 		}(i)
 	}
 	wg.Wait()

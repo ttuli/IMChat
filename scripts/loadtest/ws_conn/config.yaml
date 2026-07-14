@@ -1,6 +1,7 @@
 # WebSocket 连接数压测配置
-# 用法：go run ./scripts/loadtest/ws_conn -config config.yaml
-# 命令行 flag（-host/-n 等）优先级高于此配置文件，可用于临时覆盖。
+# 用法一：cd scripts/loadtest/ws_conn && go run .
+# 用法二：go run ./scripts/loadtest/ws_conn -config scripts/loadtest/ws_conn/config.yaml
+# 需在项目根目录存在 .env（REDIS_TOKEN_HOST / REDIS_TOKEN_PASS / JWT_SECRET）。
 
 # 网关地址
 host: "www.imflow.cloud:30443"
@@ -15,11 +16,11 @@ insecure: false
 jwt_expire: 86400
 
 # 目标连接数，脚本将自动生成对应数量的账号和 Token
-num: 500
+num: 2000
 # 起始 UserID
 start_user_id: 1000001
 # 建连爬升速率（条/秒）
-rate: 200
+rate: 30
 # 全部建连后保持时长（支持 Go duration 格式，如 30s / 2m）
 hold: "30s"
 # 单条连接握手超时
