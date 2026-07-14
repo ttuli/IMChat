@@ -85,7 +85,12 @@ go run ./scripts/loadtest/ws_conn -config scripts/loadtest/ws_conn/config.yaml
 
 **指标说明：** 报告区分「建连失败」（握手阶段）与「中途掉线」（建连成功后断开，
 其中被服务端踢下线的会单独列出）；Ctrl-C 中断时在途拨号计为「中断取消」，不算失败。
-`start_user_id` 请避开真实用户的 ID 区间，防止踢掉真实用户的会话。
+建连过程中若有失败，进度行会实时显示主导失败原因（`HTTP 503` / `timeout` / `connection reset` 等），
+便于判断「临近目标值失败飙升」到底是入口限流、accept 队列还是 fd 上限。
+
+**数据清理：** 收尾时按 `start_user_id ~ start_user_id+num` 区间删除 `session:{id}`
+与 `ws:route:{id}`。路由键由网关在断连时 best-effort 删除，高并发同时断连下常残留个位数，
+脚本按区间兜底清理，确保不留脏数据。`start_user_id` 请避开真实用户 ID 区间，防止误删真实会话/路由。
 
 ---
 

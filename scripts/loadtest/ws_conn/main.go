@@ -231,6 +231,11 @@ loop:
 	closeAll()
 	waitReadLoops(5 * time.Second)
 
+	// 给网关一点时间各自处理断连（执行 UnregisterUser），随后再兜底清理路由键残留。
+	// 非 Ctrl-C 场景才等待，中断时优先快速退出（清理仍会执行）。
+	if ctx.Err() == nil {
+		time.Sleep(2 * time.Second)
+	}
 	cleanupTokens(tm, cfg)
 	report(rampCost, onlineAtEnd)
 }
@@ -336,25 +341,33 @@ func generateAndRegisterTokens(ctx context.Context, cfg Config) ([]string, *toke
 // cleanupTokens 删除本次压测写入的 session 键。
 // 使用独立的带超时 context（主 ctx 可能已被 Ctrl-C 取消），并分批删除避免超大单命令。
 func cleanupTokens(tm *tokenmanager.TokenManager, cfg Config) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	const batchSize = 1000
+	var deleted int
 	for begin := 0; begin < cfg.Num; begin += batchSize {
 		end := begin + batchSize
 		if end > cfg.Num {
 			end = cfg.Num
 		}
-		keys := make([]string, 0, end-begin)
+		keys := make([]string, 0, (end-begin)*2)
 		for i := begin; i < end; i++ {
-			keys = append(keys, fmt.Sprintf("session:%d", cfg.StartUserID+uint64(i)))
+			id := cfg.StartUserID + uint64(i)
+			// 同时清理会话键与网关注册的用户路由键：
+			//   session:{id}   —— 本脚本生成 Token 时写入
+			//   ws:route:{id}  —— 网关在建连时注册、断连时 best-effort 删除，
+			//                     高并发同时断连下常残留个位数，这里按账号区间兜底删除。
+			keys = append(keys, fmt.Sprintf("session:%d", id), fmt.Sprintf("ws:route:%d", id))
 		}
-		if _, err := tm.DelCtx(ctx, keys...); err != nil {
+		n, err := tm.DelCtx(ctx, keys...)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n清理 Redis 测试数据失败: %v\n", err)
 			return
 		}
+		deleted += n
 	}
-	fmt.Printf("\n已清除所有 Redis 测试数据（%d 个账号）\n", cfg.Num)
+	fmt.Printf("\n已清除所有 Redis 测试数据（session + 路由键，实际删除 %d 个 key）\n", deleted)
 }
 
 // ---------- 连接建立与维持 ----------
@@ -519,8 +532,14 @@ func progressLoop(stop <-chan struct{}) {
 			return
 		case <-ticker.C:
 			cur := established.Load()
-			fmt.Printf("\r建连中：成功=%d(+%d/s)  在线=%d  失败=%d          ",
-				cur, cur-last, active.Load(), failed.Load())
+			cause := ""
+			if failed.Load() > 0 {
+				// 实时暴露主导失败原因，便于判断「临近目标值失败飙升」的性质
+				// （HTTP 503=入口/降载限流，timeout=accept 队列/CPU，reset=fd/LB 上限）
+				cause = "  [" + topFailures(1) + "]"
+			}
+			fmt.Printf("\r建连中：成功=%d(+%d/s)  在线=%d  失败=%d%s          ",
+				cur, cur-last, active.Load(), failed.Load(), cause)
 			last = cur
 		}
 	}
