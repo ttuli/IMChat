@@ -5,6 +5,7 @@ import (
 
 	model "IM2/internal/model"
 	"IM2/pkg/proto/transport"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
 )
 
@@ -49,7 +50,22 @@ func (s *MessageService) GetSession(ctx context.Context, sessionIDs []string) ([
 
 // UpdateSession 更新会话设置
 // isTop/isDisturb: 0-不变更 1-开启 2-关闭
-func (s *MessageService) UpdateSession(ctx context.Context, userID uint64, sessionID string, isTop, isDisturb int32) error {
+func (s *MessageService) UpdateSession(ctx context.Context, userID uint64, sessionID, sessionKey string, isTop, isDisturb int32) error {
+	if sessionID == "" {
+		if sessionKey == "" {
+			return xerr.New(transport.ErrorCode_ERR_INVALID_PARAMS, "更新失败")
+		}
+		sessionType := model.SessionTypeSingle
+		if util.IsGroupSession(sessionKey) {
+			sessionType = model.SessionTypeGroup
+		}
+		resolvedID, err := s.ResolveSessionID(ctx, sessionKey, sessionType)
+		if err != nil {
+			return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "解析 sessionKey 失败")
+		}
+		sessionID = resolvedID
+	}
+
 	updates := make(map[string]any)
 
 	if isDisturb != 0 {

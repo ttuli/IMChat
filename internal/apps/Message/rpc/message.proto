@@ -68,8 +68,9 @@ message GetUserSessionsResp {
 message UpdateSessionReq {
   uint64 user_id = 1;
   string session_id = 2;
-  int32 is_top = 3;      // 0:不变更 1:置顶 2:取消置顶
-  int32 is_disturb = 4;  // 0:不变更 1:免打扰 2:取消免打扰
+  string session_key = 3;
+  int32 is_top = 4;      // 0:不变更 1:置顶 2:取消置顶
+  int32 is_disturb = 5;  // 0:不变更 1:免打扰 2:取消免打扰
 }
 
 message UpdateSessionResp {}

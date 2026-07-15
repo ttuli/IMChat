@@ -1,0 +1,9 @@
+统一通知消息，比如消息撤回，拉人进群等消息统一为一个proto中的message，放到pkg/proto/message.proto下，这个message带上
+basemessage结构作为成员
+apps/Group/rpc下
+wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
+	s.publishGroupNotify(wsMsg, allMemberIDs)
+相关的内容改为发布这个构造好的结构体到DBSubject(也就是message/rpc下listener监听的subject)，进行落库处理，msgid需要分配
+其他的看情况
+
+同样其他地方有类似情况也要修改

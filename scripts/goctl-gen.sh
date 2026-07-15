@@ -81,6 +81,7 @@ fix_rpc() {
     fi
 
     rm "${SERVICE_NAME}rpc.go"
+    rm "etc/${SERVICE_NAME}rpc.yaml"
     
     # logic 中的新文件默认由 goctl 产生（goctl rpc 增量生成 logic 时，不覆盖已有文件）
     

@@ -30,10 +30,11 @@ func (l *UpdateSessionLogic) UpdateSession(req *types.UpdateSessionReq) error {
 	userID := tokenmanager.ExtractIDFromCtx(l.ctx)
 
 	_, err := l.svcCtx.MessageRpc.UpdateSession(l.ctx, &messagerpc.UpdateSessionReq{
-		UserId:    userID,
-		SessionId: req.SessionId,
-		IsTop:     req.IsTop,
-		IsDisturb: req.IsDisturb,
+		UserId:     userID,
+		SessionId:  req.SessionId,
+		SessionKey: req.SessionKey,
+		IsTop:      req.IsTop,
+		IsDisturb:  req.IsDisturb,
 	})
 	return err
 }

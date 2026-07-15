@@ -26,7 +26,7 @@ func NewUpdateSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upd
 
 func (l *UpdateSessionLogic) UpdateSession(in *message.UpdateSessionReq) (*message.UpdateSessionResp, error) {
 	if err := service.NewMessageService(l.svcCtx).UpdateSession(l.ctx,
-		in.UserId, in.SessionId,
+		in.UserId, in.SessionId, in.SessionKey,
 		in.IsTop, in.IsDisturb); err != nil {
 		return nil, err
 	}

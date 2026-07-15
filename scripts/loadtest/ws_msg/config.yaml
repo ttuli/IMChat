@@ -1,0 +1,39 @@
+# WebSocket 消息并发压测配置
+# 用法一：cd scripts/loadtest/ws_msg && go run .
+# 用法二：go run ./scripts/loadtest/ws_msg -config scripts/loadtest/ws_msg/config.yaml
+# 需在项目根目录存在 .env（REDIS_TOKEN_HOST / REDIS_TOKEN_PASS / JWT_SECRET）。
+
+# 网关地址
+host: "127.0.0.1:8888"
+# WebSocket 路径
+path: "/ws"
+# 是否使用 wss（TLS）
+tls: false
+# 跳过 TLS 证书校验（仅 tls=true 时有效）
+insecure: false
+
+# Token 过期时间（秒）
+jwt_expire: 86400
+
+# 发送连接数（目标连接数），脚本将自动生成对应数量的账号和 Token
+num: 200
+# 起始 UserID
+start_user_id: 1000001
+# 建连爬升速率（条/秒）
+dial_rate: 70
+# 单条连接握手超时
+dial_timeout: "10s"
+
+# --- 消息发送相关配置 ---
+# 每条连接的发送速率（条/秒）；0 表示不限速
+send_rate: 50
+# 每条连接发送的消息总数；0 表示不限，按 duration 时长
+send_count: 0
+# 压测时长（send_count 为 0 时生效）
+duration: "30s"
+# 固定目标用户ID；0 表示两两互发
+target_user_id: 0
+# 文本内容
+content: "hello from loadtest"
+# 将文本填充到指定字节数（0 表示不填充）
+payload_size: 0

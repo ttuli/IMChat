@@ -25,6 +25,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -39,6 +41,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 	zredis "github.com/zeromicro/go-zero/core/stores/redis"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v3"
@@ -148,9 +152,20 @@ var (
 	dialLats []time.Duration
 )
 
+type noOpLogger struct{}
+
+func (n *noOpLogger) Printf(ctx context.Context, format string, v ...interface{}) {}
+
 // ---------- 主流程 ----------
 
 func main() {
+	// 禁用 go-zero 内置的日志与系统统计输出，保持压测控制台界面整洁
+	logx.Disable()
+	logx.DisableStat()
+	// 屏蔽底层 redis 驱动标准日志包的警告输出
+	log.SetOutput(io.Discard)
+	redis.SetLogger(&noOpLogger{})
+
 	configPath := flag.String("config", "config.yaml", "配置文件路径")
 	flag.Parse()
 
@@ -259,10 +274,10 @@ func waitReadLoops(timeout time.Duration) {
 func generateAndRegisterTokens(ctx context.Context, cfg Config) ([]string, *tokenmanager.TokenManager) {
 	redisHost := os.Getenv("REDIS_TOKEN_HOST")
 	redisPass := os.Getenv("REDIS_TOKEN_PASS")
-	jwtSecret := os.Getenv("JWT_SECRET")
+	jwtSecret := os.Getenv("JWT_ACCESS_SECRET")
 
 	if redisHost == "" || jwtSecret == "" {
-		fmt.Println("未读取到 REDIS_TOKEN_HOST 或 JWT_SECRET 环境变量，请确保 .env 文件存在并且已配置")
+		fmt.Println("未读取到 REDIS_TOKEN_HOST 或 JWT_ACCESS_SECRET 环境变量，请确保 .env 文件存在并且已配置")
 		os.Exit(1)
 	}
 

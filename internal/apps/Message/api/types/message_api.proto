@@ -93,10 +93,12 @@ message GetHistoryResp {
 message UpdateSessionReq {
   // @gotags: json:"session_id"
   string session_id = 1;
+  // @gotags: json:"session_key"
+  string session_key = 2;
   // @gotags: json:"is_top,optional"
-  int32 is_top = 2;
+  int32 is_top = 3;
   // @gotags: json:"is_disturb,optional"
-  int32 is_disturb = 3;
+  int32 is_disturb = 4;
 }
 
 // GetUserSessionsResp

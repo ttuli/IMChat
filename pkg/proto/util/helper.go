@@ -10,9 +10,9 @@ import (
 	"IM2/pkg/proto/group"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
 
-	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -23,44 +23,32 @@ func GetSessionType(sessionId string) message.SessionType {
 	return message.SessionType_SESSION_TYPE_PRIVATE
 }
 
-func GenerateUserSessionId(userId uint64, targetId uint64) string {
-	if userId < targetId {
-		return "private_" + strconv.FormatUint(userId, 10) + "_" + strconv.FormatUint(targetId, 10)
-	} else {
-		return "private_" + strconv.FormatUint(targetId, 10) + "_" + strconv.FormatUint(userId, 10)
-	}
-}
-
 func GenerateGroupSessionId(groupId uint64) string {
-	return "group_" + strconv.FormatUint(groupId, 10)
+	return strconv.FormatUint(groupId, 10)
 }
 
 func IsGroupSession(sessionId string) bool {
-	return strings.HasPrefix(sessionId, "group")
+	return !IsPrivateSession(sessionId)
 }
 
 func IsPrivateSession(sessionId string) bool {
-	return strings.HasPrefix(sessionId, "private")
+	return strings.Contains(sessionId, "_")
 }
 
 // GetTargetIdFromSessionId 从会话ID中解析出目标ID（群ID或对方用户ID）
 func GetTargetIdFromSessionId(sessionId string, currentUserId uint64) (uint64, error) {
 	if IsGroupSession(sessionId) {
-		parts := strings.Split(sessionId, "_")
-		if len(parts) != 2 {
-			return 0, errors.New("invalid group session id")
-		}
-		return strconv.ParseUint(parts[1], 10, 64)
+		return strconv.ParseUint(sessionId, 10, 64)
 	} else if IsPrivateSession(sessionId) {
 		parts := strings.Split(sessionId, "_")
-		if len(parts) != 3 {
+		if len(parts) != 2 {
 			return 0, errors.New("invalid private session id")
 		}
-		id1, err := strconv.ParseUint(parts[1], 10, 64)
+		id1, err := strconv.ParseUint(parts[0], 10, 64)
 		if err != nil {
 			return 0, err
 		}
-		id2, err := strconv.ParseUint(parts[2], 10, 64)
+		id2, err := strconv.ParseUint(parts[1], 10, 64)
 		if err != nil {
 			return 0, err
 		}
@@ -172,20 +160,13 @@ func NewMessageOperationMsg(opType transport.MessageType, operator uint64, msg *
 	return ws, nil
 }
 
-func NewGroupOperationMsg(opType social.GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *transport.WSMessage {
-	wmsg := &transport.WSMessage{
-		Type:            transport.MessageType_GROUP_OP_NOTIFICATION,
-		RouteTargetType: transport.TargetType_GROUP,
-		Timestamp:       time.Now().UnixMilli(),
-		RouteTarget:     []uint64{groupId},
-	}
+func NewGroupOperationMsg(opType social.GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *svc.MessageSend {
 	notify := &social.GroupNotification{
 		OpType:     opType,
 		GroupId:    groupId,
 		OperatorId: operator,
 		TargetIds:  targetIDs,
 		OpTime:     time.Now().UnixMilli(),
-		MsgId:      uuid.New().String(),
 		SessionId:  GenerateGroupSessionId(groupId),
 	}
 
@@ -201,13 +182,16 @@ func NewGroupOperationMsg(opType social.GroupOperationType, groupId uint64, targ
 			UpdateTime:  groupInfo.UpdateTime.UnixMilli(),
 		}
 	}
-
 	payload, err := proto.Marshal(notify)
 	if err != nil {
 		return nil
 	}
-	wmsg.Payload = payload
-	return wmsg
+
+	return &svc.MessageSend{
+		SessionKey: GenerateGroupSessionId(groupInfo.ID),
+		MsgType: int64(transport.MessageType_NOTIFICATION),
+		Payload: payload,
+	}
 }
 
 func NewFriendUpdateMsg(msgType transport.MessageType, f *model.UserFriend, targetID uint64) (*transport.WSMessage, error) {

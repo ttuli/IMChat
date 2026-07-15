@@ -16,11 +16,11 @@ insecure: false
 jwt_expire: 86400
 
 # 目标连接数，脚本将自动生成对应数量的账号和 Token
-num: 2000
+num: 40000
 # 起始 UserID
 start_user_id: 1000001
 # 建连爬升速率（条/秒）
-rate: 30
+rate: 70
 # 全部建连后保持时长（支持 Go duration 格式，如 30s / 2m）
 hold: "30s"
 # 单条连接握手超时
