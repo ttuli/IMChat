@@ -65,7 +65,7 @@ func IsChatMessage(t transport.MessageType) bool {
 }
 
 func IsNotifyMessage(t transport.MessageType) bool {
-	return t >= transport.MessageType_NOTIFICATION && t <= transport.MessageType_GROUP_REQUEST
+	return t >= transport.MessageType_FRIEND_REQUEST && t <= transport.MessageType_GROUP_REQUEST
 }
 
 // ConvertFriendApplyToWSMessage converts a model.FriendApply to a WSMessage
@@ -159,7 +159,7 @@ func NewRecallNotifyMsg(operator uint64, sessionKey string, msg *model.Message) 
 		SessionKey: sessionKey,
 		Sender:     operator,
 		Target:     target,
-		MsgType:    int64(transport.MessageType_NOTIFICATION),
+		MsgType:    int64(transport.MessageType_MSG_OP_RECALL),
 		Timestamp:  now,
 		Preview:    "撤回了一条消息",
 		Payload:    payload,
@@ -210,7 +210,7 @@ func NewGroupOperationMsg(opType message.GroupOperationType, groupId uint64, tar
 		SessionKey: sessionKey,
 		Sender:     operator,
 		Target:     groupId,
-		MsgType:    int64(transport.MessageType_NOTIFICATION),
+		MsgType:    int64(transport.MessageType_GROUP_OP_NOTIFICATION),
 		Timestamp:  now,
 		Preview:    GroupNotifyPreview(opType),
 		Payload:    payload,

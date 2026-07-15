@@ -100,16 +100,13 @@ const (
 	MessageType_USER_TYPING        MessageType = 402 // 正在输入
 	MessageType_USER_STATUS_CHANGE MessageType = 403 // 状态变更
 	MessageType_USER_KICKOFF       MessageType = 404 // 用户被踢
-	// 群组操作
-	MessageType_GROUP_OP_NOTIFICATION MessageType = 500 // 群操作通知
-	// 消息操作
-	MessageType_MSG_OP_RECALL MessageType = 501 // 消息撤回
 	// 通知类 600-699
-	MessageType_NOTIFICATION   MessageType = 600 // 系统通知
-	MessageType_FRIEND_REQUEST MessageType = 601 // 好友请求
-	MessageType_FRIEND_ADD     MessageType = 602 // 添加好友
-	MessageType_FRIEND_DELETED MessageType = 603 // 删除好友
-	MessageType_GROUP_REQUEST  MessageType = 604 // 群请求
+	MessageType_FRIEND_REQUEST        MessageType = 601 // 好友请求
+	MessageType_FRIEND_ADD            MessageType = 602 // 添加好友
+	MessageType_FRIEND_DELETED        MessageType = 603 // 删除好友
+	MessageType_GROUP_REQUEST         MessageType = 604 // 群请求
+	MessageType_MSG_OP_RECALL         MessageType = 605 // 消息撤回
+	MessageType_GROUP_OP_NOTIFICATION MessageType = 606 // 群操作通知
 	// 内部消费消息
 	MessageType_UPDATE_SESSION  MessageType = 700 // 更新会话
 	MessageType_USER_GROUP_SYNC MessageType = 701 // 用户群组映射同步
@@ -145,13 +142,12 @@ var (
 		402: "USER_TYPING",
 		403: "USER_STATUS_CHANGE",
 		404: "USER_KICKOFF",
-		500: "GROUP_OP_NOTIFICATION",
-		501: "MSG_OP_RECALL",
-		600: "NOTIFICATION",
 		601: "FRIEND_REQUEST",
 		602: "FRIEND_ADD",
 		603: "FRIEND_DELETED",
 		604: "GROUP_REQUEST",
+		605: "MSG_OP_RECALL",
+		606: "GROUP_OP_NOTIFICATION",
 		700: "UPDATE_SESSION",
 		701: "USER_GROUP_SYNC",
 		900: "ERROR",
@@ -182,13 +178,12 @@ var (
 		"USER_TYPING":           402,
 		"USER_STATUS_CHANGE":    403,
 		"USER_KICKOFF":          404,
-		"GROUP_OP_NOTIFICATION": 500,
-		"MSG_OP_RECALL":         501,
-		"NOTIFICATION":          600,
 		"FRIEND_REQUEST":        601,
 		"FRIEND_ADD":            602,
 		"FRIEND_DELETED":        603,
 		"GROUP_REQUEST":         604,
+		"MSG_OP_RECALL":         605,
+		"GROUP_OP_NOTIFICATION": 606,
 		"UPDATE_SESSION":        700,
 		"USER_GROUP_SYNC":       701,
 		"ERROR":                 900,
@@ -648,7 +643,7 @@ const file_pkg_proto_transport_transport_proto_rawDesc = "" +
 	"\n" +
 	"TargetType\x12\b\n" +
 	"\x04USER\x10\x00\x12\t\n" +
-	"\x05GROUP\x10\x01*\x8c\x05\n" +
+	"\x05GROUP\x10\x01*\xf9\x04\n" +
 	"\vMessageType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tCHAT_TEXT\x10d\x12\x0e\n" +
@@ -681,15 +676,14 @@ const file_pkg_proto_transport_transport_proto_rawDesc = "" +
 	"\fUSER_OFFLINE\x10\x91\x03\x12\x10\n" +
 	"\vUSER_TYPING\x10\x92\x03\x12\x17\n" +
 	"\x12USER_STATUS_CHANGE\x10\x93\x03\x12\x11\n" +
-	"\fUSER_KICKOFF\x10\x94\x03\x12\x1a\n" +
-	"\x15GROUP_OP_NOTIFICATION\x10\xf4\x03\x12\x12\n" +
-	"\rMSG_OP_RECALL\x10\xf5\x03\x12\x11\n" +
-	"\fNOTIFICATION\x10\xd8\x04\x12\x13\n" +
+	"\fUSER_KICKOFF\x10\x94\x03\x12\x13\n" +
 	"\x0eFRIEND_REQUEST\x10\xd9\x04\x12\x0f\n" +
 	"\n" +
 	"FRIEND_ADD\x10\xda\x04\x12\x13\n" +
 	"\x0eFRIEND_DELETED\x10\xdb\x04\x12\x12\n" +
-	"\rGROUP_REQUEST\x10\xdc\x04\x12\x13\n" +
+	"\rGROUP_REQUEST\x10\xdc\x04\x12\x12\n" +
+	"\rMSG_OP_RECALL\x10\xdd\x04\x12\x1a\n" +
+	"\x15GROUP_OP_NOTIFICATION\x10\xde\x04\x12\x13\n" +
 	"\x0eUPDATE_SESSION\x10\xbc\x05\x12\x14\n" +
 	"\x0fUSER_GROUP_SYNC\x10\xbd\x05\x12\n" +
 	"\n" +

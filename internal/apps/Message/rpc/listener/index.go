@@ -176,18 +176,6 @@ func streamSeqOf(msg *nats.Msg) uint64 {
 	}
 	return meta.Sequence.Stream
 }
-
-// parseGroupNotify 从统一通知载体（NotifyMessage）中解出群操作通知，
-// 非群操作通知或解析失败返回 nil。
-func parseGroupNotify(payload []byte) *message.GroupNotification {
-	var nm message.NotifyMessage
-	if err := proto.Unmarshal(payload, &nm); err != nil {
-		logger.Errorf("[NatsListener] unmarshal notify message failed: %v", err)
-		return nil
-	}
-	return nm.GetGroupNotify()
-}
-
 // sessionWorkerIndex 按会话 key 哈希选择 worker，保证同会话消息串行处理
 func sessionWorkerIndex(m *protosvc.MessageSend, n int) int {
 	key := m.SessionKey
@@ -236,7 +224,7 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 	// 会话形态只能由 SessionKey 判断：解析出的 SessionId 是雪花 ID，不携带类型前缀
 	isGroup := util.IsGroupSession(m.SessionKey)
 	// 统一通知消息（群操作/撤回等）：无发送方 ACK 语义，操作者与普通成员同为接收方
-	isNotify := m.MsgType == int64(transport.MessageType_NOTIFICATION)
+	isNotify := m.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION)
 	sessionType := model.SessionTypeSingle
 	if isGroup {
 		sessionType = model.SessionTypeGroup
@@ -246,14 +234,6 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 		return err
 	}
 	m.SessionId = sessionID
-
-	// 群操作通知：落库前重放路由表增量修正 + user_session 建立
-	//（幂等，兜底 Group 服务同步直写失败的窗口；重投时重复执行无副作用）
-	if isNotify && isGroup {
-		if notify := parseGroupNotify(m.Payload); notify != nil {
-			l.handleGroupEvent(ctx, sessionID, notify)
-		}
-	}
 
 	// 单聊：补偿双方 user_session 行（进程内防重 + DB 幂等），
 	// 保证离线拉取的会话列表/未读计数有据可查；失败不阻塞消息链路
@@ -316,6 +296,7 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 	if isGroup {
 		// 群聊：成员定向扇出（按网关节点聚合），替代旧的全节点广播
 		l.deliverGroupMessage(ctx, m, deliverMsg)
+		msgSvc.
 		return nil
 	}
 

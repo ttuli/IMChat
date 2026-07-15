@@ -34,7 +34,7 @@ func (s *MessageService) GetHistory(ctx context.Context, conversationID string, 
 // PersistMessage 消费NATS消息、生成序号、广播事件、同步落库。
 // streamSeq 是该消息的 JetStream stream sequence，作为 Lamport 时间戳源，
 // 保证多实例并发消费同一会话时 seq 顺序与消息进入 stream 的顺序一致
-//（不受实例间物理时钟倾斜影响）。
+// （不受实例间物理时钟倾斜影响）。
 func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend, streamSeq uint64) (*model.Message, error) {
 	// 1. 分配 Lamport Seq（本地生成，不依赖 Redis）。
 	// 进程首次遇到该会话时先从 MongoDB 播种已持久化的最大 seq，
@@ -61,16 +61,16 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 
 	// 4. 构建 db model 并落库
 	dbMsg := &model.Message{
-		MsgID:          msgid,
-		ClientID:       msg.ClientId,
-		SessionID:      msg.SessionId,
-		FromUserID:     msg.Sender,
-		MsgType:        int16(msg.MsgType),
-		Seq:            seq,
-		Status:         int8(message.MessageStatus_MESSAGE_STATUS_DELIVERED),
-		Content:        msg.Preview,
-		CreateTime:     time.UnixMilli(msg.Timestamp),
-		Extra:          make(map[string]any),
+		MsgID:      msgid,
+		ClientID:   msg.ClientId,
+		SessionID:  msg.SessionId,
+		FromUserID: msg.Sender,
+		MsgType:    int16(msg.MsgType),
+		Seq:        seq,
+		Status:     int8(message.MessageStatus_MESSAGE_STATUS_DELIVERED),
+		Content:    msg.Preview,
+		CreateTime: time.UnixMilli(msg.Timestamp),
+		Extra:      make(map[string]any),
 	}
 
 	if msg.MsgType == int64(transport.MessageType_CHAT_IMAGE) ||
@@ -121,6 +121,10 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE.String()] = fileMsg.Size
 			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = fileMsg.FileName
 			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = fileMsg.Format
+		}
+	} else if msg.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) {
+		if notify := parseGroupNotify(msg.Payload); notify != nil {
+			s.handleGroupEvent(ctx, dbMsg.SessionID, notify)
 		}
 	}
 
