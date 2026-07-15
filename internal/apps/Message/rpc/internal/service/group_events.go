@@ -20,8 +20,17 @@ func parseGroupNotify(payload []byte) *message.GroupNotification {
 	return nm.GetGroupNotify()
 }
 
-// handleGroupEvent 处理单条群操作通知（由 DBSubject 落库消费路径在持久化前调用，
-// sessionID 为调用方已解析的群会话 ID）：
+// SyncGroupNotify 解出群操作通知并应用路由表 + user_session 变更。
+// 在通知投递给全部群成员之后调用：退群/被踢成员在被移出成员集合前先收到通知，
+// 避免因先同步路由（成员已被摘除）导致其漏收本次通知。
+// 非群操作通知（如撤回）payload 无 group_notify，parseGroupNotify 返回 nil，安全跳过。
+func (s *MessageService) SyncGroupNotify(ctx context.Context, sessionID string, payload []byte) {
+	if notify := parseGroupNotify(payload); notify != nil {
+		s.handleGroupEvent(ctx, sessionID, notify)
+	}
+}
+
+// handleGroupEvent 处理单条群操作通知（sessionID 为调用方已解析的群会话 ID）：
 //  1. 按事件类型增量修正路由表群成员集合——Group 服务在操作落库后已同步直写路由表，
 //     此处重放同样的幂等写入，兜底其直写失败（Redis 瞬时异常）造成的窗口
 //  2. 建群/入群时为成员建立 user_session 行（离线会话索引与已读游标的载体），

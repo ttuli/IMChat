@@ -223,8 +223,9 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 
 	// 会话形态只能由 SessionKey 判断：解析出的 SessionId 是雪花 ID，不携带类型前缀
 	isGroup := util.IsGroupSession(m.SessionKey)
-	// 统一通知消息（群操作/撤回等）：无发送方 ACK 语义，操作者与普通成员同为接收方
-	isNotify := m.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION)
+	// 通知类消息（群操作/撤回）：无发送方 ACK 语义，操作者与普通成员同为接收方
+	isNotify := m.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) ||
+		m.MsgType == int64(transport.MessageType_MSG_OP_RECALL)
 	sessionType := model.SessionTypeSingle
 	if isGroup {
 		sessionType = model.SessionTypeGroup
@@ -296,7 +297,11 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 	if isGroup {
 		// 群聊：成员定向扇出（按网关节点聚合），替代旧的全节点广播
 		l.deliverGroupMessage(ctx, m, deliverMsg)
-		msgSvc.
+		// 群操作通知投递给全部成员后再同步路由表：退群/被踢成员在被移出
+		// 成员集合前已收到通知，避免漏投（撤回等非群操作通知在此为安全空操作）
+		if m.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) {
+			msgSvc.SyncGroupNotify(ctx, sessionID, m.Payload)
+		}
 		return nil
 	}
 

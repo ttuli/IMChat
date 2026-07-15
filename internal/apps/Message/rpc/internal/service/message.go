@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/hex"
 	"time"
 
 	model "IM2/internal/model"
@@ -122,10 +123,13 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = fileMsg.FileName
 			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = fileMsg.Format
 		}
-	} else if msg.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) {
-		if notify := parseGroupNotify(msg.Payload); notify != nil {
-			s.handleGroupEvent(ctx, dbMsg.SessionID, notify)
-		}
+	}
+
+	// 通知类消息（群操作/撤回）与聊天消息同样落库：Content 为预览文案，
+	// 完整结构化载荷存 extra.payload（十六进制），供历史拉取时重建通知内容。
+	if msg.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) ||
+		msg.MsgType == int64(transport.MessageType_MSG_OP_RECALL) {
+		dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NOTIFY_PAYLOAD.String()] = hex.EncodeToString(msg.Payload)
 	}
 
 	if err := s.svcCtx.MessageDAO.InsertMessages(ctx, []*model.Message{dbMsg}); err != nil {
