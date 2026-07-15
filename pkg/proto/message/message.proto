@@ -4,6 +4,8 @@ package message;
 
 option go_package = "IM2/pkg/proto/message";
 
+import "pkg/proto/group/group.proto";
+
 // 消息状态
 enum MessageStatus {
   MESSAGE_STATUS_UNSPECIFIED = 0; // 未指定
@@ -159,11 +161,15 @@ message MessageRead {
   int64 read_time = 4;             // 已读时间
 }
 
-// 消息撤回
+// 消息撤回（作为 NotifyMessage 的 oneof 载荷投递，撤回者/会话由信封的
+// BaseMessage.from_user_id / session_id 承载；msg_id 指被撤回的消息，
+// 区别于通知自身落库分配的 base.msg_id）
 message MessageRecall {
-  string msg_id = 1;               // 消息ID
-  uint64 user_id = 2;              // 撤回者ID
-  string session_id = 3;           // 会话ID
+  // 2, 3 曾是 user_id / session_id，已由 NotifyMessage.base 承载
+  reserved 2, 3;
+  reserved "user_id", "session_id";
+
+  string msg_id = 1;               // 被撤回消息的ID
   int64 recall_time = 4;           // 撤回时间
   string reason = 5;               // 撤回原因
 }
@@ -203,4 +209,46 @@ message SystemNotification {
   string content = 4;              // 内容
   int64 create_time = 5;           // 创建时间
   map<string, string> data = 6;    // 附加数据
+}
+
+enum GroupOperationType {
+  GROUP_OP_CREATE = 0;            // 创建
+  GROUP_OP_DISMISS = 1;           // 解散
+  GROUP_OP_JOIN = 2;              // 加入
+  GROUP_OP_LEAVE = 3;             // 离开
+  GROUP_OP_KICK = 4;              // 踢出
+  GROUP_OP_INVITE = 5;            // 邀请
+  GROUP_OP_UPDATE_INFO = 6;       // 更新信息
+  GROUP_OP_MUTE = 7;              // 禁言
+  GROUP_OP_UNMUTE = 8;            // 取消禁言
+  GROUP_OP_INFO_UPDATE_NAME = 9;  // 群名称更新
+  GROUP_OP_INFO_UPDATE_NOTICE = 10; // 群公告更新
+}
+
+// 群组操作通知（作为 NotifyMessage 的 oneof 载荷投递，
+// msg_id / session_id 等基础字段由信封的 BaseMessage 承载）
+message GroupNotification {
+  // 8, 9 曾是 msg_id / session_id，已由 NotifyMessage.base 承载
+  reserved 8, 9;
+  reserved "msg_id", "session_id";
+
+  uint64 group_id = 1;            // 群组ID
+  GroupOperationType op_type = 2; // 操作类型
+  uint64 operator_id = 3;         // 操作者ID
+  repeated uint64 target_ids = 4; // 目标用户ID列表
+  int64 op_time = 5;              // 操作时间
+  string reason = 6;              // 操作原因
+  grouppb.GroupInfo group_info = 7;       // 群组信息
+}
+
+// 统一通知消息：群操作、消息撤回等控制类事件的统一载体（WSMessage.Type = NOTIFICATION）。
+// 与聊天消息一样发布到落库队列（DBSubject），由 Message 服务分配 msg_id / seq 后持久化，
+// 离线客户端可按会话 seq 增量拉取到事件，不依赖在线广播。
+message NotifyMessage {
+  BaseMessage base = 1;            // msg_id / session_id / msg_seq 由 Message 服务落库时回填
+  oneof body {
+    GroupNotification group_notify = 2;        // 群操作通知（建群/入群/踢人/退群/解散等）
+    MessageRecall recall = 3;                  // 消息撤回
+    SystemNotification system = 4;             // 系统通知
+  }
 }

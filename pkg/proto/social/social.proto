@@ -4,8 +4,6 @@ package social;
 
 option go_package = "IM2/pkg/proto/social";
 
-import "pkg/proto/group/group.proto";
-
 // 群申请
 message GroupApply {
   uint64 id = 1;                  // 申请ID
@@ -25,35 +23,6 @@ enum GroupApplyStatus {
   GROUP_APPLY_STATUS_ACCEPTED = 2;    // 已同意
   GROUP_APPLY_STATUS_REJECTED = 3;    // 已拒绝
   GROUP_APPLY_STATUS_IGNORED = 4;     // 已忽略
-}
-
-// 群组操作通知
-message GroupNotification {
-  uint64 group_id = 1;            // 群组ID
-  GroupOperationType op_type = 2; // 操作类型
-  uint64 operator_id = 3;         // 操作者ID
-  repeated uint64 target_ids = 4; // 目标用户ID列表
-  int64 op_time = 5;              // 操作时间
-  string reason = 6;              // 操作原因
-  grouppb.GroupInfo group_info = 7;       // 群组信息
-
-  // 基础字段
-  string msg_id = 8;              // 消息ID
-  string session_id = 9;          // 会话ID
-}
-
-enum GroupOperationType {
-  GROUP_OP_CREATE = 0;            // 创建
-  GROUP_OP_DISMISS = 1;           // 解散
-  GROUP_OP_JOIN = 2;              // 加入
-  GROUP_OP_LEAVE = 3;             // 离开
-  GROUP_OP_KICK = 4;              // 踢出
-  GROUP_OP_INVITE = 5;            // 邀请
-  GROUP_OP_UPDATE_INFO = 6;       // 更新信息
-  GROUP_OP_MUTE = 7;              // 禁言
-  GROUP_OP_UNMUTE = 8;            // 取消禁言
-  GROUP_OP_INFO_UPDATE_NAME = 9;  // 群名称更新
-  GROUP_OP_INFO_UPDATE_NOTICE = 10; // 群公告更新
 }
 
 // 好友信息

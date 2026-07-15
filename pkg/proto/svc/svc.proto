@@ -27,5 +27,8 @@ message MessageSend {
   int64 timestamp = 7;
   string preview = 8;
   bytes payload = 9;
+  // 投递目标快照：群操作通知（踢人/退群/解散）的目标在操作后已不在成员列表，
+  // 由发布方携带操作前成员快照；为空时消费方按当前成员列表扇出。
+  repeated uint64 deliver_to = 10;
 }
 

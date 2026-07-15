@@ -117,11 +117,6 @@ func (l *NatsListener) Listen() error {
 		batch = defaultFetchBatchSize
 	}
 
-	// 订阅群操作通知：失效成员缓存 + 维护 user_session
-	if err := l.subscribeGroupEvents(); err != nil {
-		return err
-	}
-
 	l.wg.Add(1)
 	go l.runLoop(sub, batch)
 
@@ -182,6 +177,17 @@ func streamSeqOf(msg *nats.Msg) uint64 {
 	return meta.Sequence.Stream
 }
 
+// parseGroupNotify 从统一通知载体（NotifyMessage）中解出群操作通知，
+// 非群操作通知或解析失败返回 nil。
+func parseGroupNotify(payload []byte) *message.GroupNotification {
+	var nm message.NotifyMessage
+	if err := proto.Unmarshal(payload, &nm); err != nil {
+		logger.Errorf("[NatsListener] unmarshal notify message failed: %v", err)
+		return nil
+	}
+	return nm.GetGroupNotify()
+}
+
 // sessionWorkerIndex 按会话 key 哈希选择 worker，保证同会话消息串行处理
 func sessionWorkerIndex(m *protosvc.MessageSend, n int) int {
 	key := m.SessionKey
@@ -229,6 +235,8 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 
 	// 会话形态只能由 SessionKey 判断：解析出的 SessionId 是雪花 ID，不携带类型前缀
 	isGroup := util.IsGroupSession(m.SessionKey)
+	// 统一通知消息（群操作/撤回等）：无发送方 ACK 语义，操作者与普通成员同为接收方
+	isNotify := m.MsgType == int64(transport.MessageType_NOTIFICATION)
 	sessionType := model.SessionTypeSingle
 	if isGroup {
 		sessionType = model.SessionTypeGroup
@@ -238,6 +246,14 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 		return err
 	}
 	m.SessionId = sessionID
+
+	// 群操作通知：落库前重放路由表增量修正 + user_session 建立
+	//（幂等，兜底 Group 服务同步直写失败的窗口；重投时重复执行无副作用）
+	if isNotify && isGroup {
+		if notify := parseGroupNotify(m.Payload); notify != nil {
+			l.handleGroupEvent(ctx, sessionID, notify)
+		}
+	}
 
 	// 单聊：补偿双方 user_session 行（进程内防重 + DB 幂等），
 	// 保证离线拉取的会话列表/未读计数有据可查；失败不阻塞消息链路
@@ -249,30 +265,34 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 
 	dbMsg, err := msgSvc.PersistMessage(ctx, m, streamSeq)
 	if err != nil {
-		// 持久化失败：二级 ACK（失败）投递给发送方
-		pack := &message.PersistAck{
-			ClientId:   m.ClientId,
-			SessionId:  m.SessionId,
-			SessionKey: m.SessionKey,
-			Target:     m.Sender,
-			AckStatus:  message.AckStatus_ACK_STATUS_FAILED,
-			Timestamp:  time.Now().UnixMilli(),
+		// 持久化失败：二级 ACK（失败）投递给发送方（通知消息无 ACK 语义，跳过）
+		if !isNotify {
+			pack := &message.PersistAck{
+				ClientId:   m.ClientId,
+				SessionId:  m.SessionId,
+				SessionKey: m.SessionKey,
+				Target:     m.Sender,
+				AckStatus:  message.AckStatus_ACK_STATUS_FAILED,
+				Timestamp:  time.Now().UnixMilli(),
+			}
+			l.publishPersistAck(ctx, pack)
 		}
-		l.publishPersistAck(ctx, pack)
 		return fmt.Errorf("[NatsListener] PersistMessage error: %v", err)
 	}
 
-	// 1. 二级 ACK（成功）投递给发送方
-	pack := &message.PersistAck{
-		MsgId:     dbMsg.MsgID,
-		ClientId:  dbMsg.ClientID,
-		SessionId: dbMsg.SessionID,
-		Target:    m.Sender,
-		Seq:       dbMsg.Seq,
-		AckStatus: message.AckStatus_ACK_STATUS_SUCCESS,
-		Timestamp: time.Now().UnixMilli(),
+	// 1. 二级 ACK（成功）投递给发送方（通知消息无 ACK 语义，跳过）
+	if !isNotify {
+		pack := &message.PersistAck{
+			MsgId:     dbMsg.MsgID,
+			ClientId:  dbMsg.ClientID,
+			SessionId: dbMsg.SessionID,
+			Target:    m.Sender,
+			Seq:       dbMsg.Seq,
+			AckStatus: message.AckStatus_ACK_STATUS_SUCCESS,
+			Timestamp: time.Now().UnixMilli(),
+		}
+		l.publishPersistAck(ctx, pack)
 	}
-	l.publishPersistAck(ctx, pack)
 
 	// 2. 投递消息给接收方。
 	// 服务端生成的真实 MsgId / SessionId / Seq 直接在 WSMessage 层携带，
@@ -316,8 +336,12 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 
 // deliverGroupMessage 群消息定向扇出。
 //
-// 流程：权威成员列表（Redis 缓存 + Group RPC 回源）→ 排除发送者 → 批量路由查询 →
-// 按网关节点聚合，每个节点只发一条消息，deliver_to 携带该节点需投递的用户列表。
+// 流程：确定投递目标 → 批量路由查询 → 按网关节点聚合，每个节点只发一条消息，
+// deliver_to 携带该节点需投递的用户列表。
+//
+// 投递目标：发布方携带的成员快照（m.DeliverTo）优先——群操作通知（踢人/退群/
+// 解散）的目标在操作后已不在成员列表，且操作者本人也应收到通知；快照缺失时
+// 按权威成员列表（Redis 缓存 + Group RPC 回源）扇出并排除发送者。
 //   - 确认离线的成员：只存不推，上线后由客户端按会话 seq 增量拉取
 //   - 路由不可信（Redis 异常/节点已死）的成员：广播兜底（仍带 deliver_to，
 //     各网关按本地连接过滤投递，不依赖网关侧群成员映射）
@@ -325,24 +349,31 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 //     保证 Group RPC 故障时不静默丢投
 func (l *NatsListener) deliverGroupMessage(ctx context.Context, m *protosvc.MessageSend, deliverMsg *transport.WSMessage) {
 	groupID := m.Target
-	memberIDs, err := l.svcCtx.Members.GetMemberIDs(ctx, groupID)
-	if err != nil || len(memberIDs) == 0 {
-		logger.Errorf("[NatsListener] get members of group %d failed (broadcast fallback): %v", groupID, err)
-		l.svcCtx.Nats.Broadcast(deliverMsg)
-		return
+	receivers := m.DeliverTo
+	// user_session 存量补偿名单：快照路径用快照（含操作者），
+	// 常规路径用完整成员列表（含发送者）
+	ensureIDs := receivers
+	if len(receivers) == 0 {
+		memberIDs, err := l.svcCtx.Members.GetMemberIDs(ctx, groupID)
+		if err != nil || len(memberIDs) == 0 {
+			logger.Errorf("[NatsListener] get members of group %d failed (broadcast fallback): %v", groupID, err)
+			l.svcCtx.Nats.Broadcast(deliverMsg)
+			return
+		}
+		ensureIDs = memberIDs
+		receivers = make([]uint64, 0, len(memberIDs))
+		for _, uid := range memberIDs {
+			if uid != m.Sender {
+				receivers = append(receivers, uid)
+			}
+		}
 	}
 
 	// 群成员 user_session 存量补偿（进程内防重 + DB 幂等，失败允许下条消息重试）
-	if ensureErr := l.svcCtx.SessionDAO.EnsureUserSessions(ctx, m.SessionId, memberIDs); ensureErr != nil {
+	if ensureErr := l.svcCtx.SessionDAO.EnsureUserSessions(ctx, m.SessionId, ensureIDs); ensureErr != nil {
 		logger.Errorf("[NatsListener] ensure user_session for group session %s failed: %v", m.SessionId, ensureErr)
 	}
 
-	receivers := make([]uint64, 0, len(memberIDs))
-	for _, uid := range memberIDs {
-		if uid != m.Sender {
-			receivers = append(receivers, uid)
-		}
-	}
 	if len(receivers) == 0 {
 		return
 	}

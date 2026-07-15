@@ -123,51 +123,61 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetIDs []uint64) (
 	}, nil
 }
 
-func NewMessageOperationMsg(opType transport.MessageType, operator uint64, msg *model.Message) (*transport.WSMessage, error) {
+// NewRecallNotifyMsg 构造消息撤回通知的落库消息（统一 NotifyMessage 载体）。
+// 发布到 DBSubject 后由 Message 服务分配 msg_id/seq 持久化再扇出，
+// 离线客户端可按会话 seq 增量拉取感知撤回。
+// sessionKey 用于会话形态判定与目标解析（群聊=群ID，单聊=对方用户ID）。
+func NewRecallNotifyMsg(operator uint64, sessionKey string, msg *model.Message) (*svc.MessageSend, error) {
 	if msg == nil {
 		return nil, errors.New("message is nil")
 	}
-
-	targetId, err := GetTargetIdFromSessionId(msg.SessionID, operator)
+	target, err := GetTargetIdFromSessionId(sessionKey, operator)
 	if err != nil {
 		return nil, err
 	}
 	now := time.Now().UnixMilli()
 
-	ws := &transport.WSMessage{
-		Type:        opType,
-		RouteTarget: []uint64{targetId},
-		Timestamp:   now,
-	}
-	if IsGroupSession(msg.SessionID) {
-		ws.RouteTargetType = transport.TargetType_GROUP
-	} else {
-		ws.RouteTargetType = transport.TargetType_USER
-	}
-
-	recall := &message.MessageRecall{
-		MsgId:      msg.MsgID,
-		SessionId:  msg.SessionID,
-		UserId:     operator,
-		RecallTime: now,
-	}
-
-	payload, err := proto.Marshal(recall)
+	payload, err := proto.Marshal(&message.NotifyMessage{
+		Base: &message.BaseMessage{
+			SessionId:  msg.SessionID,
+			SessionKey: sessionKey,
+			FromUserId: operator,
+			Target:     target,
+			SendTime:   now,
+		},
+		Body: &message.NotifyMessage_Recall{Recall: &message.MessageRecall{
+			MsgId:      msg.MsgID,
+			RecallTime: now,
+		}},
+	})
 	if err != nil {
 		return nil, err
 	}
-	ws.Payload = payload
-	return ws, nil
+
+	return &svc.MessageSend{
+		SessionId:  msg.SessionID,
+		SessionKey: sessionKey,
+		Sender:     operator,
+		Target:     target,
+		MsgType:    int64(transport.MessageType_NOTIFICATION),
+		Timestamp:  now,
+		Preview:    "撤回了一条消息",
+		Payload:    payload,
+	}, nil
 }
 
-func NewGroupOperationMsg(opType social.GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *svc.MessageSend {
-	notify := &social.GroupNotification{
+// NewGroupOperationMsg 构造群操作通知的落库消息（统一 NotifyMessage 载体）。
+// 通知与聊天消息同链路：发布到 DBSubject 后由 Message 服务分配 msg_id/seq
+// 落库，再按成员扇出投递；msg_id/session_id/msg_seq 由落库链路回填。
+func NewGroupOperationMsg(opType message.GroupOperationType, groupId uint64, targetIDs []uint64, operator uint64, groupInfo *model.Group) *svc.MessageSend {
+	now := time.Now().UnixMilli()
+	sessionKey := GenerateGroupSessionId(groupId)
+	notify := &message.GroupNotification{
 		OpType:     opType,
 		GroupId:    groupId,
 		OperatorId: operator,
 		TargetIds:  targetIDs,
-		OpTime:     time.Now().UnixMilli(),
-		SessionId:  GenerateGroupSessionId(groupId),
+		OpTime:     now,
 	}
 
 	if groupInfo != nil {
@@ -182,15 +192,56 @@ func NewGroupOperationMsg(opType social.GroupOperationType, groupId uint64, targ
 			UpdateTime:  groupInfo.UpdateTime.UnixMilli(),
 		}
 	}
-	payload, err := proto.Marshal(notify)
+
+	payload, err := proto.Marshal(&message.NotifyMessage{
+		Base: &message.BaseMessage{
+			SessionKey: sessionKey,
+			FromUserId: operator,
+			Target:     groupId,
+			SendTime:   now,
+		},
+		Body: &message.NotifyMessage_GroupNotify{GroupNotify: notify},
+	})
 	if err != nil {
 		return nil
 	}
 
 	return &svc.MessageSend{
-		SessionKey: GenerateGroupSessionId(groupInfo.ID),
-		MsgType: int64(transport.MessageType_NOTIFICATION),
-		Payload: payload,
+		SessionKey: sessionKey,
+		Sender:     operator,
+		Target:     groupId,
+		MsgType:    int64(transport.MessageType_NOTIFICATION),
+		Timestamp:  now,
+		Preview:    GroupNotifyPreview(opType),
+		Payload:    payload,
+	}
+}
+
+// GroupNotifyPreview 群操作通知的会话列表摘要文案
+func GroupNotifyPreview(opType message.GroupOperationType) string {
+	switch opType {
+	case message.GroupOperationType_GROUP_OP_CREATE:
+		return "创建了群聊"
+	case message.GroupOperationType_GROUP_OP_DISMISS:
+		return "群聊已解散"
+	case message.GroupOperationType_GROUP_OP_JOIN:
+		return "加入了群聊"
+	case message.GroupOperationType_GROUP_OP_LEAVE:
+		return "退出了群聊"
+	case message.GroupOperationType_GROUP_OP_KICK:
+		return "被移出群聊"
+	case message.GroupOperationType_GROUP_OP_INVITE:
+		return "被邀请进群"
+	case message.GroupOperationType_GROUP_OP_MUTE:
+		return "被禁言"
+	case message.GroupOperationType_GROUP_OP_UNMUTE:
+		return "被解除禁言"
+	case message.GroupOperationType_GROUP_OP_UPDATE_INFO,
+		message.GroupOperationType_GROUP_OP_INFO_UPDATE_NAME,
+		message.GroupOperationType_GROUP_OP_INFO_UPDATE_NOTICE:
+		return "群信息已更新"
+	default:
+		return "群通知"
 	}
 }
 

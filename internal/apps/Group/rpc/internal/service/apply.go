@@ -6,7 +6,7 @@ import (
 
 	model "IM2/internal/model"
 	"IM2/pkg/logger"
-	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
@@ -47,7 +47,7 @@ func (s *GroupService) JoinGroup(ctx context.Context, groupID, fromUserID uint64
 		// 直写路由表：先于通知发布补路由，新成员能收到本次入群通知与后续群消息
 		s.ensureGroupRoute(ctx, groupID, fromUserID)
 
-		msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
+		msg := util.NewGroupOperationMsg(message.GroupOperationType_GROUP_OP_JOIN, groupID, []uint64{fromUserID}, 0, group)
 		s.publishGroupNotify(msg, s.groupMemberSnapshot(ctx, groupID))
 
 		return nil, member, nil
@@ -143,7 +143,7 @@ func (s *GroupService) HandleGroupApply(ctx context.Context, applyID, operatorID
 			// 直写路由表：先于通知发布补路由
 			s.ensureGroupRoute(ctx, apply.GroupID, apply.FromUserID)
 
-			msg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
+			msg := util.NewGroupOperationMsg(message.GroupOperationType_GROUP_OP_JOIN, apply.GroupID, []uint64{apply.FromUserID}, operatorID, nil)
 			s.publishGroupNotify(msg, s.groupMemberSnapshot(ctx, apply.GroupID))
 		}
 	}

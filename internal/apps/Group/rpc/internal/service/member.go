@@ -6,7 +6,7 @@ import (
 
 	model "IM2/internal/model"
 	"IM2/pkg/logger"
-	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
@@ -123,7 +123,7 @@ func (s *GroupService) RemoveMember(ctx context.Context, groupID, operatorID, us
 
 	// 7. 发送群组通知（踢人）
 	wsMsg := util.NewGroupOperationMsg(
-		social.GroupOperationType_GROUP_OP_KICK,
+		message.GroupOperationType_GROUP_OP_KICK,
 		groupID, []uint64{userID}, operatorID, nil,
 	)
 	s.publishGroupNotify(wsMsg, memberIDs)
@@ -161,7 +161,7 @@ func (s *GroupService) LeaveGroup(ctx context.Context, groupID, userID uint64) e
 
 	// 6. 发送群组通知（主动退群）
 	wsMsg := util.NewGroupOperationMsg(
-		social.GroupOperationType_GROUP_OP_LEAVE,
+		message.GroupOperationType_GROUP_OP_LEAVE,
 		groupID, []uint64{userID}, userID, nil,
 	)
 	s.publishGroupNotify(wsMsg, memberIDs)

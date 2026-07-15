@@ -6,6 +6,7 @@ import (
 
 	model "IM2/internal/model"
 	"IM2/pkg/logger"
+	nats_util "IM2/pkg/nats"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/svc"
 	"IM2/pkg/proto/transport"
@@ -168,12 +169,27 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "撤回消息失败")
 	}
 
-	ws, err := util.NewMessageOperationMsg(transport.MessageType_MSG_OP_RECALL, userID, msg)
+	// 6. 撤回事件作为统一通知消息发布到落库队列：由消费链路分配 msg_id/seq
+	// 持久化后按会话扇出，离线端也能按 seq 增量拉取感知撤回。
+	// 撤回状态已落库（步骤 5），通知发布失败不影响撤回结果，客户端可拉取对齐。
+	sess, err := s.svcCtx.SessionDAO.FindBySessionID(ctx, msg.SessionID)
 	if err != nil {
-		logger.Errorf("Failed to create WSMessage: %v", err)
+		logger.Errorf("Failed to load session %s for recall notify: %v", msg.SessionID, err)
 		return nil
 	}
-	s.svcCtx.Nats.Broadcast(ws)
+	notifyMsg, err := util.NewRecallNotifyMsg(userID, sess.SessionKey, msg)
+	if err != nil {
+		logger.Errorf("Failed to build recall notify for msg %s: %v", msgID, err)
+		return nil
+	}
+	data, err := proto.Marshal(notifyMsg)
+	if err != nil {
+		logger.Errorf("Failed to marshal recall notify for msg %s: %v", msgID, err)
+		return nil
+	}
+	if _, err := s.svcCtx.Nats.JetStream().Publish(nats_util.DBSubject, data); err != nil {
+		logger.Errorf("Failed to publish recall notify for msg %s: %v", msgID, err)
+	}
 
 	return nil
 }

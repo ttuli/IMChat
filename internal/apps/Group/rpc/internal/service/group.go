@@ -7,7 +7,7 @@ import (
 	"IM2/internal/apps/Idgen/rpc/idgen"
 	model "IM2/internal/model"
 	"IM2/pkg/logger"
-	"IM2/pkg/proto/social"
+	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
@@ -80,7 +80,7 @@ func (s *GroupService) CreateGroup(ctx context.Context, ownerID uint64, name, av
 	}
 
 	// 6. 发送群创建通知（成员列表已知，随消息携带定向投递）
-	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
+	wsMsg := util.NewGroupOperationMsg(message.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
 	s.publishGroupNotify(wsMsg, allMemberIDs)
 
 	return group, nil
@@ -178,7 +178,7 @@ func (s *GroupService) DismissGroup(ctx context.Context, groupID, operatorID uin
 	}
 
 	// 5. 发送群解散通知
-	wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
+	wsMsg := util.NewGroupOperationMsg(message.GroupOperationType_GROUP_OP_DISMISS, groupID, []uint64{}, operatorID, nil)
 	s.publishGroupNotify(wsMsg, memberIDs)
 
 	return nil

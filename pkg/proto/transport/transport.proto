@@ -45,18 +45,13 @@ enum MessageType {
   USER_STATUS_CHANGE = 403;       // 状态变更
   USER_KICKOFF = 404;             // 用户被踢
   
-  // 群组操作
-  GROUP_OP_NOTIFICATION = 500;    // 群操作通知
-
-  // 消息操作
-  MSG_OP_RECALL = 501;      // 消息撤回
-  
   // 通知类 600-699
-  NOTIFICATION = 600;             // 系统通知
   FRIEND_REQUEST = 601;           // 好友请求
   FRIEND_ADD = 602;               // 添加好友
   FRIEND_DELETED = 603;           // 删除好友
   GROUP_REQUEST = 604;            // 群请求
+  MSG_OP_RECALL = 605;            // 消息撤回
+  GROUP_OP_NOTIFICATION = 606;    // 群操作通知
   
   // 内部消费消息
   UPDATE_SESSION = 700;           // 更新会话
