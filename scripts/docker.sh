@@ -2,6 +2,10 @@
 #
 # IM2 Docker 镜像构建与推送脚本（供 CI/CD 调用）
 #
+# 构建方式:
+#   所有服务共用根目录 Dockerfile 的同一个 builder 阶段（依赖图与全部二进制只编译一次），
+#   由 docker buildx bake (docker-bake.hcl) 在一次构建中并行产出各服务镜像。
+#
 # 用法:
 #   构建并推送所有镜像:    TAG=xxx REGISTRY=xxx ./scripts/docker.sh build-push
 #   构建并推送指定服务:    TAG=xxx REGISTRY=xxx ./scripts/docker.sh build-push user-api group-rpc
@@ -12,7 +16,7 @@
 #   BUILD_CACHE   buildx 跨次构建缓存后端: none(默认) | gha | registry
 #                 - none:     不使用跨次缓存 (本地构建)
 #                 - gha:      GitHub Actions 缓存 (需在 CI 导出 ACTIONS_* 运行时令牌)
-#                 - registry: 缓存推送到 ${REGISTRY}/<service>:buildcache
+#                 - registry: 缓存推送到 ${REGISTRY}/buildcache (需 registry 允许自动创建仓库)
 #
 
 set -euo pipefail
@@ -21,6 +25,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BAKE_FILE="${PROJECT_ROOT}/docker-bake.hcl"
 
 # ========== 颜色 ==========
 
@@ -42,43 +47,36 @@ REGISTRY="${REGISTRY:-registry.cn-shenzhen.aliyuncs.com/im2}"
 TAG="${TAG:-latest}"
 BUILD_CACHE="${BUILD_CACHE:-none}"
 
-declare -A SERVICES=(
-    ["idgen-rpc"]="cmd/Idgen/rpc/Dockerfile"
-    ["user-rpc"]="cmd/User/rpc/Dockerfile"
-    ["auth-rpc"]="cmd/Auth/rpc/Dockerfile"
-    ["group-rpc"]="cmd/Group/rpc/Dockerfile"
-    ["message-rpc"]="cmd/Message/rpc/Dockerfile"
-    ["user-api"]="cmd/User/api/Dockerfile"
-    ["auth-api"]="cmd/Auth/api/Dockerfile"
-    ["group-api"]="cmd/Group/api/Dockerfile"
-    ["message-api"]="cmd/Message/api/Dockerfile"
-    ["file-api"]="cmd/File/api/Dockerfile"
-    ["websocket"]="cmd/websocket/Dockerfile"
-    ["llm-rpc"]="cmd/Llm/rpc/Dockerfile"
-    ["llm-api"]="cmd/Llm/api/Dockerfile"
+# docker-bake.hcl 通过环境变量读取 REGISTRY/TAG
+export REGISTRY TAG
+
+# 可构建的服务列表（与 docker-bake.hcl 中的 target 一一对应）
+SERVICES=(
+    idgen-rpc user-rpc auth-rpc group-rpc message-rpc llm-rpc
+    user-api auth-api group-api message-api file-api llm-api
+    websocket
 )
 
 # ========== 构建缓存 ==========
 
-# 按服务生成 buildx 缓存参数，结果写入全局数组 CACHE_ARGS
+# 生成 buildx 缓存参数，结果写入全局数组 CACHE_ARGS
+# 所有目标共享同一个 builder 阶段，因此使用统一缓存 scope，公共层只存一份
 build_cache_args() {
-    local service="$1"
     CACHE_ARGS=()
     case "$BUILD_CACHE" in
         none) ;;
         gha)
-            # 每个服务独立 scope，避免互相覆盖缓存
             CACHE_ARGS=(
-                --cache-from "type=gha,scope=${service}"
-                --cache-to   "type=gha,mode=max,scope=${service}"
+                --set "*.cache-from=type=gha,scope=im2-shared"
+                --set "*.cache-to=type=gha,mode=max,scope=im2-shared"
             )
             ;;
         registry)
             # image-manifest/oci-mediatypes 提升对各类 registry(含 ACR) 的兼容性
-            local ref="${REGISTRY}/${service}:buildcache"
+            local ref="${REGISTRY}/buildcache:shared"
             CACHE_ARGS=(
-                --cache-from "type=registry,ref=${ref}"
-                --cache-to   "type=registry,ref=${ref},mode=max,image-manifest=true,oci-mediatypes=true"
+                --set "*.cache-from=type=registry,ref=${ref}"
+                --set "*.cache-to=type=registry,ref=${ref},mode=max,image-manifest=true,oci-mediatypes=true"
             )
             ;;
         *)
@@ -92,60 +90,41 @@ build_cache_args() {
 
 do_build_push() {
     local requested=("$@")
-    local services_to_build=()
+    local targets=()
 
     if [[ ${#requested[@]} -eq 0 || "${requested[0]}" == "all" ]]; then
         log_header "构建并推送所有 IM2 镜像 → ${REGISTRY} (TAG: ${TAG}, CACHE: ${BUILD_CACHE})"
-        services_to_build=("${!SERVICES[@]}")
+        targets=("default")
     else
-        local svc
+        local svc known matched
         for svc in "${requested[@]}"; do
-            if [[ -z "${SERVICES[$svc]+_}" ]]; then
-                log_error "未知服务: $svc"
+            matched=""
+            for known in "${SERVICES[@]}"; do
+                [[ "$svc" == "$known" ]] && matched=1 && break
+            done
+            if [[ -z "$matched" ]]; then
+                log_error "未知服务: $svc (可选: ${SERVICES[*]})"
                 exit 1
             fi
         done
         log_header "构建并推送 IM2 镜像 [${requested[*]}] → ${REGISTRY} (TAG: ${TAG}, CACHE: ${BUILD_CACHE})"
-        services_to_build=("${requested[@]}")
+        targets=("${requested[@]}")
     fi
 
-    local success=0
-    local failed_services=()
+    build_cache_args
 
-    local service
-    for service in "${services_to_build[@]}"; do
-        local dockerfile="${SERVICES[$service]}"
-        local image="${REGISTRY}/${service}:${TAG}"
-        local latest_image="${REGISTRY}/${service}:latest"
-
-        build_cache_args "$service"
-
-        # buildx --push：构建与推送合并为一步（容器驱动下镜像不落本地，必须直接推送）
-        # --provenance=false：保持与旧 docker build 一致的单一 manifest，避免生成 image index
-        log_info "构建并推送 ${BOLD}${service}${NC} → ${image}"
-        if docker buildx build \
-            -f "${PROJECT_ROOT}/${dockerfile}" \
-            -t "${image}" \
-            -t "${latest_image}" \
-            ${CACHE_ARGS[@]+"${CACHE_ARGS[@]}"} \
-            --provenance=false \
-            --push \
-            "${PROJECT_ROOT}"; then
-            log_info "${GREEN}✓${NC} ${BOLD}${service}${NC} 构建并推送成功 (${TAG} + latest)"
-            ((success++)) || true
-        else
-            log_error "✗ ${BOLD}${service}${NC} 构建/推送失败"
-            failed_services+=("${service}")
-        fi
-    done
-
-    echo ""
-    log_header "构建推送汇总"
-    log_info "成功: ${BOLD}${success}${NC}"
-    if [[ ${#failed_services[@]} -gt 0 ]]; then
-        log_error "失败 (${#failed_services[@]}): ${failed_services[*]}"
+    # bake 在同一次构建中并行处理全部目标，builder 阶段跨目标自动去重；
+    # 容器驱动下镜像不落本地，构建与推送合并为一步 (--push)
+    if ! docker buildx bake \
+        -f "$BAKE_FILE" \
+        --push \
+        ${CACHE_ARGS[@]+"${CACHE_ARGS[@]}"} \
+        "${targets[@]}"; then
+        log_error "✗ 构建/推送失败: ${targets[*]}"
         exit 1
     fi
+
+    log_info "${GREEN}✓${NC} 构建并推送成功 (${TAG} + latest): ${BOLD}${targets[*]}${NC}"
 
     log_header "清理悬挂镜像"
     docker image prune -f --filter "dangling=true" || true

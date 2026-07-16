@@ -1,0 +1,12 @@
+# 只把编译所需内容送进构建上下文（go.mod/go.sum、cmd/、internal/、pkg/）
+.git
+.github
+.gitignore
+.claude
+.env
+docker
+scripts
+todolist.txt
+**/*.md
+Dockerfile
+docker-bake.hcl
