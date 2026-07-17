@@ -1,9 +1,14 @@
-统一通知消息，比如消息撤回，拉人进群等消息统一为一个proto中的message，放到pkg/proto/message.proto下，这个message带上
-basemessage结构作为成员
-apps/Group/rpc下
-wsMsg := util.NewGroupOperationMsg(social.GroupOperationType_GROUP_OP_CREATE, groupID, targetIds, ownerID, group)
-	s.publishGroupNotify(wsMsg, allMemberIDs)
-相关的内容改为发布这个构造好的结构体到DBSubject(也就是message/rpc下listener监听的subject)，进行落库处理，msgid需要分配
-其他的看情况
+/root/remote/Nexus/internal/apps/Message/rpc/internal/dao/seq_syncer.go
+从原本的只缓存部分字段改为缓存全部字段，这样可以直接给getSession命中缓存使用
 
-同样其他地方有类似情况也要修改
+
+获取用户离线活跃会话
+1./root/remote/Nexus/internal/apps/Message/rpc/internal/dao/session.go
+getActiveSessionSnapshots逻辑直接放到GetActiveSessionIDs中
+然后逻辑变更为
+先ZRangeByScoreWithScoresCtx查询活跃的会话的id
+获取后直接调用GetSession，如果redis缓存未命中则查session表,redis查询可保留lua脚本查询的方法
+数据库也可以使用批量查询来优化
+
+2./root/remote/Nexus/internal/apps/Message/rpc/internal/service/session.go
+GetUserActiveSessions逻辑改为直接调用sessionDAO的一个方法获取会话信息
