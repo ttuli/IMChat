@@ -80,17 +80,8 @@ func (c *SessionDAO) ResolveSessionIDByKey(ctx context.Context, newSessionID str
 // 通常非阻塞；channel 打满且短暂等待无效时降级为同步直写（阻塞调用方但不丢事件）。
 // sessionKey 随快照写入 Redis，读路径按 session_id 可命中完整会话信息。
 // isGroup/target 描述会话形态与消息目标（群聊=群ID，单聊=接收方），用于时间线扇出。
-func (c *SessionDAO) PushSeqUpdate(sessionID, sessionKey string, seq uint64, lastContent string, lastSender uint64, updateTime int64, isGroup bool, target uint64) {
-	c.seqSyncer.Push(seqUpdate{
-		sessionID:   sessionID,
-		sessionKey:  sessionKey,
-		seq:         seq,
-		lastContent: lastContent,
-		lastSender:  lastSender,
-		updateTime:  updateTime,
-		isGroup:     isGroup,
-		target:      target,
-	})
+func (c *SessionDAO) PushSeqUpdate(data SeqUpdate) {
+	c.seqSyncer.Push(data)
 }
 
 // sessionInfoBatchScript 批量读取 session:info:{id} Hash 的完整快照字段
@@ -98,7 +89,7 @@ func (c *SessionDAO) PushSeqUpdate(sessionID, sessionKey string, seq uint64, las
 const sessionInfoBatchScript = `
 	local results = {}
 	for i = 1, #KEYS do
-		results[i] = redis.call('HMGET', KEYS[i], 'actual_seq', 'last_content', 'last_sender', 'session_key', 'type', 'update_time')
+		results[i] = redis.call('HMGET', KEYS[i], 'actual_seq', 'last_content', 'last_sender', 'session_key', 'type', 'update_time', 'session_id')
 	end
 	return results
 `
@@ -154,10 +145,10 @@ func (c *SessionDAO) FindSessionsByIDs(ctx context.Context, sessionIDs []string)
 }
 
 // parseSessionSnapshot 将 Lua HMGET 返回的一行快照解析为 Session。
-// actual_seq 或 session_key 缺失（键不存在 / 旧格式条目）视为未命中，返回 nil。
+// actual_seq、session_key 或 session_id 缺失（键不存在 / 旧格式条目）视为未命中，返回 nil。
 func parseSessionSnapshot(sessionID string, row interface{}) *model.Session {
 	fields, ok := row.([]interface{})
-	if !ok || len(fields) != 6 || fields[0] == nil || fields[3] == nil {
+	if !ok || len(fields) != 7 || fields[0] == nil || fields[3] == nil || fields[6] == nil {
 		return nil
 	}
 	actualSeq, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[0]), 10, 64)
@@ -165,7 +156,7 @@ func parseSessionSnapshot(sessionID string, row interface{}) *model.Session {
 	sessionType, _ := strconv.ParseInt(fmt.Sprintf("%s", fields[4]), 10, 8)
 	updateTime, _ := strconv.ParseInt(fmt.Sprintf("%s", fields[5]), 10, 64)
 	return &model.Session{
-		SessionID:   sessionID,
+		SessionID:   fmt.Sprintf("%s", fields[6]),
 		Type:        int8(sessionType),
 		SessionKey:  fmt.Sprintf("%s", fields[3]),
 		ActualSeq:   actualSeq,

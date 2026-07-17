@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"time"
 
+	"IM2/internal/apps/Message/rpc/internal/dao"
 	model "IM2/internal/model"
 	"IM2/pkg/logger"
 	nats_util "IM2/pkg/nats"
@@ -52,11 +53,15 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 
 	// 2. 将完整会话状态推送到 SeqSyncer（异步批量刷 MySQL actual_seq + Redis 完整快照）。
 	// 会话形态与目标显式传入：sessionId 是雪花 ID，SeqSyncer 无法再按前缀推断。
-	s.svcCtx.SessionDAO.PushSeqUpdate(
-		msg.SessionId, msg.SessionKey, seq,
-		msg.Preview, msg.Sender, msg.Timestamp,
-		util.IsGroupSession(msg.SessionKey), msg.Target,
-	)
+	s.svcCtx.SessionDAO.PushSeqUpdate(dao.SeqUpdate{
+		SessionID:   msg.SessionId,
+		SessionKey:  msg.SessionKey,
+		SessionType: int(util.JudgeSessionType(msg.SessionKey)),
+		Seq:         seq,
+		LastContent: msg.Preview,
+		LastSender:  msg.Sender,
+		UpdateTime:  msg.Timestamp,
+	})
 
 	msgid := s.GenerateMsgId()
 

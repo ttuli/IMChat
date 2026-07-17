@@ -9,6 +9,8 @@ import (
 
 	"IM2/internal/model"
 	"IM2/pkg/logger"
+	"IM2/pkg/proto/message"
+	"IM2/pkg/proto/util"
 	"IM2/pkg/redisx"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -22,21 +24,21 @@ const (
 	defaultFlushBatchLimit = 500 // 定量触发：攒满 500 条即提前刷盘
 )
 
-// seqUpdate 代表一条完整的会话状态更新事件。
+// SeqUpdate 代表一条完整的会话状态更新事件。
 // seq 由 Lamport 分配器在消息服务本地生成，SeqSyncer 负责异步批量刷
 // MySQL actual_seq 及 Redis session:info 快照。
 // 聚合时同一 conversationID 只保留 seq 最大的那条（视为最新状态，Lamport uint64 直接比较）。
-type seqUpdate struct {
-	sessionID   string
-	sessionKey  string // 业务主键（群号或单聊双方 ID 拼接），随快照缓存供读路径直接命中
-	seq         uint64 // 写入 MySQL actual_seq 和 Redis 快照
-	lastContent string
-	lastSender  uint64
-	updateTime  int64
+type SeqUpdate struct {
+	SessionID   string
+	SessionKey  string // 业务主键（群号或单聊双方 ID 拼接），随快照缓存供读路径直接命中
+	SessionType int
+	Seq         uint64 // 写入 MySQL actual_seq 和 Redis 快照
+	LastContent string
+	LastSender  uint64
+	UpdateTime  int64
 	// 会话形态与消息目标由消费方显式传入。
 	// sessionID 是雪花 ID，不再携带 group/private 前缀，无法按前缀推断类型。
-	isGroup bool
-	target  uint64 // 群聊=群ID；单聊=接收方用户ID
+	// target  uint64 // 群聊=群ID；单聊=接收方用户ID
 }
 
 // SeqSyncer 进程内 channel + 定时/定量批量刷盘器
@@ -60,14 +62,14 @@ type GroupMemberSource func(ctx context.Context, groupID uint64) ([]uint64, erro
 // seq 是 uint64，超出 Lua number（double，53 bit）的精确整数范围，故用
 // 字符串比较：先比长度再比字典序（等长十进制字符串的字典序即数值序）。
 // KEYS[1] = session:info:{convID}
-// ARGV = seq, last_content, last_sender, update_time, session_key, type, expire_seconds
+// ARGV = seq, last_content, last_sender, update_time, session_key, type, expire_seconds, session_id
 const snapshotUpdateScript = `
 local cur = redis.call('HGET', KEYS[1], 'actual_seq')
 local new = ARGV[1]
 if (not cur) or (#cur < #new) or (#cur == #new and cur < new) then
 	redis.call('HSET', KEYS[1], 'actual_seq', ARGV[1], 'last_content', ARGV[2], 'last_sender', ARGV[3], 'update_time', ARGV[4])
 end
-redis.call('HSET', KEYS[1], 'session_key', ARGV[5], 'type', ARGV[6])
+redis.call('HSET', KEYS[1], 'session_key', ARGV[5], 'type', ARGV[6], 'session_id', ARGV[8])
 redis.call('EXPIRE', KEYS[1], ARGV[7])
 return 1
 `
@@ -75,7 +77,7 @@ return 1
 type SeqSyncer struct {
 	db              *gorm.DB
 	cache           *redisx.Client
-	ch              chan seqUpdate
+	ch              chan SeqUpdate
 	flushInterval   time.Duration
 	flushBatchLimit int
 	stopCh          chan struct{}
@@ -90,7 +92,7 @@ func newSeqSyncer(db *gorm.DB, cache *redisx.Client) *SeqSyncer {
 	s := &SeqSyncer{
 		db:              db,
 		cache:           cache,
-		ch:              make(chan seqUpdate, defaultSeqBufSize),
+		ch:              make(chan SeqUpdate, defaultSeqBufSize),
 		flushInterval:   defaultFlushInterval,
 		flushBatchLimit: defaultFlushBatchLimit,
 		stopCh:          make(chan struct{}),
@@ -100,7 +102,7 @@ func newSeqSyncer(db *gorm.DB, cache *redisx.Client) *SeqSyncer {
 	return s
 }
 
-func (s *SeqSyncer) Push(u seqUpdate) {
+func (s *SeqSyncer) Push(u SeqUpdate) {
 	// 背压告警：当 channel 使用率 > 80% 时触发告警
 	if len(s.ch) > cap(s.ch)*8/10 {
 		logger.Errorf("[BACKPRESSURE ALERT] SeqSyncer channel usage > 80%% (current: %d, cap: %d)", len(s.ch), cap(s.ch))
@@ -124,8 +126,8 @@ func (s *SeqSyncer) Push(u seqUpdate) {
 		// 与 Redis 时间线将长期滞后（若此后该会话无新消息则永久 stale）。
 		// 代价是阻塞当前消费 worker，形成对上游拉取的真实背压；
 		// 与后台批量刷盘并发时由 MySQL/Redis 的 seq 条件写保证不回退。
-		logger.Errorf("[BACKPRESSURE ALERT] SeqSyncer channel full, degrade to synchronous flush for session %s seq %d", u.sessionID, u.seq)
-		s.batchFlush(map[string]seqUpdate{u.sessionID: u})
+		logger.Errorf("[BACKPRESSURE ALERT] SeqSyncer channel full, degrade to synchronous flush for session %s seq %d", u.SessionID, u.Seq)
+		s.batchFlush(map[string]SeqUpdate{u.SessionID: u})
 	}
 }
 
@@ -141,17 +143,17 @@ func (s *SeqSyncer) run() {
 	ticker := time.NewTicker(s.flushInterval)
 	defer ticker.Stop()
 
-	pending := make([]seqUpdate, 0, s.flushBatchLimit)
+	pending := make([]SeqUpdate, 0, s.flushBatchLimit)
 
 	flush := func() {
 		if len(pending) == 0 {
 			return
 		}
 		// 聚合：同一 conversationID 只保留 seq 最大的那条（含 lastContent 等完整信息）
-		latest := make(map[string]seqUpdate, len(pending))
+		latest := make(map[string]SeqUpdate, len(pending))
 		for _, u := range pending {
-			if u.seq > latest[u.sessionID].seq {
-				latest[u.sessionID] = u
+			if u.Seq > latest[u.SessionID].Seq {
+				latest[u.SessionID] = u
 			}
 		}
 		pending = pending[:0]
@@ -233,7 +235,7 @@ func (s *SeqSyncer) groupMemberIDs(ctx context.Context, convID string, groupID u
 }
 
 // batchFlush 将聚合后的会话状态批量写入 MySQL，并更新 Redis 活跃时间线
-func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
+func (s *SeqSyncer) batchFlush(latest map[string]SeqUpdate) {
 	if len(latest) == 0 {
 		return
 	}
@@ -248,7 +250,8 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 
 	for convID, u := range latest {
 		convType := model.SessionTypeSingle
-		if u.isGroup {
+		isGroup := u.SessionType == int(message.SessionType_SESSION_TYPE_GROUP)
+		if isGroup {
 			convType = model.SessionTypeGroup
 		}
 
@@ -269,23 +272,25 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 			Create(&model.Session{
 				SessionID:   convID,
 				Type:        convType,
-				SessionKey:  u.sessionKey,
-				LastContent: u.lastContent,
-				LastSender:  u.lastSender,
-				ActualSeq:   u.seq,
+				SessionKey:  u.SessionKey,
+				LastContent: u.LastContent,
+				LastSender:  u.LastSender,
+				ActualSeq:   u.Seq,
 				UpdateTime:  now,
 			})
 		if res.Error != nil {
-			failed = append(failed, fmt.Sprintf("%s(seq=%d,err=%v)", convID, u.seq, res.Error))
+			failed = append(failed, fmt.Sprintf("%s(seq=%d,err=%v)", convID, u.Seq, res.Error))
 			continue
 		}
 
-		// 2. 收集需要更新的时间线信息（参与者由 seqUpdate 显式携带，不再按 ID 前缀猜测）
+		// 2. 收集需要更新的时间线信息（参与者由 SeqUpdate 显式携带，不再按 ID 前缀猜测）
+		target, _ := util.GetTargetIdFromSessionKey(u.SessionKey, u.LastSender)
+
 		var userIDs []uint64
-		if u.isGroup {
-			userIDs = s.groupMemberIDs(ctx, convID, u.target)
+		if isGroup {
+			userIDs = s.groupMemberIDs(ctx, convID, target)
 		} else {
-			userIDs = []uint64{u.lastSender, u.target}
+			userIDs = []uint64{u.LastSender, target}
 		}
 
 		for _, uid := range userIDs {
@@ -295,7 +300,7 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 			if userTimelines[uid] == nil {
 				userTimelines[uid] = make(map[string]int64)
 			}
-			userTimelines[uid][convID] = u.updateTime
+			userTimelines[uid][convID] = u.UpdateTime
 		}
 	}
 
@@ -310,17 +315,19 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 		for convID, u := range latest {
 			key := sessionInfoPrefix + convID
 			convType := model.SessionTypeSingle
-			if u.isGroup {
+			isGroup := u.SessionType == int(message.SessionType_SESSION_TYPE_GROUP)
+			if isGroup {
 				convType = model.SessionTypeGroup
 			}
 			pipe.Eval(ctx, snapshotUpdateScript, []string{key},
-				strconv.FormatUint(u.seq, 10),
-				u.lastContent,
-				strconv.FormatUint(u.lastSender, 10),
-				strconv.FormatInt(u.updateTime, 10),
-				u.sessionKey,
+				strconv.FormatUint(u.Seq, 10),
+				u.LastContent,
+				strconv.FormatUint(u.LastSender, 10),
+				strconv.FormatInt(u.UpdateTime, 10),
+				u.SessionKey,
 				strconv.Itoa(int(convType)),
 				int(sessionInfoExpire.Seconds()),
+				u.SessionID,
 			)
 		}
 		for uid, convs := range userTimelines {

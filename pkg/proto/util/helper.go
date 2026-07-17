@@ -16,8 +16,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func GetSessionType(sessionId string) message.SessionType {
-	if IsGroupSession(sessionId) {
+func GetSessionType(sessionKey string) message.SessionType {
+	if IsGroupSession(sessionKey) {
 		return message.SessionType_SESSION_TYPE_GROUP
 	}
 	return message.SessionType_SESSION_TYPE_PRIVATE
@@ -27,20 +27,27 @@ func GenerateGroupSessionId(groupId uint64) string {
 	return strconv.FormatUint(groupId, 10)
 }
 
-func IsGroupSession(sessionId string) bool {
-	return !IsPrivateSession(sessionId)
+func IsGroupSession(sessionKey string) bool {
+	return !IsPrivateSession(sessionKey)
 }
 
-func IsPrivateSession(sessionId string) bool {
-	return strings.Contains(sessionId, "_")
+func IsPrivateSession(sessionKey string) bool {
+	return strings.Contains(sessionKey, "_")
 }
 
-// GetTargetIdFromSessionId 从会话ID中解析出目标ID（群ID或对方用户ID）
-func GetTargetIdFromSessionId(sessionId string, currentUserId uint64) (uint64, error) {
-	if IsGroupSession(sessionId) {
-		return strconv.ParseUint(sessionId, 10, 64)
-	} else if IsPrivateSession(sessionId) {
-		parts := strings.Split(sessionId, "_")
+func JudgeSessionType(sessionKey string) int32 {
+	if IsGroupSession(sessionKey) {
+		return int32(message.SessionType_SESSION_TYPE_GROUP)
+	}
+	return int32(message.SessionType_SESSION_TYPE_PRIVATE)
+}
+
+// GetTargetIdFromSessionKey 从会话ID中解析出目标ID（群ID或对方用户ID）
+func GetTargetIdFromSessionKey(sessionKey string, currentUserId uint64) (uint64, error) {
+	if IsGroupSession(sessionKey) {
+		return strconv.ParseUint(sessionKey, 10, 64)
+	} else if IsPrivateSession(sessionKey) {
+		parts := strings.Split(sessionKey, "_")
 		if len(parts) != 2 {
 			return 0, errors.New("invalid private session id")
 		}
@@ -131,7 +138,7 @@ func NewRecallNotifyMsg(operator uint64, sessionKey string, msg *model.Message) 
 	if msg == nil {
 		return nil, errors.New("message is nil")
 	}
-	target, err := GetTargetIdFromSessionId(sessionKey, operator)
+	target, err := GetTargetIdFromSessionKey(sessionKey, operator)
 	if err != nil {
 		return nil, err
 	}
