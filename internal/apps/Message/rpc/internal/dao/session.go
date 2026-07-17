@@ -78,10 +78,12 @@ func (c *SessionDAO) ResolveSessionIDByKey(ctx context.Context, newSessionID str
 
 // PushSeqUpdate 将完整的会话状态推送到 SeqSyncer，由后台批量刷 MySQL + 广播 UpdateSession。
 // 通常非阻塞；channel 打满且短暂等待无效时降级为同步直写（阻塞调用方但不丢事件）。
+// sessionKey 随快照写入 Redis，读路径按 session_id 可命中完整会话信息。
 // isGroup/target 描述会话形态与消息目标（群聊=群ID，单聊=接收方），用于时间线扇出。
-func (c *SessionDAO) PushSeqUpdate(sessionID string, seq uint64, lastContent string, lastSender uint64, updateTime int64, isGroup bool, target uint64) {
+func (c *SessionDAO) PushSeqUpdate(sessionID, sessionKey string, seq uint64, lastContent string, lastSender uint64, updateTime int64, isGroup bool, target uint64) {
 	c.seqSyncer.Push(seqUpdate{
 		sessionID:   sessionID,
+		sessionKey:  sessionKey,
 		seq:         seq,
 		lastContent: lastContent,
 		lastSender:  lastSender,
@@ -91,30 +93,30 @@ func (c *SessionDAO) PushSeqUpdate(sessionID string, seq uint64, lastContent str
 	})
 }
 
+// sessionInfoBatchScript 批量读取 session:info:{id} Hash 的完整快照字段
+// （由 SeqSyncer 随消息异步维护，可整条命中不回源 MySQL）。
+const sessionInfoBatchScript = `
+	local results = {}
+	for i = 1, #KEYS do
+		results[i] = redis.call('HMGET', KEYS[i], 'actual_seq', 'last_content', 'last_sender', 'session_key', 'type', 'update_time')
+	end
+	return results
+`
+
 // FindSessionsByIDs 批量查询会话。
-// 策略：先通过 Lua 脚本批量读取 Redis session:info:{id} Hash 中的快照字段，
-//
-//	Redis 没命中的会话再退化批量查询 MySQL。
+// 策略：先通过 Lua 脚本批量读取 Redis session:info:{id} Hash 的完整快照
+// （session_key / type / actual_seq / last_content / last_sender / update_time），
+// 未命中（含旧格式条目缺 session_key）的会话再批量查询 MySQL 兜底。
 func (c *SessionDAO) FindSessionsByIDs(ctx context.Context, sessionIDs []string) ([]*model.Session, error) {
 	if len(sessionIDs) == 0 {
 		return nil, nil
 	}
 
-	// 1. 批量读 Redis：从 session:info:{id} Hash 中读取 actual_seq / last_content / last_sender
-	// session:info 是号段模式下已有的 Key，全局最新，不必新增决策 Key
-	batchScript := `
-		local results = {}
-		for i = 1, #KEYS do
-			local v = redis.call('HMGET', KEYS[i], 'actual_seq', 'last_content', 'last_sender')
-			results[i] = v
-		end
-		return results
-	`
 	keys := make([]string, len(sessionIDs))
 	for i, id := range sessionIDs {
 		keys[i] = sessionInfoPrefix + id
 	}
-	luaRaw, err := c.cache.EvalCtx(ctx, batchScript, keys)
+	luaRaw, err := c.cache.EvalCtx(ctx, sessionInfoBatchScript, keys)
 
 	result := make([]*model.Session, 0, len(sessionIDs))
 	missingIDs := make([]string, 0)
@@ -123,19 +125,12 @@ func (c *SessionDAO) FindSessionsByIDs(ctx context.Context, sessionIDs []string)
 		rows, ok := luaRaw.([]interface{})
 		if ok && len(rows) == len(sessionIDs) {
 			for i, row := range rows {
-				fields, ok := row.([]interface{})
-				if !ok || len(fields) != 3 || fields[0] == nil {
+				session := parseSessionSnapshot(sessionIDs[i], row)
+				if session == nil {
 					missingIDs = append(missingIDs, sessionIDs[i])
 					continue
 				}
-				actualSeq, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[0]), 10, 64)
-				lastSender, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[2]), 10, 64)
-				result = append(result, &model.Session{
-					SessionID:   sessionIDs[i],
-					ActualSeq:   actualSeq,
-					LastContent: fmt.Sprintf("%s", fields[1]),
-					LastSender:  lastSender,
-				})
+				result = append(result, session)
 			}
 		} else {
 			missingIDs = append(missingIDs, sessionIDs...)
@@ -145,7 +140,7 @@ func (c *SessionDAO) FindSessionsByIDs(ctx context.Context, sessionIDs []string)
 		missingIDs = append(missingIDs, sessionIDs...)
 	}
 
-	// 2. 对于 Redis 没命中的批量查 DB
+	// Redis 没命中的批量查 DB
 	if len(missingIDs) > 0 {
 		var dbSessions []*model.Session
 		if err := c.db.WithContext(ctx).
@@ -156,6 +151,28 @@ func (c *SessionDAO) FindSessionsByIDs(ctx context.Context, sessionIDs []string)
 		result = append(result, dbSessions...)
 	}
 	return result, nil
+}
+
+// parseSessionSnapshot 将 Lua HMGET 返回的一行快照解析为 Session。
+// actual_seq 或 session_key 缺失（键不存在 / 旧格式条目）视为未命中，返回 nil。
+func parseSessionSnapshot(sessionID string, row interface{}) *model.Session {
+	fields, ok := row.([]interface{})
+	if !ok || len(fields) != 6 || fields[0] == nil || fields[3] == nil {
+		return nil
+	}
+	actualSeq, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[0]), 10, 64)
+	lastSender, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[2]), 10, 64)
+	sessionType, _ := strconv.ParseInt(fmt.Sprintf("%s", fields[4]), 10, 8)
+	updateTime, _ := strconv.ParseInt(fmt.Sprintf("%s", fields[5]), 10, 64)
+	return &model.Session{
+		SessionID:   sessionID,
+		Type:        int8(sessionType),
+		SessionKey:  fmt.Sprintf("%s", fields[3]),
+		ActualSeq:   actualSeq,
+		LastContent: fmt.Sprintf("%s", fields[1]),
+		LastSender:  lastSender,
+		UpdateTime:  time.UnixMilli(updateTime),
+	}
 }
 
 // FindBySessionID 按 session_id 精确查询单条会话
@@ -362,29 +379,17 @@ func (c *SessionDAO) BatchInsertUserSessions(ctx context.Context, userSessions [
 	})
 }
 
-// GetActiveSessionIDs 获取活跃的会话 ID 列表，按时间戳过滤大于 sinceTimestamp 的记录
-func (c *SessionDAO) GetActiveSessionIDs(ctx context.Context, userID uint64, sinceTimestamp int64) ([]string, error) {
-	snaps, err := c.getActiveSessionSnapshots(ctx, userID, sinceTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	ids := make([]string, 0, len(snaps))
-	for _, s := range snaps {
-		ids = append(ids, s.SessionID)
-	}
-	return ids, nil
-}
-
-// getActiveSessionSnapshots 获取在 sinceTimestamp 后有更新的会话快照列表。
+// GetActiveSessions 获取在 sinceTimestamp 后有更新的会话完整信息列表。
 //
 // 流程：
-//  1. 从 ZSET user:session:timeline:{uid} 读取活跃会话 ID 列表（member = sessionID，score = updateTime）
-//  2. 批量 HMGET Redis session:info:{id} 获取快照字段（actual_seq / last_content / last_sender）
-//  3. Redis 没命中的删退化批量查询 MySQL
-func (c *SessionDAO) getActiveSessionSnapshots(ctx context.Context, userID uint64, sinceTimestamp int64) ([]SessionSnapshot, error) {
+//  1. 从 ZSET user:session:timeline:{uid} 读取活跃会话 ID（member = sessionID，
+//     score = updateTime），按更新时间降序
+//  2. 复用 FindSessionsByIDs 批量取会话详情：Redis 完整快照优先命中，
+//     未命中的批量查询 MySQL 兜底
+func (c *SessionDAO) GetActiveSessions(ctx context.Context, userID uint64, sinceTimestamp int64) ([]*model.Session, error) {
 	key := fmt.Sprintf("%s%d", sessionTimelinePrefix, userID)
 
-	// Step 1: 从 ZSET 获取会话 ID
+	// Step 1: 从 ZSET 获取活跃会话 ID
 	pairs, err := c.cache.ZRangeByScoreWithScoresCtx(ctx, key, sinceTimestamp+1, time.Now().UnixMilli()+100000)
 	if err != nil {
 		if err.Error() == "redis: nil" {
@@ -403,66 +408,8 @@ func (c *SessionDAO) getActiveSessionSnapshots(ctx context.Context, userID uint6
 		sessionIDs = append(sessionIDs, pairs[i].Key)
 	}
 
-	// Step 2: 批量 HMGET session:info Hash
-	batchScript := `
-		local results = {}
-		for i = 1, #KEYS do
-			results[i] = redis.call('HMGET', KEYS[i], 'actual_seq', 'last_content', 'last_sender')
-		end
-		return results
-	`
-	luaKeys := make([]string, len(sessionIDs))
-	for i, id := range sessionIDs {
-		luaKeys[i] = sessionInfoPrefix + id
-	}
-	luaRaw, luaErr := c.cache.EvalCtx(ctx, batchScript, luaKeys)
-
-	result := make([]SessionSnapshot, 0, len(sessionIDs))
-	missingIDs := make([]string, 0)
-
-	if luaErr == nil {
-		rows, ok := luaRaw.([]interface{})
-		if ok && len(rows) == len(sessionIDs) {
-			for i, row := range rows {
-				fields, ok := row.([]interface{})
-				if !ok || len(fields) != 3 || fields[0] == nil {
-					missingIDs = append(missingIDs, sessionIDs[i])
-					continue
-				}
-				actualSeq, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[0]), 10, 64)
-				lastSender, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[2]), 10, 64)
-				result = append(result, SessionSnapshot{
-					SessionID:   sessionIDs[i],
-					Seq:         actualSeq,
-					LastContent: fmt.Sprintf("%s", fields[1]),
-					LastSender:  lastSender,
-				})
-			}
-		} else {
-			missingIDs = append(missingIDs, sessionIDs...)
-		}
-	} else {
-		missingIDs = append(missingIDs, sessionIDs...)
-	}
-
-	// Step 3: DB 退化查询
-	if len(missingIDs) > 0 {
-		var dbSessions []*model.Session
-		if dbErr := c.db.WithContext(ctx).
-			Where("session_id IN ?", missingIDs).
-			Find(&dbSessions).Error; dbErr != nil {
-			return nil, dbErr
-		}
-		for _, session := range dbSessions {
-			result = append(result, SessionSnapshot{
-				SessionID:   session.SessionID,
-				Seq:         session.ActualSeq,
-				LastContent: session.LastContent,
-				LastSender:  session.LastSender,
-			})
-		}
-	}
-	return result, nil
+	// Step 2: 批量取会话详情（Redis 快照 + MySQL 兜底）
+	return c.FindSessionsByIDs(ctx, sessionIDs)
 }
 
 // currentMaxSeq 返回当前会话已分配的最大 seq（Lamport 语义下即最后一条消息的 seq）。

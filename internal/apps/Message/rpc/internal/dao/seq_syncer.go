@@ -28,6 +28,7 @@ const (
 // 聚合时同一 conversationID 只保留 seq 最大的那条（视为最新状态，Lamport uint64 直接比较）。
 type seqUpdate struct {
 	sessionID   string
+	sessionKey  string // 业务主键（群号或单聊双方 ID 拼接），随快照缓存供读路径直接命中
 	seq         uint64 // 写入 MySQL actual_seq 和 Redis 快照
 	lastContent string
 	lastSender  uint64
@@ -36,18 +37,6 @@ type seqUpdate struct {
 	// sessionID 是雪花 ID，不再携带 group/private 前缀，无法按前缀推断类型。
 	isGroup bool
 	target  uint64 // 群聊=群ID；单聊=接收方用户ID
-}
-
-// ConvSnapshot 会话快照，同时用作:
-//  1. ZSET user:conv:timeline:{uid} 的 member（JSON 序列化）
-//  2. Hash conv:snapshot:{convID} 的读取输入
-//
-// 字段缩写以减少 Redis 内存占用。
-type SessionSnapshot struct {
-	SessionID   string `json:"c"`
-	Seq         uint64 `json:"s"`
-	LastContent string `json:"lc"`
-	LastSender  uint64 `json:"ls"`
 }
 
 // SeqSyncer 进程内 channel + 定时/定量批量刷盘器
@@ -65,18 +54,21 @@ type SessionSnapshot struct {
 // GroupMemberSource 按群 ID 获取成员列表（由上层注入，通常带 Redis 缓存 + Group RPC 回源）
 type GroupMemberSource func(ctx context.Context, groupID uint64) ([]uint64, error)
 
-// snapshotUpdateScript 仅当新 seq 更大时更新会话快照，无论是否更新都续期。
+// snapshotUpdateScript 更新会话完整快照（读路径 FindSessionsByIDs 可直接命中，
+// 不必回源 MySQL）。随消息变化的字段仅当新 seq 更大时更新；session_key / type
+// 不可变，无条件补写（兼容旧格式条目缺失这两个字段的情况）；无论是否更新都续期。
 // seq 是 uint64，超出 Lua number（double，53 bit）的精确整数范围，故用
 // 字符串比较：先比长度再比字典序（等长十进制字符串的字典序即数值序）。
 // KEYS[1] = session:info:{convID}
-// ARGV = seq, last_content, last_sender, expire_seconds
+// ARGV = seq, last_content, last_sender, update_time, session_key, type, expire_seconds
 const snapshotUpdateScript = `
 local cur = redis.call('HGET', KEYS[1], 'actual_seq')
 local new = ARGV[1]
 if (not cur) or (#cur < #new) or (#cur == #new and cur < new) then
-	redis.call('HSET', KEYS[1], 'actual_seq', ARGV[1], 'last_content', ARGV[2], 'last_sender', ARGV[3])
+	redis.call('HSET', KEYS[1], 'actual_seq', ARGV[1], 'last_content', ARGV[2], 'last_sender', ARGV[3], 'update_time', ARGV[4])
 end
-redis.call('EXPIRE', KEYS[1], ARGV[4])
+redis.call('HSET', KEYS[1], 'session_key', ARGV[5], 'type', ARGV[6])
+redis.call('EXPIRE', KEYS[1], ARGV[7])
 return 1
 `
 
@@ -277,6 +269,7 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 			Create(&model.Session{
 				SessionID:   convID,
 				Type:        convType,
+				SessionKey:  u.sessionKey,
 				LastContent: u.lastContent,
 				LastSender:  u.lastSender,
 				ActualSeq:   u.seq,
@@ -307,7 +300,8 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	}
 
 	// 3. 批量更新 Redis：
-	//    a) session:info:{convID} Hash：actual_seq / last_content / last_sender 会话快照。
+	//    a) session:info:{convID} Hash：会话完整快照（session_key / type / actual_seq /
+	//       last_content / last_sender / update_time），读路径可整条命中不回源 MySQL。
 	//       Lamport 分配器不再经过 Redis，快照统一由此处异步维护（最多滞后一个刷盘周期）。
 	//       通过 Lua 按 seq 条件写，并发刷盘时旧批次不能回退新快照。
 	//    b) user:conv:timeline:{uid} ZSET：member = convID，score = updateTime。
@@ -315,10 +309,17 @@ func (s *SeqSyncer) batchFlush(latest map[string]seqUpdate) {
 	err := s.cache.PipelinedCtx(ctx, func(pipe redis.Pipeliner) error {
 		for convID, u := range latest {
 			key := sessionInfoPrefix + convID
+			convType := model.SessionTypeSingle
+			if u.isGroup {
+				convType = model.SessionTypeGroup
+			}
 			pipe.Eval(ctx, snapshotUpdateScript, []string{key},
 				strconv.FormatUint(u.seq, 10),
 				u.lastContent,
 				strconv.FormatUint(u.lastSender, 10),
+				strconv.FormatInt(u.updateTime, 10),
+				u.sessionKey,
+				strconv.Itoa(int(convType)),
 				int(sessionInfoExpire.Seconds()),
 			)
 		}

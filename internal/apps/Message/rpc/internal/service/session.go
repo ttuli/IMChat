@@ -18,32 +18,12 @@ func (s *MessageService) GetUserSessions(ctx context.Context, userID uint64) ([]
 	return sessions, nil
 }
 
-// GetUserActiveSessions 获取用户活跃的会话列表，基于时间戳增量获取
+// GetUserActiveSessions 获取用户活跃的会话列表，基于时间戳增量获取。
+// DAO 内部：Redis 时间线取活跃 ID → 完整快照批量命中，未命中批量查 MySQL。
 func (s *MessageService) GetUserActiveSessions(ctx context.Context, userID uint64, sinceTimestamp int64) ([]*model.Session, error) {
-	// 1. 从 Redis ZSet 获取活跃会话 IDs (score > sinceTimestamp)
-	activeIDs, err := s.svcCtx.SessionDAO.GetActiveSessionIDs(ctx, userID, sinceTimestamp)
+	sessions, err := s.svcCtx.SessionDAO.GetActiveSessions(ctx, userID, sinceTimestamp)
 	if err != nil {
 		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "获取活跃会话列表失败")
-	}
-
-	if len(activeIDs) == 0 {
-		return []*model.Session{}, nil
-	}
-
-	// 2. 批量查询会话详情
-	sessions, err := s.GetSession(ctx, activeIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	return sessions, nil
-}
-
-// GetSession 批量获取会话详情
-func (s *MessageService) GetSession(ctx context.Context, sessionIDs []string) ([]*model.Session, error) {
-	sessions, err := s.svcCtx.SessionDAO.FindSessionsByIDs(ctx, sessionIDs)
-	if err != nil {
-		return nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "批量查询会话失败")
 	}
 	return sessions, nil
 }
