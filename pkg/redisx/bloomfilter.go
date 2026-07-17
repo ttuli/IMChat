@@ -7,7 +7,6 @@ import (
 )
 
 // BloomFilter 基于 Redis BITSET 实现的布隆过滤器
-//
 // 设计说明:
 //   - 不依赖 RedisBloom 模块，原生 Redis 即可运行
 //   - 使用多个独立 hash 函数写入不同 bit 位
