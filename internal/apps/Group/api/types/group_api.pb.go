@@ -1098,6 +1098,299 @@ func (x *InviteMembersResp) GetFailedIds() []uint64 {
 	return nil
 }
 
+// GroupInvite 群邀请记录（被邀请人视角）
+type GroupInvite struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"id"
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id"`
+	// @gotags: json:"group_id"
+	GroupId uint64 `protobuf:"varint,2,opt,name=group_id,json=groupId,proto3" json:"group_id"`
+	// @gotags: json:"inviter_id"
+	InviterId uint64 `protobuf:"varint,3,opt,name=inviter_id,json=inviterId,proto3" json:"inviter_id"`
+	// @gotags: json:"invitee_id"
+	InviteeId uint64 `protobuf:"varint,4,opt,name=invitee_id,json=inviteeId,proto3" json:"invitee_id"`
+	// @gotags: json:"status"
+	Status int32 `protobuf:"varint,5,opt,name=status,proto3" json:"status"`
+	// @gotags: json:"invite_msg"
+	InviteMsg string `protobuf:"bytes,6,opt,name=invite_msg,json=inviteMsg,proto3" json:"invite_msg"`
+	// @gotags: json:"create_time"
+	CreateTime int64 `protobuf:"varint,7,opt,name=create_time,json=createTime,proto3" json:"create_time"`
+	// @gotags: json:"update_time"
+	UpdateTime    int64 `protobuf:"varint,8,opt,name=update_time,json=updateTime,proto3" json:"update_time"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GroupInvite) Reset() {
+	*x = GroupInvite{}
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GroupInvite) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GroupInvite) ProtoMessage() {}
+
+func (x *GroupInvite) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GroupInvite.ProtoReflect.Descriptor instead.
+func (*GroupInvite) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GroupInvite) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *GroupInvite) GetGroupId() uint64 {
+	if x != nil {
+		return x.GroupId
+	}
+	return 0
+}
+
+func (x *GroupInvite) GetInviterId() uint64 {
+	if x != nil {
+		return x.InviterId
+	}
+	return 0
+}
+
+func (x *GroupInvite) GetInviteeId() uint64 {
+	if x != nil {
+		return x.InviteeId
+	}
+	return 0
+}
+
+func (x *GroupInvite) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *GroupInvite) GetInviteMsg() string {
+	if x != nil {
+		return x.InviteMsg
+	}
+	return ""
+}
+
+func (x *GroupInvite) GetCreateTime() int64 {
+	if x != nil {
+		return x.CreateTime
+	}
+	return 0
+}
+
+func (x *GroupInvite) GetUpdateTime() int64 {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return 0
+}
+
+// HandleGroupInviteReq 被邀请人接受/拒绝邀请（invitee_id 由服务端从 JWT 解析）
+type HandleGroupInviteReq struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"invite_id"
+	InviteId uint64 `protobuf:"varint,1,opt,name=invite_id,json=inviteId,proto3" json:"invite_id"`
+	// @gotags: json:"accept"
+	Accept        bool `protobuf:"varint,2,opt,name=accept,proto3" json:"accept"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HandleGroupInviteReq) Reset() {
+	*x = HandleGroupInviteReq{}
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HandleGroupInviteReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HandleGroupInviteReq) ProtoMessage() {}
+
+func (x *HandleGroupInviteReq) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HandleGroupInviteReq.ProtoReflect.Descriptor instead.
+func (*HandleGroupInviteReq) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *HandleGroupInviteReq) GetInviteId() uint64 {
+	if x != nil {
+		return x.InviteId
+	}
+	return 0
+}
+
+func (x *HandleGroupInviteReq) GetAccept() bool {
+	if x != nil {
+		return x.Accept
+	}
+	return false
+}
+
+// HandleGroupInviteResp
+type HandleGroupInviteResp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"member,omitempty"
+	Member        *GroupMember `protobuf:"bytes,1,opt,name=member,proto3" json:"member,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HandleGroupInviteResp) Reset() {
+	*x = HandleGroupInviteResp{}
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HandleGroupInviteResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HandleGroupInviteResp) ProtoMessage() {}
+
+func (x *HandleGroupInviteResp) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HandleGroupInviteResp.ProtoReflect.Descriptor instead.
+func (*HandleGroupInviteResp) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *HandleGroupInviteResp) GetMember() *GroupMember {
+	if x != nil {
+		return x.Member
+	}
+	return nil
+}
+
+// GetPendingInvitesReq
+type GetPendingInvitesReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPendingInvitesReq) Reset() {
+	*x = GetPendingInvitesReq{}
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPendingInvitesReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPendingInvitesReq) ProtoMessage() {}
+
+func (x *GetPendingInvitesReq) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPendingInvitesReq.ProtoReflect.Descriptor instead.
+func (*GetPendingInvitesReq) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{19}
+}
+
+// GetPendingInvitesResp
+type GetPendingInvitesResp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"data"
+	Data          []*GroupInvite `protobuf:"bytes,1,rep,name=data,proto3" json:"data"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPendingInvitesResp) Reset() {
+	*x = GetPendingInvitesResp{}
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPendingInvitesResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPendingInvitesResp) ProtoMessage() {}
+
+func (x *GetPendingInvitesResp) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPendingInvitesResp.ProtoReflect.Descriptor instead.
+func (*GetPendingInvitesResp) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetPendingInvitesResp) GetData() []*GroupInvite {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 // RemoveMemberReq
 type RemoveMemberReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1113,7 +1406,7 @@ type RemoveMemberReq struct {
 
 func (x *RemoveMemberReq) Reset() {
 	*x = RemoveMemberReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[16]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1125,7 +1418,7 @@ func (x *RemoveMemberReq) String() string {
 func (*RemoveMemberReq) ProtoMessage() {}
 
 func (x *RemoveMemberReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[16]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1431,7 @@ func (x *RemoveMemberReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveMemberReq.ProtoReflect.Descriptor instead.
 func (*RemoveMemberReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{16}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *RemoveMemberReq) GetGroupId() uint64 {
@@ -1173,7 +1466,7 @@ type LeaveGroupReq struct {
 
 func (x *LeaveGroupReq) Reset() {
 	*x = LeaveGroupReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[17]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1185,7 +1478,7 @@ func (x *LeaveGroupReq) String() string {
 func (*LeaveGroupReq) ProtoMessage() {}
 
 func (x *LeaveGroupReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[17]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1198,7 +1491,7 @@ func (x *LeaveGroupReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveGroupReq.ProtoReflect.Descriptor instead.
 func (*LeaveGroupReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{17}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *LeaveGroupReq) GetGroupId() uint64 {
@@ -1219,7 +1512,7 @@ type DismissGroupReq struct {
 
 func (x *DismissGroupReq) Reset() {
 	*x = DismissGroupReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[18]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1231,7 +1524,7 @@ func (x *DismissGroupReq) String() string {
 func (*DismissGroupReq) ProtoMessage() {}
 
 func (x *DismissGroupReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[18]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1244,7 +1537,7 @@ func (x *DismissGroupReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DismissGroupReq.ProtoReflect.Descriptor instead.
 func (*DismissGroupReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{18}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *DismissGroupReq) GetGroupId() uint64 {
@@ -1271,7 +1564,7 @@ type SetMemberRoleReq struct {
 
 func (x *SetMemberRoleReq) Reset() {
 	*x = SetMemberRoleReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[19]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1283,7 +1576,7 @@ func (x *SetMemberRoleReq) String() string {
 func (*SetMemberRoleReq) ProtoMessage() {}
 
 func (x *SetMemberRoleReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[19]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1296,7 +1589,7 @@ func (x *SetMemberRoleReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetMemberRoleReq.ProtoReflect.Descriptor instead.
 func (*SetMemberRoleReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{19}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *SetMemberRoleReq) GetGroupId() uint64 {
@@ -1340,7 +1633,7 @@ type SetMemberNicknameReq struct {
 
 func (x *SetMemberNicknameReq) Reset() {
 	*x = SetMemberNicknameReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[20]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1352,7 +1645,7 @@ func (x *SetMemberNicknameReq) String() string {
 func (*SetMemberNicknameReq) ProtoMessage() {}
 
 func (x *SetMemberNicknameReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[20]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1365,7 +1658,7 @@ func (x *SetMemberNicknameReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetMemberNicknameReq.ProtoReflect.Descriptor instead.
 func (*SetMemberNicknameReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{20}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *SetMemberNicknameReq) GetGroupId() uint64 {
@@ -1397,7 +1690,7 @@ type MuteMemberReq struct {
 
 func (x *MuteMemberReq) Reset() {
 	*x = MuteMemberReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[21]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1409,7 +1702,7 @@ func (x *MuteMemberReq) String() string {
 func (*MuteMemberReq) ProtoMessage() {}
 
 func (x *MuteMemberReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[21]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1422,7 +1715,7 @@ func (x *MuteMemberReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MuteMemberReq.ProtoReflect.Descriptor instead.
 func (*MuteMemberReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{21}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *MuteMemberReq) GetGroupId() uint64 {
@@ -1455,7 +1748,7 @@ type GetUserGroupsReq struct {
 
 func (x *GetUserGroupsReq) Reset() {
 	*x = GetUserGroupsReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[22]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1467,7 +1760,7 @@ func (x *GetUserGroupsReq) String() string {
 func (*GetUserGroupsReq) ProtoMessage() {}
 
 func (x *GetUserGroupsReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[22]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1480,7 +1773,7 @@ func (x *GetUserGroupsReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserGroupsReq.ProtoReflect.Descriptor instead.
 func (*GetUserGroupsReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{22}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{27}
 }
 
 // GetUserGroupsResp
@@ -1494,7 +1787,7 @@ type GetUserGroupsResp struct {
 
 func (x *GetUserGroupsResp) Reset() {
 	*x = GetUserGroupsResp{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[23]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1506,7 +1799,7 @@ func (x *GetUserGroupsResp) String() string {
 func (*GetUserGroupsResp) ProtoMessage() {}
 
 func (x *GetUserGroupsResp) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[23]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1519,7 +1812,7 @@ func (x *GetUserGroupsResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserGroupsResp.ProtoReflect.Descriptor instead.
 func (*GetUserGroupsResp) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{23}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetUserGroupsResp) GetData() []uint64 {
@@ -1538,7 +1831,7 @@ type GetPendingAppliesReq struct {
 
 func (x *GetPendingAppliesReq) Reset() {
 	*x = GetPendingAppliesReq{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[24]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1550,7 +1843,7 @@ func (x *GetPendingAppliesReq) String() string {
 func (*GetPendingAppliesReq) ProtoMessage() {}
 
 func (x *GetPendingAppliesReq) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[24]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1563,7 +1856,7 @@ func (x *GetPendingAppliesReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingAppliesReq.ProtoReflect.Descriptor instead.
 func (*GetPendingAppliesReq) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{24}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{29}
 }
 
 // GetPendingAppliesResp
@@ -1577,7 +1870,7 @@ type GetPendingAppliesResp struct {
 
 func (x *GetPendingAppliesResp) Reset() {
 	*x = GetPendingAppliesResp{}
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[25]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1589,7 +1882,7 @@ func (x *GetPendingAppliesResp) String() string {
 func (*GetPendingAppliesResp) ProtoMessage() {}
 
 func (x *GetPendingAppliesResp) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[25]
+	mi := &file_internal_apps_Group_api_types_group_api_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1602,7 +1895,7 @@ func (x *GetPendingAppliesResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingAppliesResp.ProtoReflect.Descriptor instead.
 func (*GetPendingAppliesResp) Descriptor() ([]byte, []int) {
-	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{25}
+	return file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *GetPendingAppliesResp) GetData() []*GroupRequest {
@@ -1735,49 +2028,80 @@ var file_internal_apps_Group_api_types_group_api_proto_rawDesc = string([]byte{
 	0x73, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0c,
 	0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a,
 	0x66, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x04,
-	0x52, 0x09, 0x66, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x49, 0x64, 0x73, 0x22, 0x66, 0x0a, 0x0f, 0x52,
-	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x71, 0x12, 0x19,
-	0x0a, 0x08, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x07, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65,
-	0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72,
-	0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x69,
-	0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f,
-	0x72, 0x49, 0x64, 0x22, 0x2a, 0x0a, 0x0d, 0x4c, 0x65, 0x61, 0x76, 0x65, 0x47, 0x72, 0x6f, 0x75,
-	0x70, 0x52, 0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x22,
-	0x2c, 0x0a, 0x0f, 0x44, 0x69, 0x73, 0x6d, 0x69, 0x73, 0x73, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52,
-	0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x22, 0x7b, 0x0a,
-	0x10, 0x53, 0x65, 0x74, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65,
-	0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x07, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07,
-	0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x75,
-	0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x72, 0x6f, 0x6c, 0x65, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x04, 0x72, 0x6f, 0x6c, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x6f, 0x70, 0x65,
-	0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a,
-	0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x49, 0x64, 0x22, 0x4d, 0x0a, 0x14, 0x53, 0x65,
-	0x74, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x4e, 0x69, 0x63, 0x6b, 0x6e, 0x61, 0x6d, 0x65, 0x52,
-	0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x1a, 0x0a,
-	0x08, 0x6e, 0x69, 0x63, 0x6b, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x08, 0x6e, 0x69, 0x63, 0x6b, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x62, 0x0a, 0x0d, 0x4d, 0x75, 0x74,
-	0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72,
+	0x52, 0x09, 0x66, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x49, 0x64, 0x73, 0x22, 0xef, 0x01, 0x0a, 0x0b,
+	0x47, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x69, 0x64, 0x12, 0x19, 0x0a, 0x08, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x69, 0x6e, 0x76, 0x69, 0x74, 0x65,
+	0x72, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x69, 0x6e, 0x76, 0x69,
+	0x74, 0x65, 0x72, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x69, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x65,
+	0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x69, 0x6e, 0x76, 0x69, 0x74,
+	0x65, 0x65, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x05,
+	0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1d, 0x0a, 0x0a,
+	0x69, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x5f, 0x6d, 0x73, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x09, 0x69, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x4d, 0x73, 0x67, 0x12, 0x1f, 0x0a, 0x0b, 0x63,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x03,
+	0x52, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x1f, 0x0a, 0x0b,
+	0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28,
+	0x03, 0x52, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x4b, 0x0a,
+	0x14, 0x48, 0x61, 0x6e, 0x64, 0x6c, 0x65, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x6e, 0x76, 0x69,
+	0x74, 0x65, 0x52, 0x65, 0x71, 0x12, 0x1b, 0x0a, 0x09, 0x69, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x69, 0x6e, 0x76, 0x69, 0x74, 0x65,
+	0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x08, 0x52, 0x06, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x22, 0x49, 0x0a, 0x15, 0x48, 0x61,
+	0x6e, 0x64, 0x6c, 0x65, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x12, 0x30, 0x0a, 0x06, 0x6d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x67, 0x72, 0x6f, 0x75,
+	0x70, 0x2e, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x06, 0x6d,
+	0x65, 0x6d, 0x62, 0x65, 0x72, 0x22, 0x16, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x50, 0x65, 0x6e, 0x64,
+	0x69, 0x6e, 0x67, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x22, 0x45, 0x0a,
+	0x15, 0x47, 0x65, 0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x49, 0x6e, 0x76, 0x69, 0x74,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x12, 0x2c, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x67, 0x72, 0x6f,
+	0x75, 0x70, 0x2e, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x52, 0x04,
+	0x64, 0x61, 0x74, 0x61, 0x22, 0x66, 0x0a, 0x0f, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4d, 0x65,
+	0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72, 0x6f, 0x75, 0x70,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67, 0x72, 0x6f, 0x75, 0x70,
+	0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x6f,
+	0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x0a, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x49, 0x64, 0x22, 0x2a, 0x0a, 0x0d,
+	0x4c, 0x65, 0x61, 0x76, 0x65, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x71, 0x12, 0x19, 0x0a,
+	0x08, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x07, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x22, 0x2c, 0x0a, 0x0f, 0x44, 0x69, 0x73, 0x6d,
+	0x69, 0x73, 0x73, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x22, 0x7b, 0x0a, 0x10, 0x53, 0x65, 0x74, 0x4d, 0x65, 0x6d,
+	0x62, 0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72,
 	0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67, 0x72,
 	0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x1d,
-	0x0a, 0x0a, 0x6d, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x74, 0x69, 0x6c, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x03, 0x52, 0x09, 0x6d, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x74, 0x69, 0x6c, 0x22, 0x12, 0x0a,
-	0x10, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x52, 0x65,
-	0x71, 0x22, 0x27, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75,
-	0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x04, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x16, 0x0a, 0x14, 0x47, 0x65,
-	0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x73, 0x52,
-	0x65, 0x71, 0x22, 0x46, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
-	0x41, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x12, 0x2d, 0x0a, 0x04, 0x64,
-	0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x74, 0x79, 0x70, 0x65,
-	0x73, 0x2e, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x2e, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x0a, 0x5a, 0x08, 0x2e, 0x2f,
-	0x3b, 0x74, 0x79, 0x70, 0x65, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x12,
+	0x0a, 0x04, 0x72, 0x6f, 0x6c, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x72, 0x6f,
+	0x6c, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x69,
+	0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f,
+	0x72, 0x49, 0x64, 0x22, 0x4d, 0x0a, 0x14, 0x53, 0x65, 0x74, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72,
+	0x4e, 0x69, 0x63, 0x6b, 0x6e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x6e, 0x69, 0x63, 0x6b, 0x6e, 0x61,
+	0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x6e, 0x69, 0x63, 0x6b, 0x6e, 0x61,
+	0x6d, 0x65, 0x22, 0x62, 0x0a, 0x0d, 0x4d, 0x75, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72,
+	0x52, 0x65, 0x71, 0x12, 0x19, 0x0a, 0x08, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x17,
+	0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x75, 0x74, 0x65, 0x5f,
+	0x75, 0x6e, 0x74, 0x69, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x6d, 0x75, 0x74,
+	0x65, 0x55, 0x6e, 0x74, 0x69, 0x6c, 0x22, 0x12, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65,
+	0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x52, 0x65, 0x71, 0x22, 0x27, 0x0a, 0x11, 0x47, 0x65,
+	0x74, 0x55, 0x73, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x12,
+	0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x04, 0x64,
+	0x61, 0x74, 0x61, 0x22, 0x16, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x22, 0x46, 0x0a, 0x15, 0x47,
+	0x65, 0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x12, 0x2d, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x67, 0x72, 0x6f, 0x75, 0x70,
+	0x2e, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x04, 0x64,
+	0x61, 0x74, 0x61, 0x42, 0x0a, 0x5a, 0x08, 0x2e, 0x2f, 0x3b, 0x74, 0x79, 0x70, 0x65, 0x73, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -1792,7 +2116,7 @@ func file_internal_apps_Group_api_types_group_api_proto_rawDescGZIP() []byte {
 	return file_internal_apps_Group_api_types_group_api_proto_rawDescData
 }
 
-var file_internal_apps_Group_api_types_group_api_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_internal_apps_Group_api_types_group_api_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_internal_apps_Group_api_types_group_api_proto_goTypes = []any{
 	(*GroupMember)(nil),           // 0: types.group.GroupMember
 	(*Group)(nil),                 // 1: types.group.Group
@@ -1810,30 +2134,37 @@ var file_internal_apps_Group_api_types_group_api_proto_goTypes = []any{
 	(*HandleGroupApplyResp)(nil),  // 13: types.group.HandleGroupApplyResp
 	(*InviteMembersReq)(nil),      // 14: types.group.InviteMembersReq
 	(*InviteMembersResp)(nil),     // 15: types.group.InviteMembersResp
-	(*RemoveMemberReq)(nil),       // 16: types.group.RemoveMemberReq
-	(*LeaveGroupReq)(nil),         // 17: types.group.LeaveGroupReq
-	(*DismissGroupReq)(nil),       // 18: types.group.DismissGroupReq
-	(*SetMemberRoleReq)(nil),      // 19: types.group.SetMemberRoleReq
-	(*SetMemberNicknameReq)(nil),  // 20: types.group.SetMemberNicknameReq
-	(*MuteMemberReq)(nil),         // 21: types.group.MuteMemberReq
-	(*GetUserGroupsReq)(nil),      // 22: types.group.GetUserGroupsReq
-	(*GetUserGroupsResp)(nil),     // 23: types.group.GetUserGroupsResp
-	(*GetPendingAppliesReq)(nil),  // 24: types.group.GetPendingAppliesReq
-	(*GetPendingAppliesResp)(nil), // 25: types.group.GetPendingAppliesResp
+	(*GroupInvite)(nil),           // 16: types.group.GroupInvite
+	(*HandleGroupInviteReq)(nil),  // 17: types.group.HandleGroupInviteReq
+	(*HandleGroupInviteResp)(nil), // 18: types.group.HandleGroupInviteResp
+	(*GetPendingInvitesReq)(nil),  // 19: types.group.GetPendingInvitesReq
+	(*GetPendingInvitesResp)(nil), // 20: types.group.GetPendingInvitesResp
+	(*RemoveMemberReq)(nil),       // 21: types.group.RemoveMemberReq
+	(*LeaveGroupReq)(nil),         // 22: types.group.LeaveGroupReq
+	(*DismissGroupReq)(nil),       // 23: types.group.DismissGroupReq
+	(*SetMemberRoleReq)(nil),      // 24: types.group.SetMemberRoleReq
+	(*SetMemberNicknameReq)(nil),  // 25: types.group.SetMemberNicknameReq
+	(*MuteMemberReq)(nil),         // 26: types.group.MuteMemberReq
+	(*GetUserGroupsReq)(nil),      // 27: types.group.GetUserGroupsReq
+	(*GetUserGroupsResp)(nil),     // 28: types.group.GetUserGroupsResp
+	(*GetPendingAppliesReq)(nil),  // 29: types.group.GetPendingAppliesReq
+	(*GetPendingAppliesResp)(nil), // 30: types.group.GetPendingAppliesResp
 }
 var file_internal_apps_Group_api_types_group_api_proto_depIdxs = []int32{
-	1, // 0: types.group.CreateGroupResp.data:type_name -> types.group.Group
-	0, // 1: types.group.GetGroupMembersResp.data:type_name -> types.group.GroupMember
-	1, // 2: types.group.GetGroupResp.data:type_name -> types.group.Group
-	2, // 3: types.group.JoinGroupResp.data:type_name -> types.group.GroupRequest
-	0, // 4: types.group.JoinGroupResp.member:type_name -> types.group.GroupMember
-	2, // 5: types.group.HandleGroupApplyResp.data:type_name -> types.group.GroupRequest
-	2, // 6: types.group.GetPendingAppliesResp.data:type_name -> types.group.GroupRequest
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1,  // 0: types.group.CreateGroupResp.data:type_name -> types.group.Group
+	0,  // 1: types.group.GetGroupMembersResp.data:type_name -> types.group.GroupMember
+	1,  // 2: types.group.GetGroupResp.data:type_name -> types.group.Group
+	2,  // 3: types.group.JoinGroupResp.data:type_name -> types.group.GroupRequest
+	0,  // 4: types.group.JoinGroupResp.member:type_name -> types.group.GroupMember
+	2,  // 5: types.group.HandleGroupApplyResp.data:type_name -> types.group.GroupRequest
+	0,  // 6: types.group.HandleGroupInviteResp.member:type_name -> types.group.GroupMember
+	16, // 7: types.group.GetPendingInvitesResp.data:type_name -> types.group.GroupInvite
+	2,  // 8: types.group.GetPendingAppliesResp.data:type_name -> types.group.GroupRequest
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_internal_apps_Group_api_types_group_api_proto_init() }
@@ -1847,7 +2178,7 @@ func file_internal_apps_Group_api_types_group_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_apps_Group_api_types_group_api_proto_rawDesc), len(file_internal_apps_Group_api_types_group_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

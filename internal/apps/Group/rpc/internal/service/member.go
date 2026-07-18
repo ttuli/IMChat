@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	model "IM2/internal/model"
 	"IM2/pkg/logger"
@@ -15,64 +14,6 @@ import (
 )
 
 // ========== 群成员管理 ==========
-
-func (s *GroupService) InviteMembers(ctx context.Context, groupID, operatorID uint64, memberIDs []uint64) (int32, []uint64, error) {
-	// 1. 检查操作者权限
-	_, err := s.svcCtx.GroupDAO.FindMember(ctx, groupID, operatorID)
-	if err == gorm.ErrRecordNotFound {
-		return 0, nil, xerr.New(transport.ErrorCode_ERR_FORBIDDEN, "非群成员无权操作")
-	}
-	if err != nil {
-		return 0, nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询成员失败")
-	}
-
-	// 2. 批量添加成员
-	var successCount int32
-	var failedIDs []uint64
-	now := time.Now()
-
-	for _, memberID := range memberIDs {
-		// 检查是否已是成员
-		isMember, _ := s.svcCtx.GroupDAO.IsMember(ctx, groupID, memberID)
-		if isMember {
-			failedIDs = append(failedIDs, memberID)
-			continue
-		}
-
-		err := s.svcCtx.GroupDAO.InsertMember(ctx, &model.GroupMember{
-			GroupID:  groupID,
-			UserID:   memberID,
-			Role:     model.GroupRoleMember,
-			JoinedAt: now,
-		})
-		if err != nil {
-			failedIDs = append(failedIDs, memberID)
-			continue
-		}
-		successCount++
-	}
-
-	// 3. 直写路由表：将成功加入的成员补进群成员集合
-	var successIDs []uint64
-	for _, id := range memberIDs {
-		// check if it's in failedIDs
-		isFailed := false
-		for _, fid := range failedIDs {
-			if id == fid {
-				isFailed = true
-				break
-			}
-		}
-		if !isFailed {
-			successIDs = append(successIDs, id)
-		}
-	}
-	if len(successIDs) > 0 {
-		s.ensureGroupRoute(ctx, groupID, successIDs...)
-	}
-
-	return successCount, failedIDs, nil
-}
 
 func (s *GroupService) RemoveMember(ctx context.Context, groupID, operatorID, userID uint64) error {
 	// 1. 检查操作者权限

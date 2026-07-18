@@ -203,6 +203,45 @@ message GetPendingAppliesResp {
   repeated GroupRequest data = 1;
 }
 
+// ========== 群邀请管理 ==========
+
+enum InviteStatus {
+  INVITE_STATUS_UNSPECIFIED = 0;
+  INVITE_STATUS_PENDING = 1;    // 待处理
+  INVITE_STATUS_ACCEPTED = 2;   // 已接受
+  INVITE_STATUS_REJECTED = 3;   // 已拒绝
+}
+
+message GroupInvite {
+  uint64 id = 1;
+  uint64 group_id = 2;
+  uint64 inviter_id = 3;
+  uint64 invitee_id = 4;
+  InviteStatus status = 5;
+  string invite_msg = 6;
+  int64 create_time = 7;
+  int64 update_time = 8;
+}
+
+// HandleGroupInviteReq 被邀请人接受/拒绝入群邀请
+message HandleGroupInviteReq {
+  uint64 id = 1;
+  uint64 invitee_id = 2;   // 被邀请人（网关从 JWT 注入）
+  bool accept = 3;
+}
+
+message HandleGroupInviteResp {
+  GroupMember member = 1;  // accept 时返回入群成员，reject 时为空
+}
+
+message GetPendingInvitesReq {
+  uint64 user_id = 1;
+}
+
+message GetPendingInvitesResp {
+  repeated GroupInvite data = 1;
+}
+
 // ========== 服务定义 ==========
 
 service GroupRpc {
@@ -227,4 +266,8 @@ service GroupRpc {
   rpc JoinGroup(JoinGroupReq) returns (JoinGroupResp);
   rpc HandleGroupApply(HandleGroupApplyReq) returns (HandleGroupApplyResp);
   rpc GetPendingApplies(GetPendingAppliesReq) returns (GetPendingAppliesResp);
+
+  // 群邀请管理（被邀请人确认制）
+  rpc HandleGroupInvite(HandleGroupInviteReq) returns (HandleGroupInviteResp);
+  rpc GetPendingInvites(GetPendingInvitesReq) returns (GetPendingInvitesResp);
 }

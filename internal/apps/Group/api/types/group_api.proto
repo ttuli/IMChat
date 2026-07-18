@@ -175,6 +175,49 @@ message InviteMembersResp {
   repeated uint64 failed_ids = 2;
 }
 
+// GroupInvite 群邀请记录（被邀请人视角）
+message GroupInvite {
+  // @gotags: json:"id"
+  uint64 id = 1;
+  // @gotags: json:"group_id"
+  uint64 group_id = 2;
+  // @gotags: json:"inviter_id"
+  uint64 inviter_id = 3;
+  // @gotags: json:"invitee_id"
+  uint64 invitee_id = 4;
+  // @gotags: json:"status"
+  int32 status = 5;
+  // @gotags: json:"invite_msg"
+  string invite_msg = 6;
+  // @gotags: json:"create_time"
+  int64 create_time = 7;
+  // @gotags: json:"update_time"
+  int64 update_time = 8;
+}
+
+// HandleGroupInviteReq 被邀请人接受/拒绝邀请（invitee_id 由服务端从 JWT 解析）
+message HandleGroupInviteReq {
+  // @gotags: json:"invite_id"
+  uint64 invite_id = 1;
+  // @gotags: json:"accept"
+  bool accept = 2;
+}
+
+// HandleGroupInviteResp
+message HandleGroupInviteResp {
+  // @gotags: json:"member,omitempty"
+  GroupMember member = 1;
+}
+
+// GetPendingInvitesReq
+message GetPendingInvitesReq {}
+
+// GetPendingInvitesResp
+message GetPendingInvitesResp {
+  // @gotags: json:"data"
+  repeated GroupInvite data = 1;
+}
+
 // RemoveMemberReq
 message RemoveMemberReq {
   // @gotags: json:"group_id"

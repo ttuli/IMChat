@@ -15,6 +15,7 @@ type ServiceContext struct {
 	Config      config.Config
 	GroupDAO    *dao.GroupDAO
 	ApplyDAO    *dao.ApplyDAO
+	InviteDAO   *dao.InviteDAO
 	IdGenerator idgenclient.Idgen
 	Nats        *nats_util.Client
 	// Routes 集群路由表：成员关系变更后同步直写群成员集合，
@@ -48,6 +49,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Config:      c,
 		GroupDAO:    dao.NewGroupDAO(c.DAO.GroupDAO.DataSource, c.DAO.GroupDAO.RedisSource),
 		ApplyDAO:    dao.NewApplyDAO(c.DAO.ApplyDAO),
+		InviteDAO:   dao.NewInviteDAO(c.DAO.ApplyDAO),
 		IdGenerator: idGenerator,
 		Nats:        nc,
 		Routes:      routes,

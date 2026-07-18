@@ -92,6 +92,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: member.InviteMembersHandler(serverCtx),
 			},
 			{
+				// 被邀请人处理入群邀请（接受/拒绝）
+				Method:  http.MethodPut,
+				Path:    "/invite/handle",
+				Handler: member.HandleGroupInviteHandler(serverCtx),
+			},
+			{
+				// 获取我收到的待处理入群邀请
+				Method:  http.MethodGet,
+				Path:    "/invite/pending",
+				Handler: member.GetPendingInvitesHandler(serverCtx),
+			},
+			{
 				// 退出群聊
 				Method:  http.MethodPost,
 				Path:    "/leave",
