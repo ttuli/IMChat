@@ -41,6 +41,7 @@ func (l *CreateGroupLogic) CreateGroup(in *group.CreateGroupReq) (*group.CreateG
 			CreatedAt:   result.CreateTime.UnixMilli(),
 			UpdatedAt:   result.UpdateTime.UnixMilli(),
 			MemberCount: int32(result.MemberCount),
+			JoinType:    int32(result.JoinType),
 		},
 	}, nil
 }
