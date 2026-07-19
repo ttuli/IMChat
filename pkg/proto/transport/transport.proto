@@ -52,6 +52,7 @@ enum MessageType {
   GROUP_REQUEST = 604;            // 群请求
   MSG_OP_RECALL = 605;            // 消息撤回
   GROUP_OP_NOTIFICATION = 606;    // 群操作通知
+  GROUP_INVITE = 607;             // 群邀请（定向投递给被邀请人）
   
   // 内部消费消息
   UPDATE_SESSION = 700;           // 更新会话

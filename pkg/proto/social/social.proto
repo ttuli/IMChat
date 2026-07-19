@@ -25,6 +25,25 @@ enum GroupApplyStatus {
   GROUP_APPLY_STATUS_IGNORED = 4;     // 已忽略
 }
 
+// 群邀请（被邀请人视角）：群成员邀请他人入群，待被邀请人确认
+message GroupInvite {
+  uint64 id = 1;                  // 邀请ID
+  uint64 group_id = 2;            // 群组ID
+  uint64 inviter_id = 3;          // 邀请人ID（群成员）
+  uint64 invitee_id = 4;          // 被邀请人ID
+  InviteStatus status = 5;        // 邀请状态
+  string invite_msg = 6;          // 邀请语
+  int64 create_time = 7;          // 创建时间
+  int64 update_time = 8;          // 更新时间
+}
+
+enum InviteStatus {
+  INVITE_STATUS_UNSPECIFIED = 0;  // 未知
+  INVITE_STATUS_PENDING = 1;      // 待处理
+  INVITE_STATUS_ACCEPTED = 2;     // 已接受
+  INVITE_STATUS_REJECTED = 3;     // 已拒绝
+}
+
 // 好友信息
 message Friend {
   uint64 user_id = 1;             // 用户ID（我）

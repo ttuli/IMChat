@@ -226,6 +226,8 @@ message RemoveMemberReq {
   uint64 user_id = 2;
   // @gotags: json:"operator_id"
   uint64 operator_id = 3;
+  // @gotags: json:"user_ids"
+  repeated uint64 user_ids = 4;
 }
 
 // LeaveGroupReq

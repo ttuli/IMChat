@@ -126,7 +126,8 @@ message InviteMembersResp {
 message RemoveMemberReq {
   uint64 group_id = 1;
   uint64 operator_id = 2;
-  uint64 user_id = 3;
+  uint64 user_id = 3;              // 单个移除（兼容旧调用）
+  repeated uint64 user_ids = 4;    // 批量移除，非空时优先于 user_id
 }
 
 message LeaveGroupReq {

@@ -386,6 +386,42 @@ func (m *GroupDAO) DeleteMember(ctx context.Context, groupID, userID uint64) err
 	return nil
 }
 
+// DeleteMembers 批量删除成员（单事务），并按实际删除行数递减群人数
+func (m *GroupDAO) DeleteMembers(ctx context.Context, groupID uint64, userIDs []uint64) (int64, error) {
+	if len(userIDs) == 0 {
+		return 0, nil
+	}
+	idKey := fmt.Sprintf("%d", groupID)
+	if _, err := m.DelCtx(ctx, idKey); err != nil {
+		logger.Errorf("删除群组缓存失败: %v", err)
+	}
+	var removed int64
+	err := m.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Where("group_id = ? AND user_id IN ?", groupID, userIDs).
+			Delete(&model.GroupMember{})
+		if res.Error != nil {
+			return res.Error
+		}
+		removed = res.RowsAffected
+		if removed == 0 {
+			return nil
+		}
+		return tx.Model(&model.Group{}).
+			Where("id = ?", groupID).
+			UpdateColumn("member_count", gorm.Expr("member_count - ?", removed)).Error
+	})
+	if err != nil {
+		return 0, err
+	}
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if _, err := m.DelCtx(context.Background(), idKey); err != nil {
+			logger.Errorf("延迟删除群组缓存失败: %v", err)
+		}
+	}()
+	return removed, nil
+}
+
 // DeleteMembersByGroupID 删除群所有成员
 func (m *GroupDAO) DeleteMembersByGroupID(ctx context.Context, groupID uint64) error {
 	return m.DB.WithContext(ctx).

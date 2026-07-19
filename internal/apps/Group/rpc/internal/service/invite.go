@@ -5,6 +5,7 @@ import (
 	"time"
 
 	model "IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
@@ -32,8 +33,7 @@ func (s *GroupService) InviteMembers(ctx context.Context, groupID, operatorID ui
 	}
 
 	// 2. 群组必须存在
-	group, err := s.svcCtx.GroupDAO.FindByID(ctx, groupID)
-	if err == gorm.ErrRecordNotFound {
+	if _, err := s.svcCtx.GroupDAO.FindByID(ctx, groupID); err == gorm.ErrRecordNotFound {
 		return 0, nil, xerr.New(transport.ErrorCode_ERR_NOT_FOUND, "群组不存在")
 	} else if err != nil {
 		return 0, nil, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询群组失败")
@@ -41,7 +41,6 @@ func (s *GroupService) InviteMembers(ctx context.Context, groupID, operatorID ui
 
 	// 3. 过滤无效目标，构建待落库邀请
 	var invites []*model.GroupInvite
-	var invitees []uint64
 	var failedIDs []uint64
 	for _, inviteeID := range memberIDs {
 		if inviteeID == 0 || inviteeID == operatorID {
@@ -57,40 +56,32 @@ func (s *GroupService) InviteMembers(ctx context.Context, groupID, operatorID ui
 			continue
 		}
 		invites = append(invites, model.NewGroupInvite(groupID, operatorID, inviteeID, ""))
-		invitees = append(invitees, inviteeID)
 	}
 
-	// 4. 批量落库（单条 SQL）
+	// 4. 批量落库（单条 SQL，自增 ID 回填到各 invite）
 	if len(invites) > 0 {
 		if err := s.svcCtx.InviteDAO.InsertInvites(ctx, invites); err != nil {
 			return 0, memberIDs, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "创建邀请失败")
 		}
 
-		// 5. 查路由表定向投递邀请通知给被邀请者（在线即时收到，离线上线后拉取兜底）。
-		// 复用群操作通知载体（op_type=INVITE），但经 UserNotifier 单播给被邀请者本人，
-		// 不入群会话、不扇出给群成员；客户端据此刷新邀请收件箱。
-		s.notifyInvitees(ctx, groupID, operatorID, invitees, group)
+		// 5. 查路由表定向投递邀请给被邀请者本人（在线即时收到，离线上线后拉取兜底）。
+		// 与群申请同机制：UserNotifier 单播 social.GroupInvite 载荷，不入群会话、不扇给群成员。
+		s.notifyInvitees(ctx, invites)
 	}
 
 	return int32(len(invites)), failedIDs, nil
 }
 
-// notifyInvitees 通过路由表向被邀请者定向投递入群邀请通知（best-effort，失败不影响邀请落库）。
-func (s *GroupService) notifyInvitees(ctx context.Context, groupID, operatorID uint64, invitees []uint64, group *model.Group) {
-	if len(invitees) == 0 {
-		return
+// notifyInvitees 逐条向被邀请者定向投递入群邀请（best-effort，失败仅记日志，不影响邀请落库）。
+func (s *GroupService) notifyInvitees(ctx context.Context, invites []*model.GroupInvite) {
+	for _, invite := range invites {
+		wsMsg, err := util.ConvertGroupInviteToWSMessage(invite, []uint64{invite.InviteeID})
+		if err != nil {
+			logger.Errorf("[GroupService] build group invite ws message failed: %v", err)
+			continue
+		}
+		s.svcCtx.Notifier.Publish(ctx, wsMsg)
 	}
-	send := util.NewGroupOperationMsg(message.GroupOperationType_GROUP_OP_INVITE, groupID, invitees, operatorID, group)
-	if send == nil {
-		return
-	}
-	s.svcCtx.Notifier.Publish(ctx, &transport.WSMessage{
-		RouteTarget:     invitees,
-		RouteTargetType: transport.TargetType_USER,
-		Timestamp:       send.Timestamp,
-		Type:            transport.MessageType_GROUP_OP_NOTIFICATION,
-		Payload:         send.Payload,
-	})
 }
 
 // HandleGroupInvite 被邀请人处理邀请：accept=true 入群，false 拒绝。

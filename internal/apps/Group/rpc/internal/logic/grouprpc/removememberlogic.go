@@ -26,7 +26,12 @@ func NewRemoveMemberLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Remo
 }
 
 func (l *RemoveMemberLogic) RemoveMember(in *group.RemoveMemberReq) (*group.EmptyResp, error) {
-	if err := service.NewGroupService(l.svcCtx).RemoveMember(l.ctx, in.GroupId, in.OperatorId, in.UserId); err != nil {
+	// user_ids 非空走批量；否则兼容旧的单个 user_id
+	userIDs := in.UserIds
+	if len(userIDs) == 0 {
+		userIDs = []uint64{in.UserId}
+	}
+	if err := service.NewGroupService(l.svcCtx).RemoveMembers(l.ctx, in.GroupId, in.OperatorId, userIDs); err != nil {
 		return nil, err
 	}
 	return &group.EmptyResp{}, nil

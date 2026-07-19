@@ -130,6 +130,34 @@ func ConvertGroupApplyToWSMessage(apply *model.GroupApply, targetIDs []uint64) (
 	}, nil
 }
 
+// ConvertGroupInviteToWSMessage 将 model.GroupInvite 转为定向投递给被邀请人的 WSMessage
+// （与群申请同机制：经 UserNotifier 单播，客户端据此写入邀请收件箱）。
+func ConvertGroupInviteToWSMessage(invite *model.GroupInvite, targetIDs []uint64) (*transport.WSMessage, error) {
+	pbInvite := &social.GroupInvite{
+		Id:         invite.ID,
+		GroupId:    invite.GroupID,
+		InviterId:  invite.InviterID,
+		InviteeId:  invite.InviteeID,
+		Status:     social.InviteStatus(invite.Status),
+		InviteMsg:  invite.InviteMsg,
+		CreateTime: invite.CreateTime.UnixMilli(),
+		UpdateTime: invite.UpdateTime.UnixMilli(),
+	}
+
+	payload, err := proto.Marshal(pbInvite)
+	if err != nil {
+		return nil, err
+	}
+
+	return &transport.WSMessage{
+		RouteTarget:     targetIDs,
+		RouteTargetType: transport.TargetType_USER,
+		Timestamp:       invite.CreateTime.UnixMilli(),
+		Type:            transport.MessageType_GROUP_INVITE,
+		Payload:         payload,
+	}, nil
+}
+
 // NewRecallNotifyMsg 构造消息撤回通知的落库消息（统一 NotifyMessage 载体）。
 // 发布到 DBSubject 后由 Message 服务分配 msg_id/seq 持久化再扇出，
 // 离线客户端可按会话 seq 增量拉取感知撤回。
