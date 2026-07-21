@@ -24,6 +24,8 @@ type (
 	GetUserSessionsResp       = message.GetUserSessionsResp
 	MarkSessionReadReq        = message.MarkSessionReadReq
 	MarkSessionReadResp       = message.MarkSessionReadResp
+	RecallMessageReq          = message.RecallMessageReq
+	RecallMessageResp         = message.RecallMessageResp
 	UpdateSessionReq          = message.UpdateSessionReq
 	UpdateSessionResp         = message.UpdateSessionResp
 
@@ -33,6 +35,7 @@ type (
 		GetUserSessions(ctx context.Context, in *GetUserSessionsReq, opts ...grpc.CallOption) (*GetUserSessionsResp, error)
 		GetUserActiveSessions(ctx context.Context, in *GetUserActiveSessionsReq, opts ...grpc.CallOption) (*GetUserActiveSessionsResp, error)
 		MarkSessionRead(ctx context.Context, in *MarkSessionReadReq, opts ...grpc.CallOption) (*MarkSessionReadResp, error)
+		RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error)
 		// 内部会话管理接口
 		GetSession(ctx context.Context, in *GetSessionReq, opts ...grpc.CallOption) (*GetSessionResp, error)
 	}
@@ -71,6 +74,11 @@ func (m *defaultMessageRpc) GetUserActiveSessions(ctx context.Context, in *GetUs
 func (m *defaultMessageRpc) MarkSessionRead(ctx context.Context, in *MarkSessionReadReq, opts ...grpc.CallOption) (*MarkSessionReadResp, error) {
 	client := message.NewMessageRpcClient(m.cli.Conn())
 	return client.MarkSessionRead(ctx, in, opts...)
+}
+
+func (m *defaultMessageRpc) RecallMessage(ctx context.Context, in *RecallMessageReq, opts ...grpc.CallOption) (*RecallMessageResp, error) {
+	client := message.NewMessageRpcClient(m.cli.Conn())
+	return client.RecallMessage(ctx, in, opts...)
 }
 
 // 内部会话管理接口

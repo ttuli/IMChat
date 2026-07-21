@@ -48,6 +48,11 @@ func (s *MessageRpcServer) MarkSessionRead(ctx context.Context, in *message.Mark
 	return l.MarkSessionRead(in)
 }
 
+func (s *MessageRpcServer) RecallMessage(ctx context.Context, in *message.RecallMessageReq) (*message.RecallMessageResp, error) {
+	l := messagerpclogic.NewRecallMessageLogic(ctx, s.svcCtx)
+	return l.RecallMessage(in)
+}
+
 // 内部会话管理接口
 func (s *MessageRpcServer) GetSession(ctx context.Context, in *message.GetSessionReq) (*message.GetSessionResp, error) {
 	l := messagerpclogic.NewGetSessionLogic(ctx, s.svcCtx)

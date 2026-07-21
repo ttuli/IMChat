@@ -3,7 +3,6 @@ package member
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
 
 	"IM2/internal/apps/Group/api/internal/logic/member"
 	"IM2/internal/apps/Group/api/svc"
@@ -25,7 +24,7 @@ func SetMemberNicknameHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
-			httpx.Ok(w)
+			resultx.OkProtoCtx(r.Context(), w, r, nil)
 		}
 	}
 }

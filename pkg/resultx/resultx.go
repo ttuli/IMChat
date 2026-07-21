@@ -73,9 +73,15 @@ func ErrorJsonCtx(ctx context.Context, w http.ResponseWriter, err *xerr.Error) {
 // OkProtoCtx 根据 Accept 头协商响应格式
 // Accept 包含 application/x-protobuf → 返回 protobuf 二进制 (包装在 common.ApiResponse 中)
 // 其他 → 返回 JSON（包裹在 Response 结构中）
+// msg 可为 nil：无业务数据的操作类接口（移除成员/退群等）仅返回 code=200 信封，
+// 客户端统一按 ApiResponse.code 判定成败（httpx.Ok 裸 200 空 body 会导致客户端解不出 code）
 func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg proto.Message) {
 	if strings.Contains(r.Header.Get("Accept"), "application/x-protobuf") {
-		data, err := proto.Marshal(msg)
+		var data []byte
+		var err error
+		if msg != nil {
+			data, err = proto.Marshal(msg)
+		}
 		if err != nil {
 			ErrorJsonCtx(ctx, w, xerr.New(transport.ErrorCode_ERR_INTERNAL_SERVER, "proto marshal failed"))
 			return

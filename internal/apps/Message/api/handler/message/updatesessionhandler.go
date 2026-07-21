@@ -3,8 +3,6 @@ package message
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
-
 	"IM2/internal/apps/Message/api/internal/logic/message"
 	"IM2/internal/apps/Message/api/svc"
 	"IM2/internal/apps/Message/api/types"
@@ -25,7 +23,7 @@ func UpdateSessionHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
-			httpx.Ok(w)
+			resultx.OkProtoCtx(r.Context(), w, r, nil)
 		}
 	}
 }

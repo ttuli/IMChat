@@ -104,6 +104,15 @@ message GetSessionResp {
   Session session = 1;
 }
 
+// RecallMessageReq 撤回消息（仅发送者本人，2 分钟内）
+message RecallMessageReq {
+  uint64 user_id = 1;     // 操作者（网关从 JWT 注入）
+  string msg_id = 2;
+  string session_id = 3;
+}
+
+message RecallMessageResp {}
+
 // ========== 服务定义 ==========
 
 service MessageRpc {
@@ -112,6 +121,7 @@ service MessageRpc {
   rpc GetUserSessions(GetUserSessionsReq) returns (GetUserSessionsResp);
   rpc GetUserActiveSessions(GetUserActiveSessionsReq) returns (GetUserActiveSessionsResp);
   rpc MarkSessionRead(MarkSessionReadReq) returns (MarkSessionReadResp);
+  rpc RecallMessage(RecallMessageReq) returns (RecallMessageResp);
 
   // 内部会话管理接口
   rpc GetSession(GetSessionReq) returns (GetSessionResp);

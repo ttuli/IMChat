@@ -125,6 +125,16 @@ message MarkSessionReadReq {
   uint64 read_seq = 2 [jstype = JS_STRING];
 }
 
+// RecallMessageReq 撤回消息（操作者由服务端从 JWT 解析）
+message RecallMessageReq {
+  // @gotags: json:"msg_id"
+  string msg_id = 1;
+  // @gotags: json:"session_id"
+  string session_id = 2;
+}
+
+message RecallMessageResp {}
+
 // GetSessionReq 根据 session_id 或 session_key 查询会话
 message GetSessionReq {
   // @gotags: form:"session_id,optional" json:"session_id,optional"

@@ -9,17 +9,17 @@ import (
 	"IM2/pkg/resultx"
 )
 
-// 上报会话已读游标
-func MarkSessionReadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+// 撤回消息
+func RecallMessageHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.MarkSessionReadReq
+		var req types.RecallMessageReq
 		if err := resultx.ParseProto(r, &req); err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 			return
 		}
 
-		l := message.NewMarkSessionReadLogic(r.Context(), svcCtx)
-		err := l.MarkSessionRead(&req)
+		l := message.NewRecallMessageLogic(r.Context(), svcCtx)
+		err := l.RecallMessage(&req)
 		if err != nil {
 			resultx.ErrorProtoCtx(r.Context(), w, r, err)
 		} else {
