@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/hex"
+	"strconv"
 	"time"
 
 	"IM2/internal/apps/Message/rpc/internal/dao"
@@ -18,6 +19,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/protobuf/proto"
 )
+
+// extraKey 以 MessageExtraKey 的数字值（而非枚举名字面量）作为 Extra map 的 key，
+// 例如 WIDTH=10 → "10"。前端据同一枚举按数字索引读取，无需匹配枚举名。
+func extraKey(k message.MessageExtraKey) string {
+	return strconv.Itoa(int(k))
+}
 
 // GetHistory 获取历史消息（基于 Seq 区间分页）
 // startSeq/endSeq 负数表示无界，limit 兜底最大 100。
@@ -94,14 +101,14 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 				return nil, err
 			}
 			dbMsg.MediaURL = imageMsg.Url
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE.String()] = imageMsg.Size
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = imageMsg.FileName
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = imageMsg.Format
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = imageMsg.Size
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = imageMsg.FileName
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = imageMsg.Format
 
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH.String()] = imageMsg.Width
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT.String()] = imageMsg.Height
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE.String()] = imageMsg.ThumbnailWidth
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT.String()] = imageMsg.ThumbnailHeight
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH)] = imageMsg.Width
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT)] = imageMsg.Height
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE)] = imageMsg.ThumbnailWidth
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT)] = imageMsg.ThumbnailHeight
 		case int64(transport.MessageType_CHAT_VIDEO), int64(transport.MessageType_GROUP_VIDEO):
 			videoMsg := &message.VideoMessage{}
 			if err := proto.Unmarshal(msg.Payload, videoMsg); err != nil {
@@ -109,15 +116,15 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 				return nil, err
 			}
 			dbMsg.MediaURL = videoMsg.Url
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE.String()] = videoMsg.Size
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = videoMsg.FileName
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_DURATION.String()] = videoMsg.Duration
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = videoMsg.Format
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = videoMsg.Size
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = videoMsg.FileName
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_DURATION)] = videoMsg.Duration
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = videoMsg.Format
 
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH.String()] = videoMsg.Width
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT.String()] = videoMsg.Height
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE.String()] = videoMsg.ThumbnailWidth
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT.String()] = videoMsg.ThumbnailHeight
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH)] = videoMsg.Width
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT)] = videoMsg.Height
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE)] = videoMsg.ThumbnailWidth
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT)] = videoMsg.ThumbnailHeight
 		case int64(transport.MessageType_CHAT_FILE), int64(transport.MessageType_GROUP_FILE):
 			fileMsg := &message.FileMessage{}
 			if err := proto.Unmarshal(msg.Payload, fileMsg); err != nil {
@@ -125,9 +132,9 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 				return nil, err
 			}
 			dbMsg.MediaURL = fileMsg.Url
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE.String()] = fileMsg.Size
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME.String()] = fileMsg.FileName
-			dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT.String()] = fileMsg.Format
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = fileMsg.Size
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = fileMsg.FileName
+			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = fileMsg.Format
 		}
 	}
 
@@ -135,7 +142,7 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 	// 完整结构化载荷存 extra.payload（十六进制），供历史拉取时重建通知内容。
 	if msg.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) ||
 		msg.MsgType == int64(transport.MessageType_MSG_OP_RECALL) {
-		dbMsg.Extra[message.MessageExtraKey_MESSAGE_EXTRA_KEY_NOTIFY_PAYLOAD.String()] = hex.EncodeToString(msg.Payload)
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NOTIFY_PAYLOAD)] = hex.EncodeToString(msg.Payload)
 	}
 
 	if err := s.svcCtx.MessageDAO.InsertMessages(ctx, []*model.Message{dbMsg}); err != nil {

@@ -122,6 +122,5 @@ func ParseMessage(msg *WSMessage) (
 			Version:         msg.Version,
 		}, nil
 	}
-
 	return spec.getBase(m), spec.getPreview(m), repackFn, nil
 }
