@@ -2,6 +2,7 @@ package model
 
 import (
 	"time"
+	"IM2/pkg/proto/message"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -12,6 +13,7 @@ type Message struct {
 	MsgID      string             `bson:"msg_id" json:"msg_id"`                   // 客户端消息ID(幂等去重)
 	ClientID   string             `bson:"client_id" json:"client_id"`             // 客户端ID
 	SessionID  string             `bson:"session_id" json:"session_id"`           // 会话ID
+	SessionKey string             `bson:"session_key" json:"session_key"`         // 会话Key
 	FromUserID uint64             `bson:"from_user_id" json:"from_user_id"`       // 发送者ID
 	MsgType    int16              `bson:"msg_type" json:"msg_type"`               // 消息类型
 	Seq        uint64             `bson:"seq" json:"seq"`                         // 消息序号(会话内递增)
@@ -23,11 +25,11 @@ type Message struct {
 }
 
 // 消息状态常量
-const (
-	MsgStatusNormal   int8 = 0 // 正常
-	MsgStatusRecalled int8 = 1 // 撤回
-	MsgStatusDeleted  int8 = 2 // 删除
-)
+// const (
+// 	MsgStatusNormal   int8 = 0 // 正常
+// 	MsgStatusRecalled int8 = 1 // 撤回
+// 	MsgStatusDeleted  int8 = 2 // 删除
+// )
 
 // ==================== 领域方法 ====================
 
@@ -42,22 +44,16 @@ func NewMessage(msgID, clientID, sessionID string, fromUserID uint64, msgType in
 		MsgType:    msgType,
 		Seq:        seq,
 		Content:    content,
-		Status:     MsgStatusNormal,
+		Status:     int8(message.MessageStatus_MESSAGE_STATUS_UNSPECIFIED),
 		CreateTime: time.Now(),
 	}
 }
 
 // Recall 撤回消息
 func (m *Message) Recall() {
-	m.Status = MsgStatusRecalled
+	m.Status = int8(message.MessageStatus_MESSAGE_STATUS_RECALLED)
 }
-
-// Delete 删除消息
-func (m *Message) Delete() {
-	m.Status = MsgStatusDeleted
-}
-
 // IsRecalled 是否已撤回
 func (m *Message) IsRecalled() bool {
-	return m.Status == MsgStatusRecalled
+	return m.Status == int8(message.MessageStatus_MESSAGE_STATUS_RECALLED)
 }

@@ -3,6 +3,7 @@ package svc
 import (
 	"IM2/internal/apps/Message/api/config"
 	"IM2/internal/apps/Message/rpc/client/messagerpc"
+	"IM2/internal/interceptor"
 	tokenmanager "IM2/pkg/tokenManager"
 
 	"github.com/zeromicro/go-zero/zrpc"
@@ -16,8 +17,9 @@ type ServiceContext struct {
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
-		Config:       c,
-		MessageRpc:   messagerpc.NewMessageRpc(zrpc.MustNewClient(c.MessageRpc)),
+		Config: c,
+		MessageRpc: messagerpc.NewMessageRpc(zrpc.MustNewClient(c.MessageRpc,
+			zrpc.WithUnaryClientInterceptor(interceptor.ClientErrorInterceptor))),
 		TokenManager: tokenmanager.NewTokenManager(c.TokenConfig),
 	}
 }

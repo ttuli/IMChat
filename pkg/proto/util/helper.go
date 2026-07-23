@@ -162,20 +162,20 @@ func ConvertGroupInviteToWSMessage(invite *model.GroupInvite, targetIDs []uint64
 // 发布到 DBSubject 后由 Message 服务分配 msg_id/seq 持久化再扇出，
 // 离线客户端可按会话 seq 增量拉取感知撤回。
 // sessionKey 用于会话形态判定与目标解析（群聊=群ID，单聊=对方用户ID）。
-func NewRecallNotifyMsg(operator uint64, sessionKey string, msg *model.Message) (*svc.MessageSend, error) {
+func NewRecallNotifyMsg(operator uint64, msg *model.Message) (*svc.MessageSend, error) {
 	if msg == nil {
 		return nil, errors.New("message is nil")
 	}
-	target, err := GetTargetIdFromSessionKey(sessionKey, operator)
+	now := time.Now().UnixMilli()
+	target, err := GetTargetIdFromSessionKey(msg.SessionKey, operator)
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UnixMilli()
 
 	payload, err := proto.Marshal(&message.NotifyMessage{
 		Base: &message.BaseMessage{
 			SessionId:  msg.SessionID,
-			SessionKey: sessionKey,
+			SessionKey: msg.SessionKey,
 			FromUserId: operator,
 			Target:     target,
 			SendTime:   now,
@@ -191,7 +191,7 @@ func NewRecallNotifyMsg(operator uint64, sessionKey string, msg *model.Message) 
 
 	return &svc.MessageSend{
 		SessionId:  msg.SessionID,
-		SessionKey: sessionKey,
+		SessionKey: msg.SessionKey,
 		Sender:     operator,
 		Target:     target,
 		MsgType:    int64(transport.MessageType_MSG_OP_RECALL),
