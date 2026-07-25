@@ -40,6 +40,9 @@ func (l *GetHistoryLogic) GetHistory(req *types.GetHistoryReq) (resp *types.GetH
 	for _, m := range res.Messages {
 		list = append(list, &types.Message{
 			MsgId:      m.MsgId,
+			// client_id 必须回传：本地库以 (session_key, msg_id/client_id) 去重，
+			// 发送方本地行可能仅有 client_id（msg_id 尚未回填），缺失会导致重复插行
+			ClientId:   m.ClientId,
 			SessionId:  m.SessionId,
 			FromUserId: m.FromUserId,
 			MsgType:    m.MsgType,

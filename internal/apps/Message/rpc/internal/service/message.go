@@ -58,6 +58,11 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 	}
 	seq := s.svcCtx.SeqAllocator.Alloc(msg.SessionId, streamSeq)
 
+	// 通知类消息（群操作 606 / 撤回 605）：占用 seq 但不是用户可读的"最后一条消息"，
+	// 不改写会话摘要，preview 保持上一条聊天消息
+	isNotify := msg.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) ||
+		msg.MsgType == int64(transport.MessageType_MSG_OP_RECALL)
+
 	// 2. 将完整会话状态推送到 SeqSyncer（异步批量刷 MySQL actual_seq + Redis 完整快照）。
 	// 会话形态与目标显式传入：sessionId 是雪花 ID，SeqSyncer 无法再按前缀推断。
 	s.svcCtx.SessionDAO.PushSeqUpdate(dao.SeqUpdate{
@@ -140,8 +145,7 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 
 	// 通知类消息（群操作/撤回）与聊天消息同样落库：Content 为预览文案，
 	// 完整结构化载荷存 extra.payload（十六进制），供历史拉取时重建通知内容。
-	if msg.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) ||
-		msg.MsgType == int64(transport.MessageType_MSG_OP_RECALL) {
+	if isNotify {
 		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NOTIFY_PAYLOAD)] = hex.EncodeToString(msg.Payload)
 	}
 
@@ -180,15 +184,16 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 		return xerr.Wrap(nil, transport.ErrorCode_ERR_FORBIDDEN, "超过撤回时间限制")
 	}
 
-	// 4. 校验消息状态（避免重复撤回）
-	if msg.IsRecalled() {
-		return xerr.Wrap(nil, transport.ErrorCode_ERR_FORBIDDEN, "该消息已被撤回或删除")
-	}
-	msg.Recall()
-
-	// 5. 更新消息状态为已撤回
-	if err := s.svcCtx.MessageDAO.UpdateMessageStatus(ctx, msgID, msg.Status); err != nil {
+	// 4. 原子置为已撤回（CAS：仅当尚未撤回时更新）。
+	// 旧实现"先查 IsRecalled 再更新"存在竞态窗口：并发重复撤回会各自通过检查、
+	// 各发一条撤回通知；CAS 保证只有一个请求完成变更并独占发布通知。
+	recalledNow, err := s.svcCtx.MessageDAO.UpdateMessageStatusCAS(
+		ctx, msgID, int8(message.MessageStatus_MESSAGE_STATUS_RECALLED))
+	if err != nil {
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "撤回消息失败")
+	}
+	if !recalledNow {
+		return xerr.Wrap(nil, transport.ErrorCode_ERR_FORBIDDEN, "该消息已被撤回或删除")
 	}
 
 	// 6. 撤回事件作为统一通知消息发布到落库队列：由消费链路分配 msg_id/seq

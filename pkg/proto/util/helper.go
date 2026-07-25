@@ -252,7 +252,9 @@ func NewGroupOperationMsg(opType message.GroupOperationType, groupId uint64, tar
 	}
 }
 
-// GroupNotifyPreview 群操作通知的会话列表摘要文案
+// GroupNotifyPreview 群操作通知的会话列表摘要文案（无主语）。
+// 操作人显示名因查看者而异（备注/群昵称/"你"），服务端无法预渲染，
+// 由客户端在收到消息 / 离线补拉时按实际消息（含 operator/target）重算摘要。
 func GroupNotifyPreview(opType message.GroupOperationType) string {
 	switch opType {
 	case message.GroupOperationType_GROUP_OP_CREATE:

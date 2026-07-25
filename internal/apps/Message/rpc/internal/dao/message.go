@@ -6,6 +6,7 @@ import (
 
 	"IM2/internal/apps/Message/rpc/config"
 	model "IM2/internal/model"
+	"IM2/pkg/proto/transport"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -142,14 +143,20 @@ func (m *MessageDAO) MaxSeq(ctx context.Context, sessionID string) (uint64, erro
 	return msg.Seq, nil
 }
 
-// CountUnread 统计会话内 seq 大于游标且非本人发送的消息数。
+// CountUnread 统计会话内 seq 大于游标且非本人发送的「聊天」消息数。
 // Lamport seq 不连续后未读数不能再用减法计算，改为服务端点查。
+// seq 现为事件流：通知类消息（群操作 606 / 撤回 605）与聊天消息同库、同样占用 seq，
+// 但不是用户需要"读"的消息，必须按 msg_type 排除，否则他人的群操作/撤回会虚增未读。
 // limit 限制扫描上限（超过按 limit 返回），防止长期未读会话拖垮查询。
 func (m *MessageDAO) CountUnread(ctx context.Context, sessionID string, afterSeq uint64, excludeUser uint64) (uint64, error) {
 	filter := bson.M{
 		"session_id":   sessionID,
 		"seq":          bson.M{"$gt": afterSeq},
 		"from_user_id": bson.M{"$ne": excludeUser},
+		"msg_type": bson.M{"$nin": bson.A{
+			int32(transport.MessageType_MSG_OP_RECALL),
+			int32(transport.MessageType_GROUP_OP_NOTIFICATION),
+		}},
 	}
 	opts := options.Count()
 	if m.c.UnreadCountLimit > 0 {
@@ -180,6 +187,21 @@ func (m *MessageDAO) UpdateMessageStatus(ctx context.Context, msgID string, stat
 		bson.M{"$set": bson.M{"status": status}},
 	)
 	return err
+}
+
+// UpdateMessageStatusCAS 原子地将消息状态置为 status（仅当前状态不同才更新，CAS 语义）。
+// 返回是否由本次调用完成变更：并发重复操作（如双击撤回、多端同时撤回）时
+// 只有一个调用者拿到 true，由其独占后续副作用（如发布撤回通知）。
+func (m *MessageDAO) UpdateMessageStatusCAS(ctx context.Context, msgID string, status int8) (bool, error) {
+	res, err := m.db.Collection(mongoCollMessage).UpdateOne(
+		ctx,
+		bson.M{"msg_id": msgID, "status": bson.M{"$ne": status}},
+		bson.M{"$set": bson.M{"status": status}},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.MatchedCount > 0, nil
 }
 
 // FindBySenderAndClient 根据发送者ID和客户端ID查询消息 (用于幂等判断)

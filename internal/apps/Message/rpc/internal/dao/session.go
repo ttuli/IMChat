@@ -144,6 +144,14 @@ func (c *SessionDAO) FindSessionsByIDs(ctx context.Context, sessionIDs []string)
 	return result, nil
 }
 
+// snapshotField 将 HMGET 返回的可选字段转为字符串，字段缺失（nil）返回空串
+func snapshotField(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s", v)
+}
+
 // parseSessionSnapshot 将 Lua HMGET 返回的一行快照解析为 Session。
 // actual_seq、session_key 或 session_id 缺失（键不存在 / 旧格式条目）视为未命中，返回 nil。
 func parseSessionSnapshot(sessionID string, row interface{}) *model.Session {
@@ -152,7 +160,9 @@ func parseSessionSnapshot(sessionID string, row interface{}) *model.Session {
 		return nil
 	}
 	actualSeq, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[0]), 10, 64)
-	lastSender, _ := strconv.ParseUint(fmt.Sprintf("%s", fields[2]), 10, 64)
+	// last_content / last_sender 可能整个字段不存在（会话由通知类事件创建，
+	// 通知不写摘要）：nil 必须转空串，否则 Sprintf 会产出 "%!s(<nil>)" 当作预览
+	lastSender, _ := strconv.ParseUint(snapshotField(fields[2]), 10, 64)
 	sessionType, _ := strconv.ParseInt(fmt.Sprintf("%s", fields[4]), 10, 8)
 	updateTime, _ := strconv.ParseInt(fmt.Sprintf("%s", fields[5]), 10, 64)
 	return &model.Session{
@@ -160,7 +170,7 @@ func parseSessionSnapshot(sessionID string, row interface{}) *model.Session {
 		Type:        int8(sessionType),
 		SessionKey:  fmt.Sprintf("%s", fields[3]),
 		ActualSeq:   actualSeq,
-		LastContent: fmt.Sprintf("%s", fields[1]),
+		LastContent: snapshotField(fields[1]),
 		LastSender:  lastSender,
 		UpdateTime:  time.UnixMilli(updateTime),
 	}

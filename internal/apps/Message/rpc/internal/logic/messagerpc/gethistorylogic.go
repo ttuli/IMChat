@@ -44,6 +44,7 @@ func (l *GetHistoryLogic) GetHistory(in *message.GetHistoryReq) (*message.GetHis
 		}
 		list = append(list, &message.Message{
 			MsgId:      m.MsgID,
+			ClientId:   m.ClientID,
 			SessionId:  m.SessionID,
 			FromUserId: m.FromUserID,
 			MsgType:    int32(m.MsgType),
