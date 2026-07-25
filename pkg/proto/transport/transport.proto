@@ -32,10 +32,6 @@ enum MessageType {
   
   // 消息状态 300-399
   MSG_ACK = 300;                  // 消息确认
-  MSG_READ = 301;                 // 消息已读
-  MSG_DELIVERED = 302;            // 消息送达
-  MSG_RECALL = 303;               // 消息撤回
-  MSG_DELETE = 304;               // 消息删除
   MSG_PERSIST_ACK = 305;          // 消息持久化确认
   
   // 用户状态 400-499
