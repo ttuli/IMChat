@@ -2,11 +2,13 @@ package util
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	model "IM2/internal/model"
+	"IM2/pkg/proto/call"
 	"IM2/pkg/proto/group"
 	"IM2/pkg/proto/message"
 	"IM2/pkg/proto/social"
@@ -73,6 +75,13 @@ func IsChatMessage(t transport.MessageType) bool {
 
 func IsNotifyMessage(t transport.MessageType) bool {
 	return t >= transport.MessageType_FRIEND_REQUEST && t <= transport.MessageType_GROUP_REQUEST
+}
+
+// IsCallSignal 判断是否为通话信令（800-899）。
+// 信令帧纯实时转发：不进 DBSubject、不落库、不分配 seq，
+// 与走 IsChatMessage 分支的聊天消息是完全独立的两条路径。
+func IsCallSignal(t transport.MessageType) bool {
+	return t >= transport.MessageType_CALL_INVITE && t <= transport.MessageType_CALL_END
 }
 
 // ConvertFriendApplyToWSMessage converts a model.FriendApply to a WSMessage
@@ -250,6 +259,91 @@ func NewGroupOperationMsg(opType message.GroupOperationType, groupId uint64, tar
 		Preview:    GroupNotifyPreview(opType),
 		Payload:    payload,
 	}
+}
+
+// NewCallRecordMsg 构造通话记录的落库消息（CHAT_CALL=106）。
+//
+// **一通电话只调用一次**：调用方必须是 callstate.Terminate 的 CAS 赢家
+// （Terminate 返回非 nil 快照），否则并发的 hangup / reject / 超时收敛会写出多条记录。
+//
+// base.from_user_id 恒为主叫，客户端据此判断展示视角（我方「已取消」/ 对方「未接来电」）。
+// duration 由服务端 connected_at → ended_at 计得，不采信客户端上报值。
+func NewCallRecordMsg(
+	callID string,
+	callerID, calleeID uint64,
+	sessionKey string,
+	mediaType call.CallMediaType,
+	reason call.CallEndReason,
+	duration int32,
+) (*svc.MessageSend, error) {
+	if callID == "" || sessionKey == "" {
+		return nil, errors.New("invalid call record")
+	}
+	now := time.Now().UnixMilli()
+
+	payload, err := proto.Marshal(&message.CallMessage{
+		Base: &message.BaseMessage{
+			SessionKey: sessionKey,
+			FromUserId: callerID,
+			Target:     calleeID,
+			SendTime:   now,
+		},
+		CallId:    callID,
+		MediaType: mediaType,
+		EndReason: reason,
+		Duration:  duration,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &svc.MessageSend{
+		SessionKey: sessionKey,
+		Sender:     callerID,
+		Target:     calleeID,
+		MsgType:    int64(transport.MessageType_CHAT_CALL),
+		Timestamp:  now,
+		Preview:    CallPreview(reason, mediaType, duration),
+		Payload:    payload,
+	}, nil
+}
+
+// CallPreview 通话记录的会话列表摘要文案（无主语，与 GroupNotifyPreview 同契约）。
+// 主被叫视角差异（「已取消」vs「未接来电」）由客户端按 from_user_id 重算，
+// 服务端只给中性文案。
+func CallPreview(reason call.CallEndReason, mediaType call.CallMediaType, duration int32) string {
+	prefix := "语音通话"
+	if mediaType == call.CallMediaType_CALL_MEDIA_TYPE_VIDEO {
+		prefix = "视频通话"
+	}
+
+	switch reason {
+	case call.CallEndReason_CALL_END_REASON_COMPLETED:
+		return fmt.Sprintf("%s %s", prefix, formatDuration(duration))
+	case call.CallEndReason_CALL_END_REASON_CANCELED:
+		return prefix + " 已取消"
+	case call.CallEndReason_CALL_END_REASON_REJECTED:
+		return prefix + " 已拒绝"
+	case call.CallEndReason_CALL_END_REASON_BUSY:
+		return prefix + " 对方忙线"
+	case call.CallEndReason_CALL_END_REASON_MISSED,
+		call.CallEndReason_CALL_END_REASON_PEER_OFFLINE:
+		return prefix + " 未接听"
+	default:
+		return prefix + " 已结束"
+	}
+}
+
+// formatDuration 把秒数格式化为 mm:ss / hh:mm:ss
+func formatDuration(sec int32) string {
+	if sec < 0 {
+		sec = 0
+	}
+	h, m, s := sec/3600, (sec%3600)/60, sec%60
+	if h > 0 {
+		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+	}
+	return fmt.Sprintf("%02d:%02d", m, s)
 }
 
 // GroupNotifyPreview 群操作通知的会话列表摘要文案（无主语）。

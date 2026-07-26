@@ -54,7 +54,21 @@ enum MessageType {
   // 内部消费消息
   UPDATE_SESSION = 700;           // 更新会话
   USER_GROUP_SYNC = 701;          // 用户群组映射同步
-  
+
+  // 通话信令 800-899（载荷见 pkg/proto/call/call.proto）
+  // 纯实时转发，不进 DBSubject、不落库；通话记录另由 CHAT_CALL=106 承载。
+  // 选 8xx 而非 7xx：700/701 已被内部消费消息占用。
+  CALL_INVITE = 800;              // 发起通话
+  CALL_ACCEPT = 801;              // 接听
+  CALL_REJECT = 802;              // 拒接
+  CALL_CANCEL = 803;              // 主叫振铃中取消
+  CALL_HANGUP = 804;              // 通话中挂断
+  CALL_SDP = 805;                 // SDP 交换（纯透传）
+  CALL_ICE = 806;                 // ICE candidate（纯透传）
+  CALL_PENDING = 807;             // 上线补投：仍在振铃的来电
+  CALL_MEDIA_UPDATE = 808;        // 摄像头/麦克风开关状态
+  CALL_END = 809;                 // 服务端主动终止（振铃超时等）
+
   // 错误响应 900-999
   ERROR = 900;                    // 错误消息
 }

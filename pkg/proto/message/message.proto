@@ -5,6 +5,7 @@ package message;
 option go_package = "IM2/pkg/proto/message";
 
 import "pkg/proto/group/group.proto";
+import "pkg/proto/call/call.proto";
 
 // 消息状态
 enum MessageStatus {
@@ -111,6 +112,24 @@ message FileMessage {
   int64 size = 4;                  // 文件大小
   string md5 = 6;                  // 文件MD5
   string format = 7;
+}
+
+// 通话记录（WSMessage.Type = CHAT_CALL）
+//
+// 一通电话**只落一条**，且只在进入终态时由服务端生成 —— 不给 invite/cancel/reject
+// 各写一条：那会推高 4 个 seq 并触发进会话 reconcile，而记录平面只需要 1 条气泡。
+//
+// base.from_user_id 恒为**主叫**，客户端据此判断展示视角（我方「已取消」/ 对方「未接来电」），
+// 因此不再单列 caller_id。
+//
+// 注意：本类型**不注册进 transport 的 msgSpecRegistry** —— 通话记录只允许服务端在
+// 状态机终态时铸造，客户端不能经普通发消息链路伪造一条通话记录。
+message CallMessage {
+  BaseMessage base = 1;
+  string call_id = 2;                     // 与信令平面的 call_id 同源，便于排查
+  call.CallMediaType media_type = 3;      // 决定「语音通话」还是「视频通话」文案
+  call.CallEndReason end_reason = 4;
+  int32 duration = 5;                     // 通话秒数；仅 COMPLETED 有意义，其余为 0
 }
 
 // 位置消息

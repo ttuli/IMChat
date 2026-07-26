@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package call;
+
+option go_package = "IM2/pkg/proto/call";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 通话信令（WSMessage.Type = 800-899）
+//
+// 设计前提（改动前先读 CALL_TODO.md）：
+//   1. 信令平面不落库。本文件所有 message 均为实时转发帧，网关纯透传、不解释语义、
+//      不进 DBSubject。对端不在线即失败返回，不排队不补投。
+//   2. 状态平面在服务端 Redis（call:{call_id}），TTL = 振铃窗口。它是「这通电话是否还活着」
+//      的唯一权威，不由事件流末尾推导。
+//   3. 记录平面是 message.CallMessage（CHAT_CALL=106），一通电话只在进入终态时落一条。
+//
+// 握手采用 late offer：invite 只是通知，被叫 accept 后主叫才产生 SDP offer。
+// 好处是 pending 记录不必在 Redis 中驮着 SDP blob，离线补投路径更干净；
+// 代价是媒体建立多一个 RTT，可接受。
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 通话媒体类型。由发起入口按钮决定，**通话期间不变**。
+// 中途开关摄像头不改本字段，用 CallMediaUpdate 表达。
+enum CallMediaType {
+  CALL_MEDIA_TYPE_AUDIO = 0;      // 语音通话
+  CALL_MEDIA_TYPE_VIDEO = 1;      // 视频通话
+}
+
+// 通话状态机（服务端 Redis 状态平面持有）
+enum CallState {
+  CALL_STATE_UNSPECIFIED = 0;
+  CALL_STATE_RINGING = 1;         // 振铃中（含被叫离线、等待其上线补投的阶段）
+  CALL_STATE_CONNECTED = 2;       // 已接通
+  CALL_STATE_ENDED = 3;           // 已终止
+}
+
+// 通话终止原因。写入 CHAT_CALL 记录，决定聊天气泡文案。
+enum CallEndReason {
+  CALL_END_REASON_UNSPECIFIED = 0;
+  CALL_END_REASON_COMPLETED = 1;     // 正常通话结束（有通话时长）
+  CALL_END_REASON_CANCELED = 2;      // 主叫在振铃期间取消
+  CALL_END_REASON_REJECTED = 3;      // 被叫拒接
+  CALL_END_REASON_MISSED = 4;        // 振铃超时无人接听
+  CALL_END_REASON_PEER_OFFLINE = 5;  // 被叫离线，且振铃窗口内未上线
+  CALL_END_REASON_FAILED = 6;        // 建连失败（ICE 失败 / 媒体协商失败等）
+  CALL_END_REASON_BUSY = 7;          // 被叫（或主叫自己）已在另一通电话中
+}
+
+enum SdpType {
+  SDP_TYPE_OFFER = 0;
+  SDP_TYPE_ANSWER = 1;
+}
+
+// ─── 呼叫控制 ───
+
+// 发起通话（主叫 → 服务端 → 被叫）
+// call_id 由服务端生成后回给主叫，同时下发给被叫；客户端两侧均以此为幂等键。
+message CallInvite {
+  string call_id = 1;
+  uint64 caller_id = 2;
+  uint64 callee_id = 3;
+  string session_key = 4;           // 可解析派生格式（私聊 = 小uid_大uid）
+  CallMediaType media_type = 5;
+  int64 invite_at = 6;              // 发起时间（毫秒）
+  int64 ring_deadline = 7;          // 振铃截止的**绝对**毫秒时间戳，服务端下发
+}
+
+// 被叫接听
+message CallAccept {
+  string call_id = 1;
+  uint64 callee_id = 2;
+  int64 accept_at = 3;
+}
+
+// 被叫拒接
+message CallReject {
+  string call_id = 1;
+  uint64 callee_id = 2;
+  int64 reject_at = 3;
+  string reason = 4;                // 可选，如「忙线」
+}
+
+// 主叫在振铃期间取消
+message CallCancel {
+  string call_id = 1;
+  uint64 caller_id = 2;
+  int64 cancel_at = 3;
+}
+
+// 通话中任一方挂断
+message CallHangup {
+  string call_id = 1;
+  uint64 operator_id = 2;
+  int64 hangup_at = 3;
+  // 客户端侧统计的通话秒数，仅作参考；
+  // 落库记录以服务端 connected_at → ended_at 计时为准，避免客户端时钟不可信
+  int32 duration = 4;
+}
+
+// 服务端主动终止：振铃超时（sweeper 扫出）、被叫离线且窗口内未上线、状态机异常等。
+// 与 CallHangup 区分开，因为发起方是服务端而非用户。
+message CallEnd {
+  string call_id = 1;
+  CallEndReason reason = 2;
+  int64 end_at = 3;
+  int32 duration = 4;               // 秒；非 COMPLETED 时为 0
+}
+
+// ─── 媒体协商 ───
+
+// SDP 交换。服务端纯透传，不解析 sdp 内容、不做「握手已完成」的状态判断。
+message CallSdp {
+  string call_id = 1;
+  SdpType sdp_type = 2;
+  string sdp = 3;
+}
+
+// ICE candidate（trickle）。同样纯透传。
+message CallIce {
+  string call_id = 1;
+  string candidate = 2;
+  string sdp_mid = 3;
+  int32 sdp_mline_index = 4;
+  string username_fragment = 5;
+}
+
+// ─── 媒体开关状态 ───
+
+// 摄像头/麦克风开关通知。
+//
+// **这是对端 UI 的唯一驱动源**：客户端关摄像头用 sender.replaceTrack(null)，
+// 该操作不改 SDP、不触发对端 ontrack，对端 track 也不会立即 mute ——
+// 没有这条信令，对方只会看到画面凝固而无从判断是关了摄像头还是卡了。
+//
+// 走 WS 而非 DataChannel：首次 offer 之后再 createDataChannel 会新增 m=application 段
+// 并触发重协商，恰是本设计要避开的。
+message CallMediaUpdate {
+  string call_id = 1;
+  uint64 from_user_id = 2;
+  bool camera_on = 3;
+  bool mic_on = 4;
+}
+
+// ─── 上线补投 ───
+
+// 客户端建连/重连后查询是否有仍在振铃的来电（对应 CALL_PENDING）。
+// 服务端返回前已校验：主叫仍在线 + 剩余振铃时间足够，客户端拿到即可直接弹接听界面。
+message CallPending {
+  bool has_pending = 1;
+  CallInvite invite = 2;
+  int64 remaining_ms = 3;           // 剩余振铃毫秒数，供 UI 显示倒计时
+}

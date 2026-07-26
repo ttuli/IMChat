@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"IM2/internal/apps/websocket/gateway/callsweeper"
 	"IM2/pkg/logger"
 	nats_util "IM2/pkg/nats"
 	"IM2/pkg/proto/transport"
@@ -44,7 +45,16 @@ func (s *GatewayServer) Start() error {
 		}
 	})
 
-	// 4. 订阅跨节点路由消息
+	// 4. 启动通话超时收敛 (振铃无人接听 / 通话超时上限 → 置终态并落未接记录)。
+	//    多实例并行运行是安全的：认领带可见性超时，终态转换是 CAS，只有赢家落库。
+	callsweeper.New(
+		s.svcCtx.CallState,
+		s.svcCtx.Routes,
+		s.svcCtx.Notifier,
+		s.svcCtx.Nats.JetStream(),
+	).Start(s.ctx)
+
+	// 5. 订阅跨节点路由消息
 	nodeSubject := nats_util.NodeSubjectPrefix + s.svcCtx.Config.WebSocket.NodeID
 	if err := s.svcCtx.Nats.Subscribe(nodeSubject, s.handleSubscribeMessage); err != nil {
 		return fmt.Errorf("subscribe route message failed: %w", err)

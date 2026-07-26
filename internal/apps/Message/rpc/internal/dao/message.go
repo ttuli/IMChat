@@ -147,6 +147,14 @@ func (m *MessageDAO) MaxSeq(ctx context.Context, sessionID string) (uint64, erro
 // Lamport seq 不连续后未读数不能再用减法计算，改为服务端点查。
 // seq 现为事件流：通知类消息（群操作 606 / 撤回 605）与聊天消息同库、同样占用 seq，
 // 但不是用户需要"读"的消息，必须按 msg_type 排除，否则他人的群操作/撤回会虚增未读。
+//
+// **通话记录 CHAT_CALL(106) 有意不排除**：未接来电必须有未读红点，这是该记录的主要价值。
+// 记录的 from_user_id 恒为主叫，故只有被叫侧可能计入未读，主叫不会为自己拨出的电话产生未读。
+// 由此带来的副作用——被叫在「正常通话结束」「自己拒接」后同样会 +1——
+// 由客户端在这两种 end_reason 下改调 reportSessionRead 推进游标消解，
+// 不在本查询里按 end_reason 细分（reason 埋在 payload 内，查询侧不可见，
+// 提上来需要给通用消息模型加通话专属列，代价与收益不成比例）。
+//
 // limit 限制扫描上限（超过按 limit 返回），防止长期未读会话拖垮查询。
 func (m *MessageDAO) CountUnread(ctx context.Context, sessionID string, afterSeq uint64, excludeUser uint64) (uint64, error) {
 	filter := bson.M{
