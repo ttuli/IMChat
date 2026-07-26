@@ -110,19 +110,27 @@ func (d *FriendDAO) UpdateFriend(ctx context.Context, userID, friendID uint64, u
 		Updates(updates).Error
 }
 
-// DeleteFriend 双向删除好友关系
+// DeleteFriend 双向删除好友关系（按ID固定顺序加锁与删除，防止并发并发操作死锁）
 func (d *FriendDAO) DeleteFriend(ctx context.Context, userID, friendID uint64) error {
 	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 删除 userID -> friendID
-		if err := tx.Where("user_id = ? AND friend_id = ?", userID, friendID).
-			Delete(&model.UserFriend{}).Error; err != nil {
-			return err
+		// 统一排序 u1, u2 (u1 < u2)，确保并发互为好友删除时以相同顺序获取行锁，避免死锁
+		u1, u2 := userID, friendID
+		if u1 > u2 {
+			u1, u2 = u2, u1
 		}
 
-		// 删除 friendID -> userID
-		if err := tx.Where("user_id = ? AND friend_id = ?", friendID, userID).
-			Delete(&model.UserFriend{}).Error; err != nil {
-			return err
+		res1 := tx.Where("user_id = ? AND friend_id = ?", u1, u2).Delete(&model.UserFriend{})
+		if res1.Error != nil {
+			return res1.Error
+		}
+
+		res2 := tx.Where("user_id = ? AND friend_id = ?", u2, u1).Delete(&model.UserFriend{})
+		if res2.Error != nil {
+			return res2.Error
+		}
+
+		if res1.RowsAffected == 0 && res2.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
 		}
 
 		return nil

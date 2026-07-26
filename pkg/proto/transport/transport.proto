@@ -20,7 +20,8 @@ enum MessageType {
   CHAT_AUDIO = 103;               // 语音消息
   CHAT_FILE = 104;                // 文件消息
   CHAT_LOCATION = 105;            // 位置消息
-  CHAT_CUSTOM = 106;              // 自定义消息
+  CHAT_CALL = 106;                // 通话消息
+  CHAT_CUSTOM = 107;              // 自定义消息
   
   // 群聊消息 200-299
   GROUP_TEXT = 200;               // 群文本消息

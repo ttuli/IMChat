@@ -53,7 +53,7 @@ func (s *UserService) UpdateFriend(ctx context.Context, userID, friendID uint64,
 
 // DeleteFriend 删除好友（双向删除）
 func (s *UserService) DeleteFriend(ctx context.Context, userID, friendID uint64) error {
-	// 检查好友关系是否存在
+	// 1. 检查好友关系是否存在，用于构造删除通知
 	friendRecord, err := s.svcCtx.FriendDAO.FindFriendRelation(ctx, userID, friendID)
 	if err == gorm.ErrRecordNotFound {
 		return xerr.New(transport.ErrorCode_ERR_NOT_FOUND, "好友关系不存在")
@@ -62,7 +62,15 @@ func (s *UserService) DeleteFriend(ctx context.Context, userID, friendID uint64)
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询好友关系失败")
 	}
 
-	// 通知被删除的一方（操作方由 RPC 返回值感知）
+	// 2. 数据库事务中原子删除双向好友关系
+	if err := s.svcCtx.FriendDAO.DeleteFriend(ctx, userID, friendID); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return xerr.New(transport.ErrorCode_ERR_NOT_FOUND, "好友关系不存在")
+		}
+		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "删除好友关系失败")
+	}
+
+	// 3. 通知被删除的一方（操作方由 RPC 返回值感知）
 	if msg, err := util.NewFriendUpdateMsg(transport.MessageType_FRIEND_DELETED, friendRecord, friendID); err == nil {
 		s.svcCtx.Notifier.Publish(ctx, msg)
 	}
