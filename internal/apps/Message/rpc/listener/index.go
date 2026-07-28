@@ -306,18 +306,48 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 	}
 
 	// 单聊：查路由表精准投递
-	node, status := l.lookupRoute(ctx, m.Target)
+	l.deliverToUser(ctx, m.Target, deliverMsg)
+
+	// 通话记录（CHAT_CALL）额外投一份给发送方。
+	//
+	// 常规聊天消息只投 Target 是对的：发送方有本地乐观副本，另有 PersistAck 回填 msg_id/seq。
+	// 但通话记录是**服务端在通话终态铸造**的，主叫端从未产生过本地副本，
+	// 只投 Target 会让主叫侧聊天记录直到下次拉历史才出现这条通话。
+	if m.MsgType == int64(transport.MessageType_CHAT_CALL) && m.Sender != m.Target {
+		l.deliverToUser(ctx, m.Sender, withRouteTargetUser(deliverMsg, m.Sender))
+	}
+	return nil
+}
+
+// deliverToUser 单聊精准投递：按路由状态选择定向投递 / 只存不推 / 广播兜底。
+func (l *NatsListener) deliverToUser(ctx context.Context, userID uint64, msg *transport.WSMessage) {
+	node, status := l.lookupRoute(ctx, userID)
 	switch status {
 	case routing.RouteOnline:
-		l.svcCtx.Nats.PublishToNode(node, deliverMsg)
+		l.svcCtx.Nats.PublishToNode(node, msg)
 	case routing.RouteOffline:
 		// 确认不在线：只存不推，上线后由客户端拉取
 	default:
 		// 路由状态不可信（Redis 异常 / 路由指向已死节点）：
 		// 广播兜底，由持有连接的网关节点完成本地投递，避免静默漏推
-		l.svcCtx.Nats.Broadcast(deliverMsg)
+		l.svcCtx.Nats.Broadcast(msg)
 	}
-	return nil
+}
+
+// withRouteTargetUser 复制一份仅 route_target 不同的投递消息。
+// 网关按 route_target 匹配本地连接，不复制会让两个接收方共用同一份而互相覆盖。
+func withRouteTargetUser(msg *transport.WSMessage, userID uint64) *transport.WSMessage {
+	return &transport.WSMessage{
+		Type:            msg.Type,
+		Payload:         msg.Payload,
+		RouteTarget:     []uint64{userID},
+		RouteTargetType: transport.TargetType_USER,
+		SenderId:        msg.SenderId,
+		Timestamp:       msg.Timestamp,
+		MsgId:           msg.MsgId,
+		SessionId:       msg.SessionId,
+		MsgSeq:          msg.MsgSeq,
+	}
 }
 
 // deliverGroupMessage 群消息定向扇出。

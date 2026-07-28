@@ -143,6 +143,21 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		}
 	}
 
+	// 通话记录：终态与类型在 CallMessage payload 内，而历史接口只返回
+	// content / media_url / extra，不落 Extra 的话客户端翻历史时无法还原
+	// 「未接来电」还是「通话时长 03:21」，只剩服务端下发的中性 Content 文案。
+	if msg.MsgType == int64(transport.MessageType_CHAT_CALL) {
+		callMsg := &message.CallMessage{}
+		if err := proto.Unmarshal(msg.Payload, callMsg); err != nil {
+			logger.Errorf("Failed to unmarshal call message: %v", err)
+			return nil, err
+		}
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_CALL_ID)] = callMsg.CallId
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_CALL_MEDIA_TYPE)] = int32(callMsg.MediaType)
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_CALL_END_REASON)] = int32(callMsg.EndReason)
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_DURATION)] = callMsg.Duration
+	}
+
 	// 通知类消息（群操作/撤回）与聊天消息同样落库：Content 为预览文案，
 	// 完整结构化载荷存 extra.payload（十六进制），供历史拉取时重建通知内容。
 	if isNotify {

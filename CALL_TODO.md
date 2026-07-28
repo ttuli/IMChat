@@ -5,6 +5,9 @@
 **主链路已完成**：发起 → 状态平面 → 信令转发 → 上线补投 → 超时收敛 → 落库记录，
 通过 `go build ./...` + `go vet`。已完成部分的设计理由都写在对应代码注释里，本文件只留待办。
 
+**前端已全部完成**（含媒体权限、铃声、设备跟随、登出收尾），
+**TURN 是整个功能唯一的阻塞项** —— 不部署则跨 NAT 通话建不起来。
+
 ---
 
 ## 1. TURN / STUN ⬜ 未开始（阻塞真实可用）
@@ -25,10 +28,13 @@
 - [ ] **改完 `pkg/proto` 与 Message RPC 必须重新编译部署才生效**，
       通话链路涉及 websocket 网关与 Message 服务两处
 
-## 3. 待定决策 ⬜
+## 3. 容量规划 ⬜
 
-- [ ] **视频默认分辨率与码率上限** —— 直接决定 §1 的 TURN 带宽预算，
-      也决定前端 `applyConstraints` 的取值。与前端清单同一条决策
+- [ ] **按前端已定的采集参数估 TURN 带宽**：前端 `CALL_CONFIG.videoConstraints`
+      已定为 720p / 24fps（`Nexus/share/config/constants.ts`）。
+      据此估算并发上限与机器规格；若容量不够，是调低这个值还是加机器，需要一起定
+- [ ] 定完把**发送码率上限**同步给前端 —— 前端待补 SDP `b=AS` 封顶
+      （采集分辨率 ≠ 发送码率，不封顶时编码器会吃满上行，直接推高中继成本）
 
 ## 4. 范围外（明确不做，避免以后误当遗漏）
 
@@ -53,6 +59,8 @@
 | 超时收敛 | `gateway/callsweeper/` | 2s 一轮；可见性超时认领；多实例并行安全 |
 | 落库 | `pkg/proto/util/helper.go` | `NewCallRecordMsg` / `CallPreview`；JetStream 以 `call:{callID}` 去重 |
 | 未读口径 | `dao/message.go:146` | `CHAT_CALL(106)` **计入未读**，零逻辑改动，注释已固化意图 |
+| 记录投递 | `Message/rpc/listener/index.go` | **通话记录额外投一份给主叫**：常规私聊只投 Target（发送方有本地乐观副本），但通话记录是服务端铸造的，主叫从无本地副本，不补投就要等下次拉历史才出现 |
+| 记录落 Extra | `Message/rpc/internal/service/message.go` | `end_reason`/`media_type`/`duration`/`call_id` 拆进 Extra（新增 `MessageExtraKey` 40/41/42，时长复用 20）——历史接口只返回 content/media_url/extra，不拆的话翻历史只剩中性文案 |
 
 ### 已定参数
 

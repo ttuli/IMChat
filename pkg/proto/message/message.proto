@@ -48,6 +48,13 @@ enum MessageExtraKey {
   MESSAGE_EXTRA_KEY_DURATION = 20;
 
   MESSAGE_EXTRA_KEY_NOTIFY_PAYLOAD = 30;
+
+  // 通话记录（CHAT_CALL）。时长复用 DURATION=20。
+  // 这些字段在 CallMessage payload 内，但历史接口只返回 content/media_url/extra，
+  // 不落 Extra 的话客户端翻历史时无法还原通话终态与类型
+  MESSAGE_EXTRA_KEY_CALL_MEDIA_TYPE = 40;
+  MESSAGE_EXTRA_KEY_CALL_END_REASON = 41;
+  MESSAGE_EXTRA_KEY_CALL_ID         = 42;
 }
 
 // 文本消息
