@@ -223,9 +223,14 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 
 	// 会话形态只能由 SessionKey 判断：解析出的 SessionId 是雪花 ID，不携带类型前缀
 	isGroup := util.IsGroupSession(m.SessionKey)
-	// 通知类消息（群操作/撤回）：无发送方 ACK 语义，操作者与普通成员同为接收方
+	// 无发送方 ACK 语义的消息：
+	//   - 通知类（群操作/撤回）：操作者与普通成员同为接收方
+	//   - 通话记录（CHAT_CALL）：服务端在通话终态铸造，主叫从未"发送"过它，
+	//     也就没有 client_id 可确认。发一条空 client_id 的 PersistAck 只会让
+	//     客户端拿去做无意义的本地消息匹配
 	isNotify := m.MsgType == int64(transport.MessageType_GROUP_OP_NOTIFICATION) ||
-		m.MsgType == int64(transport.MessageType_MSG_OP_RECALL)
+		m.MsgType == int64(transport.MessageType_MSG_OP_RECALL) ||
+		m.MsgType == int64(transport.MessageType_CHAT_CALL)
 	sessionType := model.SessionTypeSingle
 	if isGroup {
 		sessionType = model.SessionTypeGroup

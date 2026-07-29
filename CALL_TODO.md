@@ -60,6 +60,7 @@
 | 落库 | `pkg/proto/util/helper.go` | `NewCallRecordMsg` / `CallPreview`；JetStream 以 `call:{callID}` 去重 |
 | 未读口径 | `dao/message.go:146` | `CHAT_CALL(106)` **计入未读**，零逻辑改动，注释已固化意图 |
 | 记录投递 | `Message/rpc/listener/index.go` | **通话记录额外投一份给主叫**：常规私聊只投 Target（发送方有本地乐观副本），但通话记录是服务端铸造的，主叫从无本地副本，不补投就要等下次拉历史才出现 |
+| 记录无 ACK | `Message/rpc/listener/index.go` `isNotify` | `CHAT_CALL` 与通知类一并跳过 PersistAck：服务端铸造的记录主叫从未"发送"过，没有 client_id 可确认，发一条空 client_id 的 ACK 只会让客户端拿去做无意义的本地匹配 |
 | 记录落 Extra | `Message/rpc/internal/service/message.go` | `end_reason`/`media_type`/`duration`/`call_id` 拆进 Extra（新增 `MessageExtraKey` 40/41/42，时长复用 20）——历史接口只返回 content/media_url/extra，不拆的话翻历史只剩中性文案 |
 
 ### 已定参数
