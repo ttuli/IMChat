@@ -38,6 +38,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if c.DAO.MessageDAO.UnreadCountLimit == 0 {
 		c.DAO.MessageDAO.UnreadCountLimit = 100
 	}
+	if c.DAO.MessageDAO.BucketSize <= 0 {
+		c.DAO.MessageDAO.BucketSize = dao.DefaultBucketSize
+	}
 
 	nc, err := nats_util.NewClient(c.Listener.Url)
 	if err != nil {

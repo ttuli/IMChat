@@ -45,6 +45,30 @@ func (s *MessageService) GetHistory(ctx context.Context, conversationID string, 
 // 保证多实例并发消费同一会话时 seq 顺序与消息进入 stream 的顺序一致
 // （不受实例间物理时钟倾斜影响）。
 func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSend, streamSeq uint64) (*model.Message, error) {
+	// 0. 幂等：JetStream 是至少一次投递，落库成功后若进程崩溃 / Ack 丢失会重投同一条消息。
+	// msg_id 是本函数现场生成的雪花号，重投时必然是新号，据此判重无效；
+	// 真正稳定的幂等键是客户端带来的 (from_user_id, client_id)——网关发布到 JetStream 时
+	// 用的也是这个键（nats.MsgId）。
+	//
+	// 命中已落库消息时直接复用它返回：上层据此回的 PersistAck 仍是**原** msg_id/seq，
+	// 客户端本地 client_id → msg_id 的映射不会被同一条消息的第二个 msg_id 冲掉；
+	// 重复投递给接收方的那份也因 msg_id 相同而能被客户端识别为重复。
+	//
+	// 服务端铸造的消息（撤回通知/群操作通知/通话记录）没有 client_id，跳过判重——
+	// 它们由发布侧保证只发一次（如通话记录只由 callstate.Terminate 的 CAS 赢家发布）。
+	if msg.ClientId != "" {
+		existing, err := s.svcCtx.MessageDAO.FindBySenderAndClient(ctx, msg.Sender, msg.ClientId)
+		switch {
+		case err == nil:
+			logger.Infof("[MessageService] duplicate delivery skipped: client_id=%s reuse msg_id=%s seq=%d",
+				msg.ClientId, existing.MsgID, existing.Seq)
+			return existing, nil
+		case err != mongo.ErrNoDocuments:
+			logger.Errorf("[MessageService] idempotency check failed for client_id %s: %v", msg.ClientId, err)
+			return nil, err
+		}
+	}
+
 	// 1. 分配 Lamport Seq（本地生成，不依赖 Redis）。
 	// 进程首次遇到该会话时先从 MongoDB 播种已持久化的最大 seq，
 	// 防止进程重启 + stream 重建导致新消息 seq 落后于历史消息。
@@ -164,7 +188,7 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NOTIFY_PAYLOAD)] = hex.EncodeToString(msg.Payload)
 	}
 
-	if err := s.svcCtx.MessageDAO.InsertMessages(ctx, []*model.Message{dbMsg}); err != nil {
+	if err := s.svcCtx.MessageDAO.AppendMessages(ctx, dbMsg.SessionID, []*model.Message{dbMsg}); err != nil {
 		logger.Errorf("Failed to persist message %s: %v", msgid, err)
 		return nil, err
 	}
@@ -233,14 +257,23 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 }
 
 // BulkPersistMessages 批量持久化消息，由 NATS Listener 消费后调用。
+// 消息桶按会话组织，跨会话的一批必须先按 session_id 分组再各自追加。
 func (s *MessageService) BulkPersistMessages(ctx context.Context, msgs []*model.Message) error {
 	if len(msgs) == 0 {
 		return nil
 	}
-	if err := s.svcCtx.MessageDAO.InsertMessages(ctx, msgs); err != nil {
-		logger.Errorf("[MessageService] BulkPersistMessages failed (batch=%d): %v", len(msgs), err)
-		return err
+	bySession := make(map[string][]*model.Message)
+	for _, msg := range msgs {
+		bySession[msg.SessionID] = append(bySession[msg.SessionID], msg)
 	}
-	logger.Infof("[MessageService] BulkPersistMessages ok: %d messages persisted", len(msgs))
+	for sessionID, group := range bySession {
+		if err := s.svcCtx.MessageDAO.AppendMessages(ctx, sessionID, group); err != nil {
+			logger.Errorf("[MessageService] BulkPersistMessages failed (session=%s, batch=%d): %v",
+				sessionID, len(group), err)
+			return err
+		}
+	}
+	logger.Infof("[MessageService] BulkPersistMessages ok: %d messages persisted across %d sessions",
+		len(msgs), len(bySession))
 	return nil
 }
