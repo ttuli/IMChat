@@ -47,10 +47,21 @@ func resetSession(t *testing.T, d *MessageDAO, sessionID string) {
 	}
 }
 
+// msg_id / client_id 必须带会话前缀：FindByMsgID 与 UpdateMessageStatusCAS 都不按
+// session_id 收窄（线上 msg_id 是全局唯一雪花号），若各用例共用 "m-7" 这类 id，
+// 先跑的用例残留的桶会被后面的用例误命中。
+func msgIDOf(sessionID string, seq uint64) string {
+	return fmt.Sprintf("%s-m-%d", sessionID, seq)
+}
+
+func clientIDOf(sessionID string, seq uint64) string {
+	return fmt.Sprintf("%s-c-%d", sessionID, seq)
+}
+
 func testMsg(sessionID string, seq uint64, from uint64, msgType int16) *model.Message {
 	return &model.Message{
-		MsgID:      fmt.Sprintf("m-%d", seq),
-		ClientID:   fmt.Sprintf("c-%d", seq),
+		MsgID:      msgIDOf(sessionID, seq),
+		ClientID:   clientIDOf(sessionID, seq),
 		SessionID:  sessionID,
 		SessionKey: sessionID,
 		FromUserID: from,
@@ -276,12 +287,13 @@ func TestFindByMsgIDAndRecallCAS(t *testing.T) {
 		}
 	}
 
-	msg, err := d.FindByMsgID(ctx, "m-7")
+	target := msgIDOf(sessionID, 7)
+	msg, err := d.FindByMsgID(ctx, target)
 	if err != nil {
 		t.Fatalf("FindByMsgID: %v", err)
 	}
 	// $elemMatch 投影必须只返回命中的那一条，而不是桶内第一条
-	if msg.MsgID != "m-7" || msg.Seq != 7 {
+	if msg.MsgID != target || msg.Seq != 7 {
 		t.Fatalf("FindByMsgID returned wrong message: %+v", msg)
 	}
 
@@ -290,30 +302,31 @@ func TestFindByMsgIDAndRecallCAS(t *testing.T) {
 	}
 
 	const recalled = int8(1)
-	ok, err := d.UpdateMessageStatusCAS(ctx, "m-7", recalled)
+	ok, err := d.UpdateMessageStatusCAS(ctx, target, recalled)
 	if err != nil || !ok {
 		t.Fatalf("first CAS: ok=%v err=%v, want true/nil", ok, err)
 	}
+	// 先确认位置操作符真的把状态写进去了，再验重复撤回——
+	// 否则「第二次 CAS 也返回 true」既可能是 CAS 失效，也可能是 $set 根本没生效，无法区分
+	if msg, err = d.FindByMsgID(ctx, target); err != nil {
+		t.Fatal(err)
+	} else if msg.Status != recalled {
+		t.Fatalf("status after first CAS = %d, want %d (messages.$ 未写入)", msg.Status, recalled)
+	}
+
 	// 重复撤回必须返回 false，否则会重复发布撤回通知
-	if ok, err = d.UpdateMessageStatusCAS(ctx, "m-7", recalled); err != nil || ok {
+	if ok, err = d.UpdateMessageStatusCAS(ctx, target, recalled); err != nil || ok {
 		t.Fatalf("second CAS: ok=%v err=%v, want false/nil", ok, err)
 	}
 
-	msg, err = d.FindByMsgID(ctx, "m-7")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if msg.Status != recalled {
-		t.Fatalf("status = %d, want %d", msg.Status, recalled)
-	}
 	// 位置操作符只能改中标的那一条，同桶的邻居不受影响
-	for _, id := range []string{"m-6", "m-8"} {
-		neighbor, err := d.FindByMsgID(ctx, id)
+	for _, seq := range []uint64{6, 8} {
+		neighbor, err := d.FindByMsgID(ctx, msgIDOf(sessionID, seq))
 		if err != nil {
 			t.Fatal(err)
 		}
 		if neighbor.Status != 0 {
-			t.Fatalf("%s status = %d, want 0 (位置操作符改错了数组元素)", id, neighbor.Status)
+			t.Fatalf("seq %d status = %d, want 0 (位置操作符改错了数组元素)", seq, neighbor.Status)
 		}
 	}
 }
@@ -332,16 +345,17 @@ func TestFindBySenderAndClient(t *testing.T) {
 		}
 	}
 
-	msg, err := d.FindBySenderAndClient(ctx, 42, "c-9")
+	clientID := clientIDOf(sessionID, 9)
+	msg, err := d.FindBySenderAndClient(ctx, 42, clientID)
 	if err != nil {
 		t.Fatalf("FindBySenderAndClient: %v", err)
 	}
-	if msg.MsgID != "m-9" || msg.Seq != 9 {
+	if msg.MsgID != msgIDOf(sessionID, 9) || msg.Seq != 9 {
 		t.Fatalf("returned wrong message: %+v", msg)
 	}
 
 	// 发送者不匹配不能命中
-	if _, err = d.FindBySenderAndClient(ctx, 43, "c-9"); err != mongo.ErrNoDocuments {
+	if _, err = d.FindBySenderAndClient(ctx, 43, clientID); err != mongo.ErrNoDocuments {
 		t.Fatalf("wrong sender err = %v, want ErrNoDocuments", err)
 	}
 	// 空 client_id 不查库直接返回未找到（服务端铸造的消息走这条路）
