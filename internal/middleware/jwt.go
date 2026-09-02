@@ -22,6 +22,12 @@ type TokenValidator interface {
 func WithJwtAuth(validator TokenValidator) rest.Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			// 健康检查探针直接放行
+			if r.URL.Path == "/healthz" {
+				next(w, r)
+				return
+			}
+
 			ctx := r.Context()
 
 			// 1. 提取 token

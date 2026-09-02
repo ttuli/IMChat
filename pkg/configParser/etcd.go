@@ -3,6 +3,8 @@ package configparser
 import (
 	"context"
 	"fmt"
+	"log"
+	"math/rand/v2"
 	"time"
 
 	"IM2/pkg/env"
@@ -33,7 +35,7 @@ func NewEtcdParser(c EtcdConfig) ConfigParser {
 }
 
 // Load 从 etcd 读取 Key 对应的 YAML 配置并解析到 v
-// 与 nacos 解析器一致：取回的内容先做 ${VAR} 环境变量展开，再交给 go-zero conf 解析
+// 增加多轮重试与指数退避机制，防止发版并发或网络抖动时导致 Pod 启动崩溃
 func (p *etcdParser) Load(v any) error {
 	ec := p.EtcdConfig
 	if len(ec.Endpoints) == 0 {
@@ -46,6 +48,31 @@ func (p *etcdParser) Load(v any) error {
 		ec.TimeoutMs = 5000
 	}
 	timeout := time.Duration(ec.TimeoutMs) * time.Millisecond
+
+	const maxAttempts = 3
+	var lastErr error
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		err := p.loadOnce(v, timeout)
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+		if attempt < maxAttempts {
+			// 基础延迟 + 随机抖动 (Jitter)，打散多个 Pod 同时重启时的重试时间窗口，彻底避免二次惊群
+			maxJitter := time.Duration(attempt) * 600 * time.Millisecond
+			jitter := time.Duration(rand.Int64N(int64(maxJitter)))
+			backoff := 200*time.Millisecond + jitter
+			log.Printf("[etcd] 第 %d 次获取配置失败: %v, 将在 %v 后重试...", attempt, err, backoff)
+			time.Sleep(backoff)
+		}
+	}
+
+	return fmt.Errorf("从 etcd 加载配置失败(已重试 %d 次): %w", maxAttempts, lastErr)
+}
+
+func (p *etcdParser) loadOnce(v any, timeout time.Duration) error {
+	ec := p.EtcdConfig
 
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   ec.Endpoints,
@@ -60,6 +87,7 @@ func (p *etcdParser) Load(v any) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+
 	resp, err := cli.Get(ctx, ec.Key)
 	if err != nil {
 		return fmt.Errorf("从 etcd 获取配置失败: %w", err)

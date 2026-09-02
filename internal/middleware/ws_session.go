@@ -48,6 +48,12 @@ type SessionVersionChecker interface {
 func WithWsSessionAuth(checker WSSessionChecker) rest.Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			// 健康检查探针直接放行
+			if r.URL.Path == "/healthz" {
+				next(w, r)
+				return
+			}
+
 			ctx := r.Context()
 
 			tokenString := tokenmanager.ExtractToken(r)

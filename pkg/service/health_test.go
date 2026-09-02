@@ -77,6 +77,60 @@ Mode: test
 	}
 }
 
+func TestHealthzWithJwtMiddleware(t *testing.T) {
+	var c dummyRestConfig
+	if err := conf.LoadFromJsonBytes([]byte(`{"Name":"test-api-jwt","Host":"127.0.0.1","Port":18023,"Mode":"test"}`), &c); err != nil {
+		t.Fatalf("failed to load conf: %v", err)
+	}
+
+	rs := NewRestService(
+		func(c *dummyRestConfig, server *rest.Server) error {
+			// Simulate global JWT middleware that blocks all requests without Authorization header
+			server.Use(func(next http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					if r.URL.Path == "/healthz" {
+						next(w, r)
+						return
+					}
+					http.Error(w, "unauthorized", http.StatusUnauthorized)
+				}
+			})
+			return nil
+		},
+		func(c *dummyRestConfig) *rest.RestConf {
+			return &c.RestConf
+		},
+	)
+
+	if err := rs.Load(&c); err != nil {
+		t.Fatalf("failed to load RestService: %v", err)
+	}
+
+	if err := rs.Start(); err != nil {
+		t.Fatalf("failed to start RestService: %v", err)
+	}
+	defer rs.Stop()
+
+	var resp *http.Response
+	var reqErr error
+	for i := 0; i < 20; i++ {
+		time.Sleep(50 * time.Millisecond)
+		resp, reqErr = http.Get("http://127.0.0.1:18023/healthz")
+		if reqErr == nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+	}
+
+	if reqErr != nil {
+		t.Fatalf("failed to get /healthz: %v", reqErr)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %d", resp.StatusCode)
+	}
+}
+
 type dummyRpcConfig struct {
 	zrpc.RpcServerConf
 }
