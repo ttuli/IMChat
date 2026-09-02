@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"IM2/internal/apps/Message/rpc/config"
@@ -42,6 +43,14 @@ func NewMessageDAO(c config.MessageDAOConfig) *MessageDAO {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(c.Dbsource))
 	if err != nil {
 		panic(err)
+	}
+	// mongo.Connect 是惰性的：它只解析 URI、不建立连接，Mongo 完全不可达时也返回 nil error。
+	// 而服务的健康检查 /healthz 是静态 200 —— 它的语义「初始化已完成」成立的前提，
+	// 是所有依赖都在 HTTP 监听之前 fail-fast（MySQL 走 gorm.Open 会 ping、Redis 同理）。
+	// 不显式探活的话，Mongo 挂掉时 Pod 仍会被判定 Ready 并接入流量，
+	// 直到第一个查历史消息的请求才失败。
+	if err := client.Ping(ctx, nil); err != nil {
+		panic(fmt.Errorf("connect mongo failed: %w", err))
 	}
 
 	dao := &MessageDAO{c: c, db: client.Database(mongoDbName)}

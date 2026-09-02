@@ -24,6 +24,10 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 	// 最大消息大小
 	maxMessageSize = 65536
+	// 关停时发送 Close 帧的写超时。比常规 writeWait 短得多：
+	// 节点关停要在 K8s 的 terminationGracePeriod 内跑完，
+	// 不能被少数无响应的客户端拖住。
+	closeNoticeWait = time.Second
 )
 
 // Connection WebSocket 连接
@@ -93,6 +97,27 @@ func (c *Connection) Kick(reason string) {
 	}
 	c.Send(ws)
 	time.AfterFunc(time.Second, c.Close)
+}
+
+// CloseWithNotice 先发一帧 WebSocket Close 控制帧告知关闭原因，再断开连接。
+//
+// 与 Close 的区别：Close 直接关 TCP，客户端只能观察到异常断开（1006），
+// 无法区分「服务端正常下线」与「网络故障」，只能按后者走完整的指数退避重连。
+// 带上 Close 帧（1012 服务重启）后客户端可以识别出这是计划内下线，
+// 立刻重连到其他实例，不必空等一轮退避。
+//
+// 用 WriteControl 而非 WriteMessage：gorilla/websocket 不支持并发写，
+// 但 WriteControl 被显式声明为可与其他写方法并发调用，
+// 因此关停路径无需与正在运行的 WritePump 协调加锁。
+func (c *Connection) CloseWithNotice(code int, reason string) {
+	if c.IsClosed() {
+		return
+	}
+	payload := websocket.FormatCloseMessage(code, reason)
+	if err := c.Conn.WriteControl(websocket.CloseMessage, payload, time.Now().Add(closeNoticeWait)); err != nil {
+		logx.Errorf("[Connection] user %d write close frame failed: %v", c.UserID, err)
+	}
+	c.Close()
 }
 
 // Close 关闭连接

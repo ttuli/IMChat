@@ -6,6 +6,7 @@ import (
 
 	"IM2/pkg/proto/transport"
 
+	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -116,14 +117,26 @@ func (m *DefaultManager) GetAllLocalUserIDs() []uint64 {
 	return userIDs
 }
 
-// Close 关闭管理器，断开所有连接
+// Close 关闭管理器，断开所有连接。
+//
+// 这是节点关停路径（唯一调用方是 GatewayServer.Stop），因此对每个连接先发一帧
+// Close(1012 服务重启) 再断开：客户端据此可判定这是计划内下线、立即重连到其他实例，
+// 而不是把它当成网络故障走完整的指数退避。
+//
+// 并发发送：单个无响应的客户端最多拖住自己那 1 秒写超时，不会逐个累加拖垮整个关停流程。
 func (m *DefaultManager) Close() error {
+	var wg sync.WaitGroup
 	m.connections.Range(func(key, value any) bool {
 		if conn, ok := value.(*Connection); ok {
-			conn.Close()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				conn.CloseWithNotice(websocket.CloseServiceRestart, "server shutting down")
+			}()
 		}
 		m.connections.Delete(key)
 		return true
 	})
+	wg.Wait()
 	return nil
 }
