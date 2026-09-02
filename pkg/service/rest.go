@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -40,6 +41,17 @@ func (rs *RestService[T]) Load(c *T) error {
 		return fmt.Errorf("创建 rest 服务器失败: %w", err)
 	}
 	rs.server = server
+
+	// 统一注册健康检查端点 /healthz，供 Kubernetes 探针（Readiness/Liveness）与网关探测
+	server.AddRoute(rest.Route{
+		Method:  http.MethodGet,
+		Path:    "/healthz",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"ok"}`))
+		},
+	})
 
 	if err := rs.registerServices(c, server); err != nil {
 		return fmt.Errorf("注册服务失败: %w", err)
