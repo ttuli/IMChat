@@ -61,6 +61,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/recall",
 				Handler: message.RecallMessageHandler(serverCtx),
 			},
+			{
+				// 获取 TURN 短时凭证
+				Method:  http.MethodGet,
+				Path:    "/turnCredential",
+				Handler: message.GetTurnCredentialHandler(serverCtx),
+			},
 		}...),
 		rest.WithPrefix("/message"),
 	)

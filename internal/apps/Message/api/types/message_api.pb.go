@@ -967,6 +967,164 @@ func (x *GetSessionResp) GetSession() *Session {
 	return nil
 }
 
+// GetTurnCredentialReq 获取 TURN 凭证（用户身份由服务端从 JWT 解析，请求体为空）
+type GetTurnCredentialReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTurnCredentialReq) Reset() {
+	*x = GetTurnCredentialReq{}
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTurnCredentialReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTurnCredentialReq) ProtoMessage() {}
+
+func (x *GetTurnCredentialReq) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTurnCredentialReq.ProtoReflect.Descriptor instead.
+func (*GetTurnCredentialReq) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{14}
+}
+
+// IceServer 与 WebRTC 的 RTCIceServer 字段一一对应，客户端可直接使用
+type IceServer struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"urls"
+	Urls []string `protobuf:"bytes,1,rep,name=urls,proto3" json:"urls"`
+	// STUN 条目不需要凭证，这两个字段为空
+	// @gotags: json:"username"
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username"`
+	// @gotags: json:"credential"
+	Credential    string `protobuf:"bytes,3,opt,name=credential,proto3" json:"credential"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IceServer) Reset() {
+	*x = IceServer{}
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IceServer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IceServer) ProtoMessage() {}
+
+func (x *IceServer) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IceServer.ProtoReflect.Descriptor instead.
+func (*IceServer) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *IceServer) GetUrls() []string {
+	if x != nil {
+		return x.Urls
+	}
+	return nil
+}
+
+func (x *IceServer) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *IceServer) GetCredential() string {
+	if x != nil {
+		return x.Credential
+	}
+	return ""
+}
+
+type GetTurnCredentialResp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// @gotags: json:"ice_servers"
+	IceServers []*IceServer `protobuf:"bytes,1,rep,name=ice_servers,json=iceServers,proto3" json:"ice_servers"`
+	// 凭证过期时间（Unix 秒）。客户端据此在发起通话前判断是否需要重新拉取，
+	// 不要缓存超过该时间，否则 coturn 会拒绝分配中继。
+	// @gotags: json:"expires_at"
+	ExpiresAt     int64 `protobuf:"varint,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTurnCredentialResp) Reset() {
+	*x = GetTurnCredentialResp{}
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTurnCredentialResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTurnCredentialResp) ProtoMessage() {}
+
+func (x *GetTurnCredentialResp) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_apps_Message_api_types_message_api_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTurnCredentialResp.ProtoReflect.Descriptor instead.
+func (*GetTurnCredentialResp) Descriptor() ([]byte, []int) {
+	return file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetTurnCredentialResp) GetIceServers() []*IceServer {
+	if x != nil {
+		return x.IceServers
+	}
+	return nil
+}
+
+func (x *GetTurnCredentialResp) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
 var File_internal_apps_Message_api_types_message_api_proto protoreflect.FileDescriptor
 
 var file_internal_apps_Message_api_types_message_api_proto_rawDesc = string([]byte{
@@ -1083,8 +1241,22 @@ var file_internal_apps_Message_api_types_message_api_proto_rawDesc = string([]by
 	0x74, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x12, 0x28, 0x0a, 0x07,
 	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e,
 	0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x73,
-	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x5a, 0x08, 0x2e, 0x2f, 0x3b, 0x74, 0x79, 0x70,
-	0x65, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x16, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x75, 0x72,
+	0x6e, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x71, 0x22, 0x5b,
+	0x0a, 0x09, 0x49, 0x63, 0x65, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x75,
+	0x72, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x75, 0x72, 0x6c, 0x73, 0x12,
+	0x1a, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x63,
+	0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0a, 0x63, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x22, 0x6d, 0x0a, 0x15, 0x47,
+	0x65, 0x74, 0x54, 0x75, 0x72, 0x6e, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c,
+	0x52, 0x65, 0x73, 0x70, 0x12, 0x31, 0x0a, 0x0b, 0x69, 0x63, 0x65, 0x5f, 0x73, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x74, 0x79, 0x70, 0x65,
+	0x73, 0x2e, 0x49, 0x63, 0x65, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x52, 0x0a, 0x69, 0x63, 0x65,
+	0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x73, 0x12, 0x21, 0x0a, 0x0a, 0x65, 0x78, 0x70, 0x69, 0x72,
+	0x65, 0x73, 0x5f, 0x61, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x02, 0x30, 0x01, 0x52,
+	0x09, 0x65, 0x78, 0x70, 0x69, 0x72, 0x65, 0x73, 0x41, 0x74, 0x42, 0x0a, 0x5a, 0x08, 0x2e, 0x2f,
+	0x3b, 0x74, 0x79, 0x70, 0x65, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -1099,7 +1271,7 @@ func file_internal_apps_Message_api_types_message_api_proto_rawDescGZIP() []byte
 	return file_internal_apps_Message_api_types_message_api_proto_rawDescData
 }
 
-var file_internal_apps_Message_api_types_message_api_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_internal_apps_Message_api_types_message_api_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_internal_apps_Message_api_types_message_api_proto_goTypes = []any{
 	(*Message)(nil),                   // 0: types.Message
 	(*Session)(nil),                   // 1: types.Session
@@ -1115,17 +1287,21 @@ var file_internal_apps_Message_api_types_message_api_proto_goTypes = []any{
 	(*RecallMessageResp)(nil),         // 11: types.RecallMessageResp
 	(*GetSessionReq)(nil),             // 12: types.GetSessionReq
 	(*GetSessionResp)(nil),            // 13: types.GetSessionResp
+	(*GetTurnCredentialReq)(nil),      // 14: types.GetTurnCredentialReq
+	(*IceServer)(nil),                 // 15: types.IceServer
+	(*GetTurnCredentialResp)(nil),     // 16: types.GetTurnCredentialResp
 }
 var file_internal_apps_Message_api_types_message_api_proto_depIdxs = []int32{
-	0, // 0: types.GetHistoryResp.list:type_name -> types.Message
-	2, // 1: types.GetUserSessionsResp.sessions:type_name -> types.UserSession
-	1, // 2: types.GetUserActiveSessionsResp.sessions:type_name -> types.Session
-	1, // 3: types.GetSessionResp.session:type_name -> types.Session
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0,  // 0: types.GetHistoryResp.list:type_name -> types.Message
+	2,  // 1: types.GetUserSessionsResp.sessions:type_name -> types.UserSession
+	1,  // 2: types.GetUserActiveSessionsResp.sessions:type_name -> types.Session
+	1,  // 3: types.GetSessionResp.session:type_name -> types.Session
+	15, // 4: types.GetTurnCredentialResp.ice_servers:type_name -> types.IceServer
+	5,  // [5:5] is the sub-list for method output_type
+	5,  // [5:5] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_internal_apps_Message_api_types_message_api_proto_init() }
@@ -1139,7 +1315,7 @@ func file_internal_apps_Message_api_types_message_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_apps_Message_api_types_message_api_proto_rawDesc), len(file_internal_apps_Message_api_types_message_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -150,3 +150,39 @@ message GetSessionResp {
   // @gotags: json:"session"
   Session session = 1;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TURN 短时凭证
+//
+// coturn 以 use-auth-secret 模式运行：不存用户表，凭证由服务端用共享密钥
+// （static-auth-secret）现算，coturn 收到后用同一密钥校验。
+//
+//   username   = "<过期 Unix 秒>:<userId>"
+//   credential = base64(HMAC-SHA1(secret, username))
+//
+// 必须走这条路而不能把固定账号密码写进客户端：TURN 是通用流量中继，
+// 密码一旦泄漏就会被拿去白嫖带宽，而本服务出向带宽只有 2 Mbps。
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GetTurnCredentialReq 获取 TURN 凭证（用户身份由服务端从 JWT 解析，请求体为空）
+message GetTurnCredentialReq {}
+
+// IceServer 与 WebRTC 的 RTCIceServer 字段一一对应，客户端可直接使用
+message IceServer {
+  // @gotags: json:"urls"
+  repeated string urls = 1;
+  // STUN 条目不需要凭证，这两个字段为空
+  // @gotags: json:"username"
+  string username = 2;
+  // @gotags: json:"credential"
+  string credential = 3;
+}
+
+message GetTurnCredentialResp {
+  // @gotags: json:"ice_servers"
+  repeated IceServer ice_servers = 1;
+  // 凭证过期时间（Unix 秒）。客户端据此在发起通话前判断是否需要重新拉取，
+  // 不要缓存超过该时间，否则 coturn 会拒绝分配中继。
+  // @gotags: json:"expires_at"
+  int64 expires_at = 2 [jstype = JS_STRING];
+}
