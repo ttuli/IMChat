@@ -1,6 +1,7 @@
 package seq
 
 import (
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -11,6 +12,14 @@ func newTestAllocator(nodeID int64, clock *int64) *Allocator {
 	a := NewAllocator(nodeID)
 	a.nowFn = func() int64 { return *clock }
 	return a
+}
+
+// fillSessions 直接写入 lastTS，用于构造 prune 所需的规模与冷热分布
+// （靠 Alloc 逐条灌到 6 万条太慢，且无法精确控制 touched）
+func fillSessions(a *Allocator, prefix string, n int, touched int64) {
+	for i := 0; i < n; i++ {
+		a.lastTS[prefix+strconv.Itoa(i)] = &sessionClock{ts: tsEpoch + int64(i), touched: touched}
+	}
 }
 
 func TestAllocMonotonicPerSession(t *testing.T) {
@@ -154,6 +163,61 @@ func TestNodeIDInSeq(t *testing.T) {
 	s := a.Alloc("s1", 1)
 	if SeqNodeID(s) != 777 {
 		t.Fatalf("node id mismatch: got %d want 777", SeqNodeID(s))
+	}
+}
+
+// 超过容量阈值时清理冷会话，热会话不受影响
+func TestPruneRemovesColdSessions(t *testing.T) {
+	now := int64(1_700_000_000_000)
+	clock := now
+	a := newTestAllocator(1, &clock)
+
+	fillSessions(a, "hot-", pruneThreshold+1, now)
+	fillSessions(a, "cold-", 100, now-pruneAge-1)
+	total := len(a.lastTS)
+
+	a.Alloc("hot-0", 1)
+
+	if got := len(a.lastTS); got != total-100 {
+		t.Fatalf("cold sessions not pruned: before=%d after=%d want=%d", total, got, total-100)
+	}
+	if _, ok := a.lastTS["hot-0"]; !ok {
+		t.Fatal("hot session must survive prune")
+	}
+}
+
+// 回归：清理必须受最小间隔限流。
+// 活跃会话数越过阈值且全部不可清理时，若不限流则每条消息都要全量扫描
+// lastTS —— O(n) 从「偶尔一次」退化成「每条一次」，且全程持全局锁。
+func TestPruneRateLimited(t *testing.T) {
+	now := int64(1_700_000_000_000)
+	clock := now
+	a := newTestAllocator(1, &clock)
+
+	// 全部是热会话：清理一个都删不掉，但 len 始终高于阈值
+	fillSessions(a, "hot-", pruneThreshold+1, now)
+
+	a.Alloc("hot-0", 1)
+	if a.lastPrune != now {
+		t.Fatalf("first prune should have run: lastPrune=%d want=%d", a.lastPrune, now)
+	}
+
+	// 制造可清理的冷条目，但不推进时钟——仍在最小间隔内
+	fillSessions(a, "cold-", 50, now-pruneAge-1)
+	before := len(a.lastTS)
+
+	for i := 0; i < 100; i++ {
+		a.Alloc("hot-0", uint64(i+2))
+	}
+	if got := len(a.lastTS); got != before {
+		t.Fatalf("prune ran inside the interval: before=%d after=%d", before, got)
+	}
+
+	// 越过最小间隔后恢复清理
+	clock = now + pruneInterval + 1
+	a.Alloc("hot-0", 200)
+	if got := len(a.lastTS); got != before-50 {
+		t.Fatalf("prune did not resume after interval: got=%d want=%d", got, before-50)
 	}
 }
 

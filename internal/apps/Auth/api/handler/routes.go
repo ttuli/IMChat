@@ -24,11 +24,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/login",
-				Handler: direct.LoginHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodPost,
 				Path:    "/register",
 				Handler: direct.RegisterHandler(serverCtx),
 			},
@@ -36,8 +31,31 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		rest.WithPrefix("/auth"),
 	)
 
+	// 客户端最低版本门槛只挂在登录、刷新 token 和启动版本探测上：这三个请求由客户端主进程发出，
+	// 会带 X-App-Version。注册、验证码由渲染进程经 axios 发出，带不上这个头（自定义头会触发 CORS
+	// 预检，需网关放行），挂上会把新版客户端也当成旧版拦掉；旧版能注册也登录不了，无需拦。
+	appVersionGate := middleware.WithAppVersionGate(serverCtx.VersionGate, serverCtx.Config.AppVersion.DownloadURL)
+
+	server.AddRoutes(
+		rest.WithMiddlewares([]rest.Middleware{appVersionGate}, []rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/version",
+				Handler: direct.VersionHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/login",
+				Handler: direct.LoginHandler(serverCtx),
+			},
+		}...),
+		rest.WithPrefix("/auth"),
+	)
+
 	server.AddRoutes(
 		rest.WithMiddlewares([]rest.Middleware{
+			// 版本门槛在 JWT 之前：版本过低直接 426，不必先校验 token
+			appVersionGate,
 			middleware.WithJwtAuth(serverCtx.TokenManager),
 		}, []rest.Route{
 			{

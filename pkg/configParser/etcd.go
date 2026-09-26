@@ -27,6 +27,20 @@ type EtcdConfig struct {
 	TimeoutMs uint64 `json:"timeoutms,optional"`
 }
 
+// ClientConfig 转换为 etcd 客户端配置，TimeoutMs 未设置时默认 5 秒
+func (c EtcdConfig) ClientConfig() clientv3.Config {
+	timeoutMs := c.TimeoutMs
+	if timeoutMs == 0 {
+		timeoutMs = 5000
+	}
+	return clientv3.Config{
+		Endpoints:   c.Endpoints,
+		DialTimeout: time.Duration(timeoutMs) * time.Millisecond,
+		Username:    c.User,
+		Password:    c.Password,
+	}
+}
+
 // NewEtcdParser 创建etcd配置解析器
 func NewEtcdParser(c EtcdConfig) ConfigParser {
 	return &etcdParser{
@@ -74,12 +88,7 @@ func (p *etcdParser) Load(v any) error {
 func (p *etcdParser) loadOnce(v any, timeout time.Duration) error {
 	ec := p.EtcdConfig
 
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   ec.Endpoints,
-		DialTimeout: timeout,
-		Username:    ec.User,
-		Password:    ec.Password,
-	})
+	cli, err := clientv3.New(ec.ClientConfig())
 	if err != nil {
 		return fmt.Errorf("创建 etcd 客户端失败: %w", err)
 	}

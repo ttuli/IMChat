@@ -12,7 +12,10 @@ type ListenerConfig struct {
 	// Workers 消费并行度（按会话哈希分区，同会话串行、跨会话并行），默认 8
 	Workers int `json:",optional"`
 
-	MaxDeliver int
+	// MaxDeliver 应用层最大投递次数，达到后转入 DLQ（毒消息首投即转），默认 5。
+	// 只由 listener 在应用层判定；服务端 consumer 的投递上限固定为不限，
+	// 保证 DLQ 转存失败的消息仍会被重投、再次尝试转存。
+	MaxDeliver int `json:",optional"`
 }
 
 type MessageDAOConfig struct {

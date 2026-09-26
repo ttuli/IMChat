@@ -47,11 +47,18 @@ const (
 	// 42 bits 时间戳上限约 4.39e12，扣除基线后可用 stream sequence 约 2.6e12 条。
 	tsEpoch = int64(1798761600000)
 
-	// lastTS map 的容量上限，超过时清理已冷却的会话条目防止内存无限增长
+	// lastTS map 的**软**容量上限，超过时清理已冷却的会话条目防止内存无限增长。
+	// 是软上限而非硬上限：清理受 pruneInterval 限流，两次清理之间允许超出。
 	pruneThreshold = 1 << 16
 	// 条目冷却时间：最后一次访问距今超过该值即可安全清理
 	//（被清理的会话在下次 Alloc 前会经由 Known/Observe 从 DB 重新播种兜底）
 	pruneAge = int64(10 * time.Minute / time.Millisecond)
+	// 两次清理的最小间隔。没有这个闸门时存在吞吐悬崖：
+	// 当活跃会话数越过 pruneThreshold 且全都在 pruneAge 内被访问过，
+	// 每次清理都一个条目都删不掉，len 始终高于阈值，于是**每条消息**都要
+	// 持全局锁全量扫一遍 map —— O(n) 从「偶尔一次」退化成「每条一次」。
+	// 限流后清理成本锁定为 O(n)/pruneInterval，与消息速率无关。
+	pruneInterval = int64(time.Minute / time.Millisecond)
 )
 
 // sessionClock 单个会话的逻辑时钟状态
@@ -62,11 +69,12 @@ type sessionClock struct {
 
 // Allocator 每个 Message 服务实例独立持有一个，进程内并发安全。
 type Allocator struct {
-	mu      sync.Mutex
-	nodeID  uint64
-	counter uint64
-	lastTS  map[string]*sessionClock // sessionID → 会话逻辑时钟
-	nowFn   func() int64             // 物理时钟，仅用于冷会话清理与退化路径，可注入便于测试
+	mu        sync.Mutex
+	nodeID    uint64
+	counter   uint64
+	lastTS    map[string]*sessionClock // sessionID → 会话逻辑时钟
+	lastPrune int64                    // 上次清理的物理毫秒，0 表示尚未清理过
+	nowFn     func() int64             // 物理时钟，仅用于冷会话清理与退化路径，可注入便于测试
 }
 
 // NewAllocator 创建分配器。nodeID 超出 10 bits 时取低 10 位。
@@ -107,8 +115,11 @@ func (a *Allocator) Alloc(sessionID string, streamSeq uint64) uint64 {
 		a.lastTS[sessionID] = &sessionClock{ts: ts, touched: now}
 	}
 
-	if len(a.lastTS) > pruneThreshold {
+	// 容量与频次双重条件：超阈值只是「该清了」，还要距上次清理够久才真清，
+	// 否则会退化成每条消息一次全量扫描（见 pruneInterval 注释）
+	if len(a.lastTS) > pruneThreshold && now-a.lastPrune > pruneInterval {
 		a.pruneLocked(now)
+		a.lastPrune = now
 	}
 
 	return compose(ts, a.nodeID, a.counter)

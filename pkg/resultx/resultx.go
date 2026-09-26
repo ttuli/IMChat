@@ -42,6 +42,10 @@ func OkJsonCtx(ctx context.Context, w http.ResponseWriter, data interface{}) {
 
 // ErrorJsonCtx 错误响应（带上下文）
 func ErrorJsonCtx(ctx context.Context, w http.ResponseWriter, err *xerr.Error) {
+	errorJsonStatusCtx(ctx, w, http.StatusInternalServerError, err)
+}
+
+func errorJsonStatusCtx(ctx context.Context, w http.ResponseWriter, status int, err *xerr.Error) {
 	if err == nil {
 		err = xerr.New(transport.ErrorCode_ERR_UNKNOWN, "未知错误")
 	}
@@ -62,7 +66,7 @@ func ErrorJsonCtx(ctx context.Context, w http.ResponseWriter, err *xerr.Error) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(500)
+	w.WriteHeader(status)
 	if e := json.NewEncoder(w).Encode(resp); e != nil {
 		if logger.IsInitialized {
 			logger.Error(fmt.Sprintf("json encode error: %v", e))
@@ -110,6 +114,13 @@ func OkProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, msg
 // Accept 包含 application/x-protobuf → 返回 protobuf 二进制 (包装在 transport.ApiResponse 中)
 // 其他 → 返回 JSON
 func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+	ErrorProtoStatusCtx(ctx, w, r, http.StatusInternalServerError, err)
+}
+
+// ErrorProtoStatusCtx 同 ErrorProtoCtx，但使用指定的 HTTP 状态码。
+// 业务错误统一 500、真实原因看 ApiResponse.code；只有协议层语义需要客户端在解包前
+// 就能识别时（如 426 要求客户端升级）才用它区分状态码。
+func ErrorProtoStatusCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, status int, err error) {
 	if !strings.Contains(r.Header.Get("Accept"), "application/x-protobuf") {
 		// 回退到 JSON 错误处理
 		var e *xerr.Error
@@ -118,7 +129,7 @@ func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 		} else {
 			e = xerr.New(transport.ErrorCode_ERR_UNKNOWN, err.Error())
 		}
-		ErrorJsonCtx(ctx, w, e)
+		errorJsonStatusCtx(ctx, w, status, e)
 		return
 	}
 
@@ -151,6 +162,6 @@ func ErrorProtoCtx(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 	}
 
 	w.Header().Set("Content-Type", "application/x-protobuf")
-	w.WriteHeader(500)
+	w.WriteHeader(status)
 	w.Write(respData)
 }

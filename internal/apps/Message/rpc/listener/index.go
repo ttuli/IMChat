@@ -2,9 +2,12 @@ package listener
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"hash/fnv"
+	"math"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"IM2/internal/apps/Message/rpc/config"
@@ -35,7 +38,41 @@ const (
 	defaultWorkers = 8
 	// 每个 worker 的待处理队列长度（打满时 runLoop 阻塞，形成天然背压）
 	workerQueueSize = 128
+
+	// 默认应用层最大投递次数：达到后转入 DLQ
+	defaultMaxDeliver = 5
+
+	// serverMaxDeliver 服务端不限投递次数，进 DLQ 的判定完全由 finishMsg 在应用层做。
+	// 若把上限交给服务端：最后一次投递时 DLQ 转存失败的消息会被服务端放弃——
+	// 不再重投、也没进 DLQ，搁浅在 stream 里直到 MaxAge 过期后消失。
+	serverMaxDeliver = -1
+
+	// dlqPublishTimeout 单次死信转存的超时。独立于 listener 生命周期的 ctx：
+	// 停机排空队列时达到阈值的消息仍要能完成转存。
+	dlqPublishTimeout = 5 * time.Second
+
+	// consumerCreatedUnknown 取不到 consumer 创建时间时的保守取值：
+	// 视所有消息都早于 consumer，一律走判重。
+	consumerCreatedUnknown = math.MaxInt64
 )
+
+// nakBackoff 第 n 次投递失败后的重投延迟（n 从 1 起，超出按最后一档）。
+// 累计容忍窗口约 1+5+30+120 ≈ 2.6 分钟，覆盖依赖 Pod 重调度、短暂网络抖动；
+// 持续失败超过该窗口的才进 DLQ —— DLQ 里应只剩需要人介入的问题。
+// 不带延迟的 Nak 会被立即重投，依赖短暂不可用几秒内就能耗尽全部重试次数。
+var nakBackoff = []time.Duration{time.Second, 5 * time.Second, 30 * time.Second, 2 * time.Minute}
+
+// nakDelay 返回第 numDelivered 次投递失败后的重投延迟
+func nakDelay(numDelivered uint64) time.Duration {
+	i := int(numDelivered) - 1
+	if i < 0 {
+		i = 0
+	}
+	if i >= len(nakBackoff) {
+		i = len(nakBackoff) - 1
+	}
+	return nakBackoff[i]
+}
 
 // pendingMsg 已反序列化、待 worker 处理的消息
 type pendingMsg struct {
@@ -50,22 +87,29 @@ type pendingMsg struct {
 // 跨实例的 seq 单调性由 JetStream stream sequence 作为 Lamport 时钟源保证，
 // 不依赖实例间物理时钟对齐。
 type NatsListener struct {
-	svcCtx    *svc.ServiceContext
-	ctx       context.Context
-	cancel    context.CancelFunc
-	wg        sync.WaitGroup
-	dlq       DLQHandler
-	workerChs []chan *pendingMsg
+	svcCtx     *svc.ServiceContext
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	dlq        DLQHandler
+	workerChs  []chan *pendingMsg
+	maxDeliver int
+
+	// consumerCreated 当前 durable consumer 的创建时间（UnixNano），
+	// 用于识别 consumer 重建后被从头重投的存量消息，见 service.Delivery.PredatesConsumer
+	consumerCreated atomic.Int64
 }
 
 func NewNatsListener(c config.Config, svcCtx *svc.ServiceContext) *NatsListener {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &NatsListener{
+	l := &NatsListener{
 		svcCtx: svcCtx,
 		ctx:    ctx,
 		cancel: cancel,
-		dlq:    NewNatsDLQHandler(svcCtx.Nats.Conn(), nats_util.DLQSubject, nil),
+		dlq:    NewNatsDLQHandler(svcCtx.Nats.JetStream(), nats_util.DLQSubject, nil),
 	}
+	l.consumerCreated.Store(consumerCreatedUnknown)
+	return l
 }
 
 func (l *NatsListener) Listen() error {
@@ -73,31 +117,39 @@ func (l *NatsListener) Listen() error {
 
 	// Stream 只保留需要持久化重放的落库队列；
 	// 广播/节点 subject 走 core NATS，不纳入 Stream（避免无意义落盘）
-	err := nats_util.InitStream(js, []string{nats_util.DBSubject})
-	if err != nil {
+	if err := nats_util.InitStream(js, []string{nats_util.DBSubject}); err != nil {
+		return err
+	}
+	// 死信 Stream 必须先于消费就绪：否则第一条死信就会转存失败
+	if err := nats_util.InitDLQStream(js); err != nil {
 		return err
 	}
 
-	maxDeliver := l.svcCtx.Config.Listener.MaxDeliver
-	if maxDeliver <= 0 {
-		maxDeliver = 5 // default
+	l.maxDeliver = l.svcCtx.Config.Listener.MaxDeliver
+	if l.maxDeliver <= 0 {
+		l.maxDeliver = defaultMaxDeliver
 	}
 
-	// 检查并自动更新已存在的 Durable Consumer 配置，防止配置冲突（如 MaxDeliver 校验失败）
-	if info, infoErr := js.ConsumerInfo("WS_MESSAGES", durableConsumerName); infoErr == nil {
-		if info.Config.MaxDeliver != maxDeliver {
-			cfg := info.Config
-			cfg.MaxDeliver = maxDeliver
-			if _, updateErr := js.UpdateConsumer("WS_MESSAGES", &cfg); updateErr != nil {
-				_ = js.DeleteConsumer("WS_MESSAGES", durableConsumerName)
-			}
+	// 校准已存在的 Durable Consumer：服务端投递上限统一为不限（见 serverMaxDeliver），
+	// 否则下面 PullSubscribe 会因配置不一致失败。
+	if info, infoErr := js.ConsumerInfo(nats_util.StreamName, durableConsumerName); infoErr == nil &&
+		info.Config.MaxDeliver != serverMaxDeliver {
+		cfg := info.Config
+		cfg.MaxDeliver = serverMaxDeliver
+		if _, err := js.UpdateConsumer(nats_util.StreamName, &cfg); err != nil {
+			// 绝不能「删了重建」兜底：新 consumer 会把 stream 内全部存量消息（MaxAge 内）
+			// 从头重投一遍，投递计数也随之归零。宁可启动失败交给人处理。
+			return fmt.Errorf("update consumer %s max_deliver: %w", durableConsumerName, err)
 		}
 	}
 
 	// Pull Consumer：多个服务实例共享同一个 Durable，NATS 自动负载均衡
-	sub, err := js.PullSubscribe(nats_util.DBSubject, durableConsumerName, nats.MaxDeliver(maxDeliver))
+	sub, err := js.PullSubscribe(nats_util.DBSubject, durableConsumerName, nats.MaxDeliver(serverMaxDeliver))
 	if err != nil {
 		return err
+	}
+	if err := l.refreshConsumerCreated(sub); err != nil {
+		return fmt.Errorf("read consumer %s info: %w", durableConsumerName, err)
 	}
 
 	workers := l.svcCtx.Config.Listener.Workers
@@ -133,6 +185,8 @@ func (l *NatsListener) runLoop(sub *nats.Subscription, batch int) {
 		}
 	}()
 
+	// fetchFailed 标记拉取曾经失败：consumer 被删除重建时，本实例必然先经历拉取失败
+	fetchFailed := false
 	for {
 		select {
 		case <-l.ctx.Done():
@@ -143,13 +197,25 @@ func (l *NatsListener) runLoop(sub *nats.Subscription, batch int) {
 		msgs, err := sub.Fetch(batch, nats.MaxWait(fetchWaitTimeout))
 		if err != nil && err != nats.ErrTimeout {
 			logger.Errorf("[NatsListener] fetch error: %v", err)
+			fetchFailed = true
 			time.Sleep(time.Second)
 			continue
+		}
+		// 拉取从失败中恢复：consumer 可能在此期间被删除重建（投递计数随之归零），
+		// 分发这一批之前先刷新创建时间，PredatesConsumer 才能基于新 consumer 判断。
+		// 刷新失败时 consumerCreated 已置为保守值（全部判重），下一批再试。
+		if fetchFailed && len(msgs) > 0 {
+			if err := l.refreshConsumerCreated(sub); err != nil {
+				logger.Errorf("[NatsListener] refresh consumer info failed, dedup all until recovered: %v", err)
+			} else {
+				fetchFailed = false
+			}
 		}
 		for _, msg := range msgs {
 			var m protosvc.MessageSend
 			if unmarshalErr := proto.Unmarshal(msg.Data, &m); unmarshalErr != nil {
-				l.finishMsg(msg, fmt.Errorf("[NatsListener] unmarshal error: %v", unmarshalErr))
+				l.finishMsg(msg, nil, l.deliveryOf(msg),
+					fmt.Errorf("%w: [NatsListener] unmarshal: %v", service.ErrPoison, unmarshalErr))
 				continue
 			}
 			// worker 队列满时此处阻塞，暂停拉取，形成背压
@@ -162,19 +228,41 @@ func (l *NatsListener) runLoop(sub *nats.Subscription, batch int) {
 func (l *NatsListener) runWorker(ch chan *pendingMsg) {
 	defer l.wg.Done()
 	for pm := range ch {
-		l.finishMsg(pm.natsMsg, l.process(pm.send, streamSeqOf(pm.natsMsg)))
+		d := l.deliveryOf(pm.natsMsg)
+		l.finishMsg(pm.natsMsg, pm.send, d, l.process(pm.send, d))
 	}
 }
 
-// streamSeqOf 提取消息的 JetStream stream sequence（Lamport seq 的跨实例时钟源，
-// 保证多实例消费同一会话时 seq 顺序与消息进入 stream 的顺序一致）；
-// 元数据缺失时返回 0，分配器退化为本地逻辑时钟。
-func streamSeqOf(msg *nats.Msg) uint64 {
+// refreshConsumerCreated 读取 durable consumer 的创建时间。
+// 失败时置为保守值，使所有消息都走判重，而不是沿用可能已过期的旧值。
+func (l *NatsListener) refreshConsumerCreated(sub *nats.Subscription) error {
+	info, err := sub.ConsumerInfo()
+	if err != nil {
+		l.consumerCreated.Store(consumerCreatedUnknown)
+		return err
+	}
+	l.consumerCreated.Store(info.Created.UnixNano())
+	return nil
+}
+
+// deliveryOf 一次取全本条消息的 JetStream 投递元数据：
+//   - stream sequence 是 Lamport seq 的跨实例时钟源，保证多实例消费同一会话时
+//     seq 顺序与消息进入 stream 的顺序一致；
+//   - 投递次数与写入时间供 PersistMessage 判断是否需要付一次判重查询。
+//     消息写入时间与 consumer 创建时间都由 NATS 服务端打戳，不受本机时钟影响。
+//
+// 元数据缺失（DLQ 重放等）时返回零值：seq 分配退化为本地逻辑时钟，
+// 判重按「可能重复」保守处理。
+func (l *NatsListener) deliveryOf(msg *nats.Msg) service.Delivery {
 	meta, err := msg.Metadata()
 	if err != nil {
-		return 0
+		return service.Delivery{}
 	}
-	return meta.Sequence.Stream
+	return service.Delivery{
+		StreamSeq:        meta.Sequence.Stream,
+		NumDelivered:     meta.NumDelivered,
+		PredatesConsumer: meta.Timestamp.UnixNano() < l.consumerCreated.Load(),
+	}
 }
 // sessionWorkerIndex 按会话 key 哈希选择 worker，保证同会话消息串行处理
 func sessionWorkerIndex(m *protosvc.MessageSend, n int) int {
@@ -187,35 +275,40 @@ func sessionWorkerIndex(m *protosvc.MessageSend, n int) int {
 	return int(h.Sum32() % uint32(n))
 }
 
-// finishMsg 根据处理结果完成消息确认：成功 Ack；失败 Nak 重投，达到 MaxDeliver 后转入 DLQ
-func (l *NatsListener) finishMsg(msg *nats.Msg, err error) {
+// finishMsg 根据处理结果完成消息确认：
+//   - 成功：Ack；
+//   - 毒消息，或投递次数达到 maxDeliver：转存 DLQ，**转存成功才 Ack**；
+//   - 其余失败：按投递次数退避后重投。
+//
+// send 为已解析的业务消息，反序列化失败时为 nil（仅用于死信 Header）。
+func (l *NatsListener) finishMsg(msg *nats.Msg, send *protosvc.MessageSend, d service.Delivery, err error) {
 	if err == nil {
 		msg.Ack()
 		return
 	}
 	logger.Error(err.Error())
 
-	meta, metaErr := msg.Metadata()
-	maxDeliver := l.svcCtx.Config.Listener.MaxDeliver
-	if maxDeliver <= 0 {
-		maxDeliver = 5
+	poison := errors.Is(err, service.ErrPoison)
+	if !poison && d.NumDelivered < uint64(l.maxDeliver) {
+		msg.NakWithDelay(nakDelay(d.NumDelivered))
+		return
 	}
 
-	if metaErr == nil && int(meta.NumDelivered) >= maxDeliver {
-		// Reached max deliver, send to DLQ
-		if dlqErr := l.dlq.Handle(l.ctx, msg, err, int(meta.NumDelivered)); dlqErr != nil {
-			logger.Errorf("[NatsListener] Failed to handle DLQ: %v", dlqErr)
-			msg.Nak() // Still Nak if DLQ fails
-		} else {
-			msg.Ack() // Ack from main stream if DLQ success
-		}
-	} else {
-		msg.Nak() // Normal retry
+	ctx, cancel := context.WithTimeout(context.Background(), dlqPublishTimeout)
+	defer cancel()
+	dl := DeadLetter{Msg: msg, Send: send, Reason: err, Poison: poison, Delivery: d}
+	if dlqErr := l.dlq.Handle(ctx, dl); dlqErr != nil {
+		// 转存失败绝不能 Ack：否则消息既不在 DLQ、也不会再投递。
+		// 服务端不限投递次数（见 serverMaxDeliver），退避后重投回来仍会达到阈值，再次尝试转存。
+		logger.Errorf("[NatsListener] move to DLQ failed, retry later: %v", dlqErr)
+		msg.NakWithDelay(nakBackoff[len(nakBackoff)-1])
+		return
 	}
+	msg.Ack()
 }
 
 // process 处理单条消息：会话解析 → 持久化 → 二级 ACK → 投递
-func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error {
+func (l *NatsListener) process(m *protosvc.MessageSend, d service.Delivery) error {
 	msgSvc := service.NewMessageService(l.svcCtx)
 
 	ctx, cancel := context.WithTimeout(l.ctx, 5*time.Second)
@@ -249,7 +342,7 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 		}
 	}
 
-	dbMsg, err := msgSvc.PersistMessage(ctx, m, streamSeq)
+	dbMsg, err := msgSvc.PersistMessage(ctx, m, d)
 	if err != nil {
 		// 持久化失败：二级 ACK（失败）投递给发送方（通知消息无 ACK 语义，跳过）
 		if !isNotify {
@@ -263,7 +356,8 @@ func (l *NatsListener) process(m *protosvc.MessageSend, streamSeq uint64) error 
 			}
 			l.publishPersistAck(ctx, pack)
 		}
-		return fmt.Errorf("[NatsListener] PersistMessage error: %v", err)
+		// %w 保留错误链：finishMsg 靠 errors.Is 识别毒消息
+		return fmt.Errorf("[NatsListener] PersistMessage error: %w", err)
 	}
 
 	// 1. 二级 ACK（成功）投递给发送方（通知消息无 ACK 语义，跳过）
