@@ -30,7 +30,8 @@ type AppVersionConf struct {
 	// DownloadURL 官网下载地址，拼进 426 提示文案，给没有更新功能的旧版客户端看。
 	// 旧版只在几秒即消失的报错提示里显示它，要短且固定：填本服务 /auth/download 经网关的完整地址，不要填 OSS 直链
 	DownloadURL string `json:",optional"`
-	// UpdateFeedURL 客户端自动更新的更新源目录（与 electron-builder 的 publish.url 相同），其下有 latest.yml。
-	// /auth/download 据此跳转到最新安装包；不配则该接口返回 404
+	// UpdateFeedURL 更新源的真实存储目录（如 OSS），其下有 latest.yml、安装包和 .blockmap。
+	// 客户端 publish.url 指向本服务 /auth/update，由它跳转到这里；/auth/download 也据此找最新安装包。
+	// 不配则这两个接口都返回 404
 	UpdateFeedURL string `json:",optional"`
 }

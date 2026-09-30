@@ -176,6 +176,34 @@ func TestReleaseFeedErrors(t *testing.T) {
 	}
 }
 
+func TestReleaseFeedFileURL(t *testing.T) {
+	f := mustFeed(t, "https://oss.example.com/nexus/win")
+	for _, name := range []string{
+		"latest.yml",
+		"Nexus-Windows-1.0.1-Setup.exe",
+		"Nexus-Windows-1.0.0-Setup.exe.blockmap",
+		"Nexus-Windows-1.0.1-beta.1-Setup.EXE",
+	} {
+		got, err := f.FileURL(name)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if want := "https://oss.example.com/nexus/win/" + name; got != want {
+			t.Fatalf("期望 %s，实际 %s", want, got)
+		}
+	}
+
+	// 只放行更新源里的三类文件，且只能是目录下的单个文件名
+	for _, name := range []string{
+		"", ".", "..", ".latest.yml", "../latest.yml", "sub/latest.yml", `..\latest.yml`,
+		"config.json", "latest.yml.bak", "Nexus-Setup.zip",
+	} {
+		if got, err := f.FileURL(name); err == nil {
+			t.Fatalf("%q 应被拒绝，实际返回 %s", name, got)
+		}
+	}
+}
+
 func TestNewReleaseFeedRejectsInvalidURL(t *testing.T) {
 	for _, feedURL := range []string{"", "nexus/win", "/nexus/win", "ftp://example.com/nexus/win", "https://"} {
 		if _, err := NewReleaseFeed(feedURL, time.Minute); err == nil {

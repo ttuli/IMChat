@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -24,7 +26,11 @@ const (
 	fetchTimeout = 5 * time.Second
 )
 
-// ReleaseFeed 读取客户端 electron-updater 的更新源（generic provider 的目录），给出最新安装包的地址。
+// feedFileExts electron-updater 会向更新源请求的三类文件：版本清单、安装包、增量下载用的分块索引
+var feedFileExts = []string{".yml", ".exe", ".blockmap"}
+
+// ReleaseFeed 客户端 electron-updater 的更新源（generic provider 的目录）：给出最新安装包的地址（InstallerURL），
+// 以及更新源内各文件的真实地址（FileURL）。更新源的真实位置只在服务端配置，客户端经 /auth/update 转发访问。
 //
 // 最新版本只认更新源里的 latest.yml：与客户端自动更新读的是同一份，发版上传完即生效，不必另外维护版本号。
 // 结果缓存 ttl；查询失败时继续用上一次的结果，更新源短暂不可用不影响下载入口。
@@ -122,6 +128,18 @@ func (f *ReleaseFeed) resolve(name string) (string, error) {
 		return u.String(), nil
 	}
 	// 按路径而不是 URL 拼接，文件名里的空格等字符交给 url 包转义
+	return f.base.ResolveReference(&url.URL{Path: name}).String(), nil
+}
+
+// FileURL 更新源目录下文件 name 的完整地址，供 /auth/update 转发客户端的请求。
+// 只接受单个文件名，且限于 feedFileExts 中的类型：不能借它跳到更新源目录以外，也不暴露目录里的其他文件
+func (f *ReleaseFeed) FileURL(name string) (string, error) {
+	if name == "" || name != path.Base(name) || strings.HasPrefix(name, ".") || strings.Contains(name, `\`) {
+		return "", fmt.Errorf("文件名不合法: %q", name)
+	}
+	if !slices.Contains(feedFileExts, strings.ToLower(path.Ext(name))) {
+		return "", fmt.Errorf("不是更新源里的文件: %q", name)
+	}
 	return f.base.ResolveReference(&url.URL{Path: name}).String(), nil
 }
 

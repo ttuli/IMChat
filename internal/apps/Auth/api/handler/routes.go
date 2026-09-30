@@ -33,6 +33,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/download",
 				Handler: direct.DownloadHandler(serverCtx),
 			},
+			{
+				// 自动更新的请求由 electron-updater 发出，同样不带 X-App-Version：挂上门槛，版本过低的客户端连更新包都下不到
+				Method:  http.MethodGet,
+				Path:    "/update/:file",
+				Handler: direct.UpdateHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/auth"),
 	)
