@@ -52,23 +52,6 @@ func Load(configFile string, v any) error {
 	return parser.Load(v)
 }
 
-// LoadEtcdConfig 读取引导配置中的 etcd 连接信息（地址、账号），供需要直连 etcd 的组件复用，
-// 例如监听客户端最低版本。与 config_source 无关，只要引导配置里写了 etcd 地址就返回。
-func LoadEtcdConfig(configFile string) (EtcdConfig, error) {
-	content, err := os.ReadFile(configFile)
-	if err != nil {
-		return EtcdConfig{}, fmt.Errorf("读取配置文件失败: %w", err)
-	}
-	local, err := parseLocalConfig(content)
-	if err != nil {
-		return EtcdConfig{}, err
-	}
-	if len(local.Etcd.Endpoints) == 0 {
-		return EtcdConfig{}, fmt.Errorf("引导配置 %s 未配置 etcd 地址", configFile)
-	}
-	return local.Etcd, nil
-}
-
 // parseLocalConfig 展开环境变量并解析引导配置。
 // 与 Nacos 业务配置一样走 go-zero conf，保证两条加载路径解析行为一致。
 func parseLocalConfig(content []byte) (localConfig, error) {

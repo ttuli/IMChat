@@ -1,7 +1,8 @@
-// Package appversion 客户端最低版本门槛。
+// Package appversion 客户端版本：最低版本门槛与最新安装包地址。
 //
 // 允许的最低客户端版本存放在 etcd 的独立 key 中，Gate 监听该 key 并实时生效，
 // 供 Auth 服务的版本中间件判断是否要求客户端强制更新。
+// ReleaseFeed 读取客户端自动更新用的更新源，给下载入口提供最新安装包地址。
 package appversion
 
 import (

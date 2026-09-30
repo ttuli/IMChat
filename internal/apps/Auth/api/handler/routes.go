@@ -27,6 +27,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/register",
 				Handler: direct.RegisterHandler(serverCtx),
 			},
+			{
+				// 下载入口由浏览器打开，带不上 X-App-Version，不能挂版本门槛：挂上会把要下载新版的人也挡成 426
+				Method:  http.MethodGet,
+				Path:    "/download",
+				Handler: direct.DownloadHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/auth"),
 	)

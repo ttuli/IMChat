@@ -27,8 +27,9 @@ type Gate struct {
 }
 
 // NewGate 订阅 conf.Key（为空时用 DefaultKey），首次读取完成后才返回。
-// 首次读取失败时 go-zero 会一直重试并阻塞调用方；Auth 自身的配置也从同一个 etcd 读取，
-// etcd 不可用时服务本就起不来，这里不另设超时。
+// etcd 连不上时，在 go-zero 的拨号超时（5 秒）后返回错误；
+// 连上之后首次读取失败（如账号对该 key 无读权限、集群无 leader），
+// go-zero 会一直重试并阻塞调用方，这里不另设超时。
 func NewGate(conf subscriber.EtcdConf) (*Gate, error) {
 	if conf.Key == "" {
 		conf.Key = DefaultKey
