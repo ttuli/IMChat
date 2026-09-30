@@ -1,0 +1,3 @@
+1. cmd\Auth\api\main.go里面，etcd配置改为单独获取，
+也就是在internal\apps\Auth\api\config\config.go添加相应字段
+
