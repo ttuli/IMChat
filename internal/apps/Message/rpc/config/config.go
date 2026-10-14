@@ -43,7 +43,9 @@ type Config struct {
 
 	RouteStore redis.RedisConf
 
-	// SnowflakeNodeID 本地雪花节点 ID，0-1023，不填时自动从 hostname 派生
+	// SnowflakeNodeID 本地雪花节点 ID，1-1023，0 表示不配置。
+	// 所有副本读同一份配置，写死会让各副本同号，只适合单实例部署；
+	// 多副本由编排层按实例注入环境变量 NODE_ID（优先级更高），见 svc.resolveNodeID
 	SnowflakeNodeID int64 `json:",optional"`
 
 	DAO struct {

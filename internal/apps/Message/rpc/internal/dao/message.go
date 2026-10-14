@@ -334,13 +334,16 @@ func (m *MessageDAO) CountUnread(ctx context.Context, sessionID string, afterSeq
 	return uint64(result[0].N), nil
 }
 
-// FindByMsgID 根据 msg_id 查询单条消息。
+// FindByMsgID 根据 msg_id 查询单条消息；sessionID 非空时只在该会话的桶里找。
+// msg_id 由各 Message 实例的雪花节点生成，节点号重复时不同会话可能出现同号消息，
+// 按会话限定才能保证命中的是调用方指的那一条。
 // $elemMatch 投影让 MongoDB 只回传数组里命中的那一个元素，不回传整桶。
-func (m *MessageDAO) FindByMsgID(ctx context.Context, msgID string) (*model.Message, error) {
-	return m.findEmbedded(ctx,
-		bson.M{"messages.msg_id": msgID},
-		bson.M{"msg_id": msgID},
-	)
+func (m *MessageDAO) FindByMsgID(ctx context.Context, msgID, sessionID string) (*model.Message, error) {
+	filter := bson.M{"messages.msg_id": msgID}
+	if sessionID != "" {
+		filter["session_id"] = sessionID
+	}
+	return m.findEmbedded(ctx, filter, bson.M{"msg_id": msgID})
 }
 
 // FindBySenderAndClient 根据发送者ID和客户端ID查询消息 (用于幂等判断)
@@ -387,13 +390,18 @@ func (m *MessageDAO) UpdateMessageStatus(ctx context.Context, msgID string, stat
 // 写成 {"messages.msg_id": id, "messages.status": {$ne: status}} 是错的——
 // 两个条件可以由桶内**不同的**消息分别满足，CAS 语义就破了。
 // 位置操作符 messages.$ 定位的正是满足 $elemMatch 的那个元素。
-func (m *MessageDAO) UpdateMessageStatusCAS(ctx context.Context, msgID string, status int8) (bool, error) {
+// sessionID 非空时限定在该会话的桶内（原因同 FindByMsgID）。
+func (m *MessageDAO) UpdateMessageStatusCAS(ctx context.Context, msgID, sessionID string, status int8) (bool, error) {
+	filter := bson.M{"messages": bson.M{"$elemMatch": bson.M{
+		"msg_id": msgID,
+		"status": bson.M{"$ne": status},
+	}}}
+	if sessionID != "" {
+		filter["session_id"] = sessionID
+	}
 	res, err := m.coll().UpdateOne(
 		ctx,
-		bson.M{"messages": bson.M{"$elemMatch": bson.M{
-			"msg_id": msgID,
-			"status": bson.M{"$ne": status},
-		}}},
+		filter,
 		bson.M{"$set": bson.M{"messages.$.status": status}},
 	)
 	if err != nil {

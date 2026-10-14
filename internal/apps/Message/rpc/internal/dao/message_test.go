@@ -288,7 +288,8 @@ func TestFindByMsgIDAndRecallCAS(t *testing.T) {
 	}
 
 	target := msgIDOf(sessionID, 7)
-	msg, err := d.FindByMsgID(ctx, target)
+	// 不带会话也能查到（客户端没有 session_id 时走这条路）
+	msg, err := d.FindByMsgID(ctx, target, "")
 	if err != nil {
 		t.Fatalf("FindByMsgID: %v", err)
 	}
@@ -297,37 +298,80 @@ func TestFindByMsgIDAndRecallCAS(t *testing.T) {
 		t.Fatalf("FindByMsgID returned wrong message: %+v", msg)
 	}
 
-	if _, err = d.FindByMsgID(ctx, "m-nonexistent"); err != mongo.ErrNoDocuments {
+	if _, err = d.FindByMsgID(ctx, "m-nonexistent", ""); err != mongo.ErrNoDocuments {
 		t.Fatalf("FindByMsgID(missing) err = %v, want ErrNoDocuments", err)
 	}
 
 	const recalled = int8(1)
-	ok, err := d.UpdateMessageStatusCAS(ctx, target, recalled)
+	ok, err := d.UpdateMessageStatusCAS(ctx, target, sessionID, recalled)
 	if err != nil || !ok {
 		t.Fatalf("first CAS: ok=%v err=%v, want true/nil", ok, err)
 	}
 	// 先确认位置操作符真的把状态写进去了，再验重复撤回——
 	// 否则「第二次 CAS 也返回 true」既可能是 CAS 失效，也可能是 $set 根本没生效，无法区分
-	if msg, err = d.FindByMsgID(ctx, target); err != nil {
+	if msg, err = d.FindByMsgID(ctx, target, sessionID); err != nil {
 		t.Fatal(err)
 	} else if msg.Status != recalled {
 		t.Fatalf("status after first CAS = %d, want %d (messages.$ 未写入)", msg.Status, recalled)
 	}
 
 	// 重复撤回必须返回 false，否则会重复发布撤回通知
-	if ok, err = d.UpdateMessageStatusCAS(ctx, target, recalled); err != nil || ok {
+	if ok, err = d.UpdateMessageStatusCAS(ctx, target, sessionID, recalled); err != nil || ok {
 		t.Fatalf("second CAS: ok=%v err=%v, want false/nil", ok, err)
 	}
 
 	// 位置操作符只能改中标的那一条，同桶的邻居不受影响
 	for _, seq := range []uint64{6, 8} {
-		neighbor, err := d.FindByMsgID(ctx, msgIDOf(sessionID, seq))
+		neighbor, err := d.FindByMsgID(ctx, msgIDOf(sessionID, seq), sessionID)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if neighbor.Status != 0 {
 			t.Fatalf("seq %d status = %d, want 0 (位置操作符改错了数组元素)", seq, neighbor.Status)
 		}
+	}
+}
+
+// 节点号重复时，两个会话可能出现同一个 msg_id：带上会话后，点查和 CAS 都只作用于指定会话里的那一条。
+func TestFindByMsgIDScopedToSession(t *testing.T) {
+	const size = 5
+	d := newTestDAO(t, size)
+	ctx := context.Background()
+	sessA, sessB := "test-dup-a", "test-dup-b"
+	resetSession(t, d, sessA)
+	resetSession(t, d, sessB)
+
+	const dupID = "m-dup"
+	for i, sid := range []string{sessA, sessB} {
+		msg := testMsg(sid, 1, uint64(100+i), 101)
+		msg.MsgID = dupID
+		if err := d.AppendMessages(ctx, sid, []*model.Message{msg}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got, err := d.FindByMsgID(ctx, dupID, sessB)
+	if err != nil {
+		t.Fatalf("FindByMsgID(%s): %v", sessB, err)
+	}
+	if got.SessionID != sessB || got.FromUserID != 101 {
+		t.Fatalf("FindByMsgID(%s) returned %+v, want the message in %s", sessB, got, sessB)
+	}
+
+	const recalled = int8(1)
+	if ok, err := d.UpdateMessageStatusCAS(ctx, dupID, sessB, recalled); err != nil || !ok {
+		t.Fatalf("CAS in %s: ok=%v err=%v, want true/nil", sessB, ok, err)
+	}
+	// 只改了 B 会话里的那一条，A 会话里同号的消息不受影响
+	if a, err := d.FindByMsgID(ctx, dupID, sessA); err != nil {
+		t.Fatal(err)
+	} else if a.Status != 0 {
+		t.Fatalf("message in %s status = %d, want 0 (CAS 改到了别的会话)", sessA, a.Status)
+	}
+	if b, err := d.FindByMsgID(ctx, dupID, sessB); err != nil {
+		t.Fatal(err)
+	} else if b.Status != recalled {
+		t.Fatalf("message in %s status = %d, want %d", sessB, b.Status, recalled)
 	}
 }
 

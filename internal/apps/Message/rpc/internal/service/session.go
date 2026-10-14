@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 
+	"IM2/internal/apps/Message/rpc/internal/dao"
 	model "IM2/internal/model"
+	"IM2/pkg/logger"
 	"IM2/pkg/proto/transport"
 	"IM2/pkg/proto/util"
 	"IM2/pkg/xerr"
@@ -76,11 +79,30 @@ func (s *MessageService) MarkSessionRead(ctx context.Context, userID uint64, ses
 	return nil
 }
 
+// maxSessionIDAttempts 新会话 ID 与已有会话冲突时的最大尝试次数（每次换一个新雪花 ID）
+const maxSessionIDAttempts = 3
+
+// withSessionIDRetry 用新生成的雪花 ID 调用 create；ID 与已有会话的 session_id 冲突时换号重试。
+func (s *MessageService) withSessionIDRetry(sessionKey string, create func(newSessionID string) error) error {
+	for attempt := 1; ; attempt++ {
+		err := create(s.svcCtx.SnowflakeNode.Generate().String())
+		if !errors.Is(err, dao.ErrSessionIDConflict) || attempt == maxSessionIDAttempts {
+			return err
+		}
+		logger.Errorf("[SESSION-ID-CONFLICT] session_key=%s attempt=%d: 新会话 ID 与已有会话重复，换号重试；出现此日志说明有副本的节点号重复",
+			sessionKey, attempt)
+	}
+}
+
 // ResolveSessionID 消息消费热路径专用：按 session_key 解析（不存在则创建）会话 ID。
 // 走 SessionDAO 的进程内 LRU 缓存，避免每条消息一次 MySQL 查询。
 func (s *MessageService) ResolveSessionID(ctx context.Context, sessionKey string, sessionType int8) (string, error) {
-	newSessionID := s.svcCtx.SnowflakeNode.Generate().String()
-	return s.svcCtx.SessionDAO.ResolveSessionIDByKey(ctx, newSessionID, sessionKey, sessionType)
+	var sessionID string
+	err := s.withSessionIDRetry(sessionKey, func(newSessionID string) (err error) {
+		sessionID, err = s.svcCtx.SessionDAO.ResolveSessionIDByKey(ctx, newSessionID, sessionKey, sessionType)
+		return err
+	})
+	return sessionID, err
 }
 
 // GetOrCreateSession 按 session_id 或 session_key 查询会话。
@@ -94,8 +116,12 @@ func (s *MessageService) GetOrCreateSession(ctx context.Context, sessionID strin
 		return session, false, nil
 	}
 	if sessionKey != "" {
-		newSessionID := s.svcCtx.SnowflakeNode.Generate().String()
-		session, created, err := s.svcCtx.SessionDAO.FindOrCreateBySessionKey(ctx, newSessionID, sessionKey, sessionType)
+		var session *model.Session
+		var created bool
+		err := s.withSessionIDRetry(sessionKey, func(newSessionID string) (err error) {
+			session, created, err = s.svcCtx.SessionDAO.FindOrCreateBySessionKey(ctx, newSessionID, sessionKey, sessionType)
+			return err
+		})
 		if err != nil {
 			return nil, false, xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "查询或创建会话失败")
 		}

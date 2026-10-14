@@ -259,8 +259,14 @@ func (s *MessageService) pushSessionSummary(msg *svc.MessageSend, seq uint64) {
 func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID string, sessionID string) error {
 	const recallWindowSeconds = 120 // 撤回时间窗口：2分钟
 
-	// 1. 查询消息
-	msg, err := s.svcCtx.MessageDAO.FindByMsgID(ctx, msgID)
+	// 1. 查询消息：优先在客户端指定的会话里找，避免命中别的会话里 msg_id 相同的消息。
+	// 指定会话里找不到时（客户端本地的 session_id 与服务端不一致）退回只按 msg_id 查，
+	// 保持与之前一致的行为，不让正常撤回失败。
+	msg, err := s.svcCtx.MessageDAO.FindByMsgID(ctx, msgID, sessionID)
+	if err == mongo.ErrNoDocuments && sessionID != "" {
+		logger.Infof("[MessageService] recall msg %s not found in session %s, falling back to msg_id lookup", msgID, sessionID)
+		msg, err = s.svcCtx.MessageDAO.FindByMsgID(ctx, msgID, "")
+	}
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return xerr.Wrap(err, transport.ErrorCode_ERR_NOT_FOUND, "消息不存在")
@@ -281,8 +287,9 @@ func (s *MessageService) RecallMessage(ctx context.Context, userID uint64, msgID
 	// 4. 原子置为已撤回（CAS：仅当尚未撤回时更新）。
 	// 旧实现"先查 IsRecalled 再更新"存在竞态窗口：并发重复撤回会各自通过检查、
 	// 各发一条撤回通知；CAS 保证只有一个请求完成变更并独占发布通知。
+	// 按查到的消息所在会话限定，保证改的就是上面校验过的那一条
 	recalledNow, err := s.svcCtx.MessageDAO.UpdateMessageStatusCAS(
-		ctx, msgID, int8(message.MessageStatus_MESSAGE_STATUS_RECALLED))
+		ctx, msgID, msg.SessionID, int8(message.MessageStatus_MESSAGE_STATUS_RECALLED))
 	if err != nil {
 		return xerr.Wrap(err, transport.ErrorCode_ERR_DATABASE, "撤回消息失败")
 	}

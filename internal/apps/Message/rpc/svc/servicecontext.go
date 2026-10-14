@@ -2,9 +2,7 @@ package svc
 
 import (
 	"fmt"
-	"hash/crc32"
 	"os"
-	"strconv"
 
 	"IM2/internal/apps/Group/rpc/client/grouprpc"
 	"IM2/internal/apps/Message/rpc/config"
@@ -12,6 +10,7 @@ import (
 	"IM2/internal/apps/Message/rpc/internal/members"
 	"IM2/internal/apps/Message/rpc/internal/seq"
 	"IM2/internal/interceptor"
+	"IM2/pkg/logger"
 	nats_util "IM2/pkg/nats"
 	"IM2/pkg/redisx"
 	"IM2/pkg/routing"
@@ -57,18 +56,15 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(err)
 	}
 
-	// 初始化本地雪花发号器
-	nodeID := c.SnowflakeNodeID
-	if nodeID == 0 {
-		if envNodeID := os.Getenv("NODE_ID"); envNodeID != "" {
-			if id, err := strconv.ParseInt(envNodeID, 10, 64); err == nil {
-				nodeID = id
-			}
-		}
+	// 初始化本地雪花发号器（节点号的取值规则见 resolveNodeID）
+	nodeID, nodeSource, err := resolveNodeID(c.SnowflakeNodeID, os.Getenv, os.Hostname)
+	if err != nil {
+		panic(fmt.Sprintf("resolve message node id failed: %v", err))
 	}
-	if nodeID == 0 {
-		hostname, _ := os.Hostname()
-		nodeID = int64(crc32.ChecksumIEEE([]byte(fmt.Sprintf("msg-%s", hostname))) % 1024)
+	if nodeSource == nodeSourceHostname {
+		logger.Errorf("[MessageRpc] 未注入 NODE_ID，节点号按主机名哈希得到 %d，多副本部署时可能与其他副本重复", nodeID)
+	} else {
+		logger.Infof("[MessageRpc] node id = %d (source: %s)", nodeID, nodeSource)
 	}
 	sfNode, sfErr := snowflake.NewNode(nodeID)
 	if sfErr != nil {

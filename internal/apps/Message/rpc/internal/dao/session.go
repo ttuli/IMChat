@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -185,8 +186,13 @@ func (c *SessionDAO) FindBySessionID(ctx context.Context, sessionID string) (*mo
 	return &session, nil
 }
 
+// ErrSessionIDConflict 新会话的 ID 与已有会话的 session_id 重复。
+// 只会在多个 Message 实例的雪花节点号相同时出现，调用方应换一个新 ID 重试。
+var ErrSessionIDConflict = errors.New("new session id conflicts with an existing session")
+
 // FindOrCreateBySessionKey 按 session_key 查询会话；若不存在则创建新会话并返回。
-// newSessionID 为调用方预先生成的雪花 ID，仅在需要创建时使用。
+// newSessionID 为调用方预先生成的雪花 ID，仅在需要创建时使用；
+// 它与已有会话的 ID 重复时返回 ErrSessionIDConflict。
 func (c *SessionDAO) FindOrCreateBySessionKey(ctx context.Context, newSessionID string, sessionKey string, sessionType int8) (*model.Session, bool, error) {
 	// 1. 查 DB
 	var existing model.Session
@@ -215,7 +221,27 @@ func (c *SessionDAO) FindOrCreateBySessionKey(ctx context.Context, newSessionID 
 	}).Create(session).Error; err != nil {
 		return nil, false, err
 	}
-	return session, true, nil
+
+	// 3. 回查确认这一行确实属于本 session_key。
+	// MySQL 的 ON DUPLICATE KEY UPDATE 对任意唯一索引冲突都会生效，包括 session_id：
+	// 新 ID 撞上已有会话时不会报错，只会改掉别人那一行。不回查的话，本会话的消息
+	// 会写进别人的 session_id 下，两个会话的消息串在一起。
+	var row model.Session
+	err = c.db.WithContext(ctx).Where("session_id = ?", newSessionID).First(&row).Error
+	switch {
+	case err == nil && row.SessionKey == sessionKey:
+		return &row, true, nil
+	case err == nil:
+		return nil, false, ErrSessionIDConflict
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		// 冲突发生在 session_key 上（同一会话被并发创建），以已存在的那一行为准
+		if err := c.db.WithContext(ctx).Where("session_key = ?", sessionKey).First(&existing).Error; err != nil {
+			return nil, false, err
+		}
+		return &existing, false, nil
+	default:
+		return nil, false, err
+	}
 }
 
 // FindUserSessions 查询用户的会话列表 (按最后消息时间倒序)
