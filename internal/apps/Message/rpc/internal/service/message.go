@@ -148,55 +148,87 @@ func (s *MessageService) PersistMessage(ctx context.Context, msg *svc.MessageSen
 		Extra:      make(map[string]any),
 	}
 
-	if msg.MsgType == int64(transport.MessageType_CHAT_IMAGE) ||
-		msg.MsgType == int64(transport.MessageType_GROUP_IMAGE) ||
-		msg.MsgType == int64(transport.MessageType_CHAT_VIDEO) ||
-		msg.MsgType == int64(transport.MessageType_GROUP_VIDEO) ||
-		msg.MsgType == int64(transport.MessageType_CHAT_FILE) ||
-		msg.MsgType == int64(transport.MessageType_GROUP_FILE) {
-		switch msg.MsgType {
-		case int64(transport.MessageType_CHAT_IMAGE), int64(transport.MessageType_GROUP_IMAGE):
-			imageMsg := &message.ImageMessage{}
-			if err := proto.Unmarshal(msg.Payload, imageMsg); err != nil {
-				logger.Errorf("Failed to unmarshal image message: %v", err)
-				return nil, fmt.Errorf("%w: unmarshal image payload: %v", ErrPoison, err)
-			}
-			dbMsg.MediaURL = imageMsg.Url
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = imageMsg.Size
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = imageMsg.FileName
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = imageMsg.Format
-
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH)] = imageMsg.Width
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT)] = imageMsg.Height
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE)] = imageMsg.ThumbnailWidth
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT)] = imageMsg.ThumbnailHeight
-		case int64(transport.MessageType_CHAT_VIDEO), int64(transport.MessageType_GROUP_VIDEO):
-			videoMsg := &message.VideoMessage{}
-			if err := proto.Unmarshal(msg.Payload, videoMsg); err != nil {
-				logger.Errorf("Failed to unmarshal video message: %v", err)
-				return nil, fmt.Errorf("%w: unmarshal video payload: %v", ErrPoison, err)
-			}
-			dbMsg.MediaURL = videoMsg.Url
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = videoMsg.Size
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = videoMsg.FileName
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_DURATION)] = videoMsg.Duration
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = videoMsg.Format
-
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH)] = videoMsg.Width
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT)] = videoMsg.Height
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE)] = videoMsg.ThumbnailWidth
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT)] = videoMsg.ThumbnailHeight
-		case int64(transport.MessageType_CHAT_FILE), int64(transport.MessageType_GROUP_FILE):
-			fileMsg := &message.FileMessage{}
-			if err := proto.Unmarshal(msg.Payload, fileMsg); err != nil {
-				logger.Errorf("Failed to unmarshal file message: %v", err)
-				return nil, fmt.Errorf("%w: unmarshal file payload: %v", ErrPoison, err)
-			}
-			dbMsg.MediaURL = fileMsg.Url
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = fileMsg.Size
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = fileMsg.FileName
-			dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = fileMsg.Format
+	var baseExt map[string]string
+	switch msg.MsgType {
+	case int64(transport.MessageType_CHAT_TEXT), int64(transport.MessageType_GROUP_TEXT):
+		textMsg := &message.TextMessage{}
+		if err := proto.Unmarshal(msg.Payload, textMsg); err != nil {
+			logger.Errorf("Failed to unmarshal text message: %v", err)
+			return nil, fmt.Errorf("%w: unmarshal text payload: %v", ErrPoison, err)
 		}
+		if textMsg.Base != nil {
+			baseExt = textMsg.Base.Ext
+		}
+		if len(textMsg.AtList) > 0 {
+			dbMsg.Extra["at_list"] = textMsg.AtList
+		}
+	case int64(transport.MessageType_CHAT_IMAGE), int64(transport.MessageType_GROUP_IMAGE):
+		imageMsg := &message.ImageMessage{}
+		if err := proto.Unmarshal(msg.Payload, imageMsg); err != nil {
+			logger.Errorf("Failed to unmarshal image message: %v", err)
+			return nil, fmt.Errorf("%w: unmarshal image payload: %v", ErrPoison, err)
+		}
+		dbMsg.MediaURL = imageMsg.Url
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = imageMsg.Size
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = imageMsg.FileName
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = imageMsg.Format
+
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH)] = imageMsg.Width
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT)] = imageMsg.Height
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE)] = imageMsg.ThumbnailWidth
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT)] = imageMsg.ThumbnailHeight
+		if imageMsg.Base != nil {
+			baseExt = imageMsg.Base.Ext
+		}
+	case int64(transport.MessageType_CHAT_VIDEO), int64(transport.MessageType_GROUP_VIDEO):
+		videoMsg := &message.VideoMessage{}
+		if err := proto.Unmarshal(msg.Payload, videoMsg); err != nil {
+			logger.Errorf("Failed to unmarshal video message: %v", err)
+			return nil, fmt.Errorf("%w: unmarshal video payload: %v", ErrPoison, err)
+		}
+		dbMsg.MediaURL = videoMsg.Url
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = videoMsg.Size
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = videoMsg.FileName
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_DURATION)] = videoMsg.Duration
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = videoMsg.Format
+
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_WIDTH)] = videoMsg.Width
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_HEIGHT)] = videoMsg.Height
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_WIDE)] = videoMsg.ThumbnailWidth
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_THUMB_HEIGHT)] = videoMsg.ThumbnailHeight
+		if videoMsg.Base != nil {
+			baseExt = videoMsg.Base.Ext
+		}
+	case int64(transport.MessageType_CHAT_FILE), int64(transport.MessageType_GROUP_FILE):
+		fileMsg := &message.FileMessage{}
+		if err := proto.Unmarshal(msg.Payload, fileMsg); err != nil {
+			logger.Errorf("Failed to unmarshal file message: %v", err)
+			return nil, fmt.Errorf("%w: unmarshal file payload: %v", ErrPoison, err)
+		}
+		dbMsg.MediaURL = fileMsg.Url
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = fileMsg.Size
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_NAME)] = fileMsg.FileName
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = fileMsg.Format
+		if fileMsg.Base != nil {
+			baseExt = fileMsg.Base.Ext
+		}
+	case int64(transport.MessageType_CHAT_AUDIO), int64(transport.MessageType_GROUP_AUDIO):
+		audioMsg := &message.AudioMessage{}
+		if err := proto.Unmarshal(msg.Payload, audioMsg); err != nil {
+			logger.Errorf("Failed to unmarshal audio message: %v", err)
+			return nil, fmt.Errorf("%w: unmarshal audio payload: %v", ErrPoison, err)
+		}
+		dbMsg.MediaURL = audioMsg.Url
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_SIZE)] = audioMsg.Size
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_DURATION)] = audioMsg.Duration
+		dbMsg.Extra[extraKey(message.MessageExtraKey_MESSAGE_EXTRA_KEY_FORMAT)] = audioMsg.Format
+		if audioMsg.Base != nil {
+			baseExt = audioMsg.Base.Ext
+		}
+	}
+	// 透传客户端扩展字段（如消息引用 ext.reply），与历史接口 chatService.ts 的 extra.ext 读取口径一致
+	if len(baseExt) > 0 {
+		dbMsg.Extra["ext"] = baseExt
 	}
 
 	// 通话记录：终态与类型在 CallMessage payload 内，而历史接口只返回
